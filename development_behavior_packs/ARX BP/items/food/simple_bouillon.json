@@ -1,0 +1,25 @@
+{
+    "format_version": "1.21.0",
+    "minecraft:item": {
+        "components": {
+            "minecraft:food": {
+                "nutrition": 4,
+                "saturation_modifier": 1,
+                "using_converts_to": "minecraft:bowl"
+            },
+            "minecraft:icon": "arx:simple_bouillon",
+            "minecraft:use_animation": "drink",
+            "minecraft:use_modifiers": {
+                "movement_modifier": 0.5,
+                "use_duration": 2.0
+            }
+        },
+        "description": {
+            "identifier": "arx:simple_bouillon",
+            "menu_category": {
+                "category": "equipment",
+                "group": "itemGroup.name.cookedFood"
+            }
+        }
+    }
+}

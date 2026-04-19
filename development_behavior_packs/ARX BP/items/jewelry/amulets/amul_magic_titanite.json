@@ -13,11 +13,6 @@
             "minecraft:max_stack_size": 1,
             "minecraft:wearable": {
                 "slot": "slot.armor.legs"
-            },
-            "minecraft:tags": {
-                "tags": [
-                    "spell_cost_reduction_with_rune_yanamo:0.25"
-                ]
             }
         },
         "description": {

@@ -1,0 +1,37 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "arx:llama_in_wine"
+        },
+        "tags": [
+            "cooking_crafting_table"
+        ],
+        "pattern": [
+            "A#C",
+            " B "
+        ],
+        "key": {
+            "#": {
+                "item": "arx:llama_meat"
+            },
+            "A": {
+                "item": "arx:wine"
+            },
+            "B": {
+                "item": "minecraft:bowl"
+            },
+            "C": {
+                "item": "arx:salt"
+            }
+        },
+        "result": [
+            {
+                "item": "arx:llama_in_wine"
+            },
+            {
+                "item": "minecraft:glass_bottle"
+            }
+        ]
+    }
+}

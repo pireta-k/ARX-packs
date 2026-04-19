@@ -4,7 +4,7 @@
         "components": {
             "minecraft:icon": "arx:small_rat_meat",
             "minecraft:food": {
-                "nutrition": 2,
+                "nutrition": 1,
                 "saturation_modifier": 0.5
             },
             "minecraft:use_animation": "eat",

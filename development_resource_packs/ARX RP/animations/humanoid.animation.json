@@ -333,17 +333,6 @@
 					]
 				}
 			}
-		},
-		"animation.humanoid.zigkhael": {
-			"loop": true,
-			"bones": {
-				"head": {
-					"rotation": [-10, 0, 0]
-				},
-				"rightArm": {
-					"rotation": [-78.86, 21.75753, 93.44396]
-				}
-			}
 		}
 	}
 }

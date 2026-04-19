@@ -1,0 +1,14 @@
+{
+    "format_version": "1.21.0",
+    "minecraft:item": {
+        "components": {
+            "minecraft:icon": "arx:exquisite_leather"
+        },
+        "description": {
+            "identifier": "arx:exquisite_leather",
+            "menu_category": {
+                "category": "items"
+            }
+        }
+    }
+}

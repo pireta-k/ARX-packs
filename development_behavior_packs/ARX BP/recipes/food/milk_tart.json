@@ -1,0 +1,42 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "arx:milk_tart"
+        },
+        "tags": [
+            "cooking_crafting_table"
+        ],
+        "pattern": [
+            "BEB",
+            "DCD",
+            "AEA"
+        ],
+        "key": {
+            "A": {
+                "item": "minecraft:milk_bucket"
+            },
+            "B": {
+                "item": "minecraft:sugar"
+            },
+            "C": {
+                "item": "arx:salt"
+            },
+            "D": {
+                "item": "arx:butter"
+            },
+            "E": {
+                "item": "minecraft:wheat"
+            }
+        },
+        "result": [
+            {
+                "item": "arx:milk_tart"
+            },
+            {
+                "item": "minecraft:bucket",
+                "count": 2
+            }
+        ]
+    }
+}

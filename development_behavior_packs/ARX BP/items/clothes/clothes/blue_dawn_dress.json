@@ -9,7 +9,7 @@
                 "slot": "armor_torso",
                 "value": 10
             },
-            "minecraft:icon": "arx:blue_dawn_dress_icon",
+            "minecraft:icon": "arx:blue_dawn_dress",
             "minecraft:max_stack_size": 1,
             "minecraft:wearable": {
                 "protection": 2,

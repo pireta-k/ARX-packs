@@ -1,5 +1,7 @@
 import { str2obj, obj2str } from "./converters"
 
+const specialDataTypePrefix = 'JSON$'
+
 // Safely Set Dynamic Property
 // Saves value to Dynamic Property with extended data types
 // object - the object we should save DP on
@@ -37,7 +39,7 @@ export function ssDP(object, DPName, value) {
 
 // Increase Dyncamic Property
 // If you will try to increase non-existent DP, it will be set to the value that you are trying to add to this DP.
-// Returns new value after increase
+// Returns the new value after increasing
 export function iDP(object, DPName, valueToIncrease = 1) {
     if (!object || !DPName) {
         console.warn(`Called iDP() without necessary vars`)
@@ -87,24 +89,32 @@ export function iDP(object, DPName, valueToIncrease = 1) {
 
 // Get Dynamic Property
 // Supports arrays and objects
-export function gDP(object, DPName) {
+// Fallback will be returned, if result = undefined
+export function gDP(object, DPName, fallback = undefined) {
+    // Check input
     if (!object || !DPName) {
         console.warn(`Called gDP() without necessary vars`)
         return undefined
     }
 
+    // Get DP
     let value = object.getDynamicProperty(DPName)
+
+    // If DP is obj
     if (typeof value === 'string' && value.startsWith(specialDataTypePrefix)) {
         try {
             const result = str2obj(value.slice(specialDataTypePrefix.length))
-            return result
+            value = result
         }
+        // An error occured with this JSON var
         catch {
             console.warn(`gDP(): dp ${DPName} cannot be deserialized (value: ${value})`)
-            return null
+            // Reset it
+            ssDP(object, DPName, undefined)
+            return undefined
         }
     }
-    else return value
+    
+    if (value === undefined) return fallback
+    return value
 }
-
-const specialDataTypePrefix = 'JSON$'

@@ -8,28 +8,19 @@
     
     "tags": [ "light_armor_crafting_table" ],
     "pattern": [
-      "#U#",
-      "XYZ",
+      "BUB",
+      "ZZZ",
       "BUB"
     ],
     "key": {
-      "#": {
-        "item": "arx:pushnina"
-      },
       "B": {
-        "item": "arx:leather_super"
-      },
-      "X": {
-        "item": "arx:lama_skin"
-      },
-      "Y": {
-        "item": "arx:cave_rat_skin"
+        "item": "arx:exquisite_leather"
       },
       "U": {
         "item": "arx:durasteel_protective_plate"
       },
       "Z": {
-        "item": "arx:snow_bars_skin"
+        "item": "minecraft:leather"
       }
     },
     "result": {

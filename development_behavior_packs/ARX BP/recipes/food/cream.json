@@ -1,0 +1,33 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "arx:cream"
+        },
+        "tags": [
+            "cooking_crafting_table"
+        ],
+        "pattern": [
+            "AAA",
+            "ABA",
+            "AAA"
+        ],
+        "key": {
+            "A": {
+                "item": "minecraft:milk_bucket"
+            },
+            "B": {
+                "item": "minecraft:glass_bottle"
+            }
+        },
+        "result": [
+            {
+                "item": "arx:cream"
+            },
+            {
+                "item": "minecraft:bucket",
+                "count": 8
+            }
+        ]
+    }
+}

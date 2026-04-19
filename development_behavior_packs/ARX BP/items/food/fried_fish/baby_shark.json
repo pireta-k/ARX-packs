@@ -4,7 +4,7 @@
         "components": {
             "minecraft:icon": "arx:baby_shark_fried",
             "minecraft:food": {
-                "nutrition": 4,
+                "nutrition": 8,
                 "saturation_modifier": 1
             },
             "minecraft:use_animation": "eat",

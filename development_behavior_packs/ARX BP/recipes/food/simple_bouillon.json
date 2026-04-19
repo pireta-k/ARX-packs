@@ -1,0 +1,26 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "arx:simple_bouillon"
+        },
+        "tags": [
+            "cooking_crafting_table"
+        ],
+        "pattern": [
+            "# #",
+            " A "
+        ],
+        "key": {
+            "#": {
+                "item": "minecraft:bone"
+            },
+            "A": {
+                "item": "minecraft:bowl"
+            }
+        },
+        "result": {
+            "item": "arx:simple_bouillon"
+        }
+    }
+}

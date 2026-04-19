@@ -1,0 +1,35 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "arx:chicken_crisps"
+        },
+        "tags": [
+            "cooking_crafting_table"
+        ],
+        "pattern": [
+            "ACA",
+            " B ",
+            " D "
+        ],
+        "key": {
+            "A": {
+                "item": "minecraft:chicken"
+            },
+            "B": {
+                "item": "arx:cheese"
+            },
+            "C": {
+                "item": "arx:kaspora"
+            },
+            "D": {
+                "item": "minecraft:bowl"
+            }
+        },
+        "result": [
+            {
+                "item": "arx:chicken_crisps"
+            }
+        ]
+    }
+}

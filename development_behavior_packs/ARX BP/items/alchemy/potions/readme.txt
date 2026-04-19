@@ -19,11 +19,9 @@ Const weight limit bonus (ash lavaflower) +0.5 per item / +3 max
 === COMMON ITEMS ===
 Blindness (night kosk) +D
 Saturation (Yuan)
-Fire resistance (beast heart || firebloom) isA
+Fire resistance (firebloom) isA
 Haste (Desert heart) +P +D
-Speed (hoof) isA
 Regen (kari) isA
-Invisibility (monster_eye) isA
 Remove negative effects (dragon pion)
 Strength (claws) isA
 
@@ -33,7 +31,7 @@ Weight limit (kaspora || fang) +P +D
 Poison (wolf death) isA
 Stress (fiuli) +P
 Happiness (Swamp heart) +P
-MP regen (brain) +P +D
+MP regen (day kosk) +P +D
 MP max (karelo) +P +D
 
 === ALCOHOL ===
@@ -46,5 +44,3 @@ Wine (water + grape) => Night vision
 Vodka (water + potato) => Nausea + strength
 
 === UNUSED ARX ALCHEMY COMPONENTS === 
-animal eye
-day kosk

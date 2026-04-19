@@ -14,10 +14,10 @@
     ],
     "key": {
       "A": {
-        "item": "arx:snow_bars_skin"
+        "item": "minecraft:leather"
       },
       "B": {
-        "item": "arx:pushnina"
+        "item": "arx:exquisite_leather"
       },
       "C": {
         "item": "arx:altaite_protective_plate"

@@ -5,12 +5,21 @@
             "entries": [
                 {
                     "type": "item",
-                    "name": "arx:dead_skorpion",
-                    "weight": 1,
+                    "name": "arx:skorpion_shell",
                     "functions": [
                         {
                             "function": "set_count",
-                            "count": 1
+                            "count": {
+                                "min": 0,
+                                "max": 1
+                            }
+                        },
+                        {
+                            "function": "looting_enchant",
+                            "count": {
+                                "min": 0,
+                                "max": 1
+                            }
                         }
                     ]
                 }

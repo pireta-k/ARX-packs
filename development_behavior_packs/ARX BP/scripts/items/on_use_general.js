@@ -14,7 +14,7 @@ import { sl } from "../lang/fetchLocalization";
 import { onUseSBHammer } from "../structureBuilder";
 
 // Использование предметов
-world.afterEvents.itemUse.subscribe((event) => { // Обнаружаем юзание предмета на ПКМ
+world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
     const player = event.source; // Получаем объект игрока
     const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Mainhand)
     switch (event.itemStack.typeId) {
@@ -24,16 +24,7 @@ world.afterEvents.itemUse.subscribe((event) => { // Обнаружаем юза�
             if (manageCD(player)) {
                 console.warn(gDP(item, 'everHolded'))
 
-                item.setLore([
-                    '§c§lDiamond Sword of Awesome§r'
-                ]);
-                
-                
-
-                // Set item
-                const inventory = player.getComponent(EntityComponentTypes.Inventory)
-                const container = inventory.container
-                container.setItem(player.selectedSlotIndex, item)
+                player.dimension.runCommand(`tickingarea add 0 0 0 0 0 0 sb true`)
             }
             break
 
@@ -296,149 +287,6 @@ world.afterEvents.itemUse.subscribe((event) => { // Обнаружаем юза�
             break
         case "arx:small_xp_book":
             player.runCommand("function books/small_xp_book")
-            break
-
-        // Мертвые мобы
-        case "arx:dead_allay":
-            player.runCommand("function dead_mobs/allay")
-            break
-        case "arx:dead_arctic_fox":
-            player.runCommand("function dead_mobs/arctic_fox")
-            break
-        case "arx:dead_bat":
-            player.runCommand("function dead_mobs/bat")
-            break
-        case "arx:dead_bear":
-            player.runCommand("function dead_mobs/bear")
-            break
-        case "arx:dead_big_leech":
-            player.runCommand("function dead_mobs/big_leech")
-            break
-        case "arx:dead_camel":
-            player.runCommand("function dead_mobs/camel")
-            break
-        case "arx:dead_cat":
-            player.runCommand("function dead_mobs/cat")
-            break
-        case "arx:dead_cave_rat":
-            player.runCommand("function dead_mobs/cave_rat")
-            break
-        case "arx:dead_cave_spider":
-            player.runCommand("function dead_mobs/cave_spider")
-            break
-        case "arx:dead_chicken":
-            player.runCommand("function dead_mobs/chicken")
-            break
-        case "arx:dead_cow":
-            player.runCommand("function dead_mobs/cow")
-            break
-        case "arx:dead_deer":
-            player.runCommand("function dead_mobs/deer")
-            break
-        case "arx:dead_dolphin":
-            player.runCommand("function dead_mobs/dolphin")
-            break
-        case "arx:dead_duckling":
-            player.runCommand("function dead_mobs/duckling")
-            break
-        case "arx:dead_elemental_desert":
-            player.runCommand("function dead_mobs/elemental_desert")
-            break
-        case "arx:dead_elemental_snow":
-            player.runCommand("function dead_mobs/elemental_snow")
-            break
-        case "arx:dead_fiercewolf":
-            player.runCommand("function dead_mobs/fiercewolf")
-            break
-        case "arx:dead_fox":
-            player.runCommand("function dead_mobs/fox")
-            break
-        case "arx:dead_frog":
-            player.runCommand("function dead_mobs/frog")
-            break
-        case "arx:dead_glow_squid":
-            player.runCommand("function dead_mobs/glow_squid")
-            break
-        case "arx:dead_goat":
-            player.runCommand("function dead_mobs/goat")
-            break
-        case "arx:dead_horse":
-            player.runCommand("function dead_mobs/horse")
-            break
-        case "arx:dead_kapibara":
-            player.runCommand("function dead_mobs/kapibara")
-            break
-        case "arx:dead_lama":
-            player.runCommand("function dead_mobs/lama")
-            break
-        case "arx:dead_lavra":
-            player.runCommand("function dead_mobs/lavra")
-            break
-        case "arx:dead_leech":
-            player.runCommand("function dead_mobs/leech")
-            break
-        case "arx:dead_meat_beatle":
-            player.runCommand("function dead_mobs/meat_beatle")
-            break
-        case "arx:dead_panda":
-            player.runCommand("function dead_mobs/panda")
-            break
-        case "arx:dead_parrot":
-            player.runCommand("function dead_mobs/parrot")
-            break
-        case "arx:dead_pig":
-            player.runCommand("function dead_mobs/pig")
-            break
-        case "arx:dead_polar_bear":
-            player.runCommand("function dead_mobs/polar_bear")
-            break
-        case "arx:dead_rabbit":
-            player.runCommand("function dead_mobs/rabbit")
-            break
-        case "arx:dead_rat_monstr":
-            player.runCommand("function dead_mobs/rat_monstr")
-            break
-        case "arx:dead_sand_elemental":
-            player.runCommand("function dead_mobs/sand_elemental")
-            break
-        case "arx:dead_sand_leech":
-            player.runCommand("function dead_mobs/sand_leech")
-            break
-        case "arx:dead_sea_turtle":
-            player.runCommand("function dead_mobs/sea_turtle")
-            break
-        case "arx:dead_sheep":
-            player.runCommand("function dead_mobs/sheep")
-            break
-        case "arx:dead_skorpion":
-            player.runCommand("function dead_mobs/skorpion")
-            break
-        case "arx:dead_small_rat_black":
-            player.runCommand("function dead_mobs/small_rat_black")
-            break
-        case "arx:dead_small_rat_white":
-            player.runCommand("function dead_mobs/small_rat_white")
-            break
-        case "arx:dead_snow_bars":
-            player.runCommand("function dead_mobs/snow_bars")
-            break
-        case "arx:dead_snow_bug":
-            player.runCommand("function dead_mobs/snow_bug")
-            break
-        case "arx:dead_snow_lady":
-            player.runCommand("function dead_mobs/snow_lady")
-            break
-        case "arx:dead_squid":
-            player.runCommand("function dead_mobs/squid")
-            break
-        case "arx:dead_swamp_monster":
-            player.runCommand("function dead_mobs/swamp_monster")
-            break
-        case "arx:dead_warden":
-            player.runCommand("function dead_mobs/warden")
-            break
-        case "arx:dead_wolf":
-            player.runCommand("function dead_mobs/wolf")
             break
 
         case "arx:xp_shard":

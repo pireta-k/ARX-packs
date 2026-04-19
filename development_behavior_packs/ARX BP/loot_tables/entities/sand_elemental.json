@@ -5,14 +5,7 @@
             "entries": [
                 {
                     "type": "item",
-                    "name": "arx:dead_sand_elemental",
-                    "weight": 1,
-                    "functions": [
-                        {
-                            "function": "set_count",
-                            "count": 1
-                        }
-                    ]
+                    "name": "arx:sand_elemental_heart"
                 }
             ]
         }

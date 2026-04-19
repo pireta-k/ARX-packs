@@ -1,0 +1,24 @@
+{
+	"format_version": "1.17.41",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "arx:meat_tea"
+		},
+		"tags": ["tea_table"],
+		"pattern": [
+			"L",
+			"C"
+		],
+		"key": {
+			"C": "arx:pyer_tea",
+			"L": "minecraft:beef"
+		},
+		"result": [
+			{
+				"item": "arx:meat_tea",
+				
+				"count": 1
+			}
+		]
+	}
+}

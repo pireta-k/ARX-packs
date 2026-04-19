@@ -329,7 +329,7 @@
         scoreboard players add @s[hasitem={item=arx:slave_clothes}] weighLoading 1
         scoreboard players add @s[hasitem={item=arx:steampunk_pants}] weighLoading 2
         scoreboard players add @s[hasitem={item=arx:stroller_clothes}] weighLoading 3
-        scoreboard players add @s[hasitem={item=arx:travelers_cape}] weighLoading 2
+        scoreboard players add @s[hasitem={item=arx:traveler_cape}] weighLoading 2
         scoreboard players add @s[hasitem={item=arx:wanderer_jacket}] weighLoading 3
         scoreboard players add @s[hasitem={item=arx:watermelon_hat}] weighLoading 2
         scoreboard players add @s[hasitem={item=arx:white_hat}] weighLoading 1

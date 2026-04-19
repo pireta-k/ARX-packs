@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server"
+import { world, system } from "@minecraft/server"
 import { checkForItem } from "./checkForItem"
 import { gDP, ssDP } from "./DPOperations"
 import { ActionFormData } from "@minecraft/server-ui"
@@ -25,7 +25,6 @@ world.afterEvents.playerSwingStart.subscribe((event) => {
 })
 
 const defaultCoords = { x: 0, y: 0, z: 0 }
-let megachunkId = 0
 
 class BlocksMegaArray {
     constructor(dimension, pos1, pos2) {
@@ -33,11 +32,19 @@ class BlocksMegaArray {
             console.warn('Trying to create BlocksMegaArray with irrelevant positions')
         }
 
+        this.dimension = dimension
+
         // Anchor is a Vector3 vertex of MegaArray with smallest values
         this.anchor = {
             x: Math.min(pos1.x, pos2.x),
             y: Math.min(pos1.y, pos2.y),
             z: Math.min(pos1.z, pos2.z)
+        }
+        // Opposite to anchor
+        this.top = {
+            x: Math.max(pos1.x, pos2.x),
+            y: Math.max(pos1.y, pos2.y),
+            z: Math.max(pos1.z, pos2.z)
         }
         // Size of all array
         this.size = {
@@ -47,26 +54,62 @@ class BlocksMegaArray {
         }
     }
 
-    registerMegachunks() {
-
+    // Itearator. Iterates by megachunks
+    // Megachunk is a 3D mass of blocks with x size = 32, y size = world hight, z size = 32
+    *iterMegaChunks() {
+        const CHUNK_SIZE = 32
+        for (let cx = 0; cx < this.size.x; cx += CHUNK_SIZE) {
+            for (let cz = 0; cz < this.size.z; cz += CHUNK_SIZE) {
+                yield new BlocksMegaArray.MegaChunk(cx, cz, this)
+            }
+        }
     }
 
-    // This is 2x2 default chunks. I mean, x = 32, y = default (can be decreased if needed), y = 32 blocks array
+    // Main blocks iterator
+    *[Symbol.iterator]() {
+        for (const chunk of this.iterMegaChunks()) {
+            // The active area we need to process further
+            const activeArea = {
+                // Minimal vertex of the area
+                min: { x: Math.max(chunk.absPos.x, this.anchor.x), y: chunk.height.min, z: Math.max(chunk.absPos.z, this.anchor.z) },
+                // Top vertex of the area
+                max: { x: Math.min(chunk.absPos.x + 32, this.top.x), y: chunk.height.max, z: Math.min(chunk.absPos.z + 32, this.top.z) }
+            }
+
+            chunk.startTick()
+
+            // Iterate and yield blocks
+            for (let x = activeArea.min.x; x <= activeArea.max.x; x++) {
+                for (let y = activeArea.min.y; y <= activeArea.max.y; y++) {
+                    for (let z = activeArea.min.z; z <= activeArea.max.z; z++) {
+                        yield this.dimension.getBlock({ x: x, y: y, z: z })
+                    }
+                }
+            }
+            chunk.delTick()
+        }
+    }
+
+    // MegaChunk class
     static MegaChunk = class {
-        constructor(pos1, pos2) {
-            // Register ID
-            this.uid = megachunkId
-            megachunkId += 1
+        constructor(posX, posZ, parent) {
+            this.parent = parent
+            this.relPos = { x: posX, z: posZ } // Relative to Mega Array position
+            this.absPos = { x: this.parent.anchor.x + this.relPos.x, z: this.parent.anchor.z + this.relPos.z } // Absolute
+            this.height = { min: this.parent.anchor.y, max: this.parent.top.y }
         }
 
-        fillWithBlock(blockTypeId) {
+        // Start ticking
+        startTick() {
+            this.delTick() // Remove old tickingArea, if there was a bug and it wasn't unloaded
+            const command = `tickingarea add ${this.absPos.x} ${this.height.min} ${this.absPos.z} ${this.absPos.x + 31} ${this.height.max} ${this.absPos.z + 31} sb true`
+            const result = this.parent.dimension.runCommand(command)
+            console.warn(command, result.successCount)
+        }
 
-        }
-        createTickingArea() {
-            world.dimension.runCommand('')
-        }
-        unloadTickingArea() {
-            world.dimension.runCommand('')
+        // Delete ticking
+        delTick() {
+            this.parent.dimension.runCommand(`tickingarea remove sb`)
         }
     }
 }
@@ -106,21 +149,14 @@ export function onUseSBHammer(p) {
     form.show(p).then(r => {
         switch (r.selection) {
             case 0:
-                let errorsCounter = 0
-                for (let x = 0; x < dx; x++) {
-                    for (let y = 0; y < dy; y++) {
-                        for (let z = 0; z < dz; z++) {
-                            const b = d.getBlock({ x: minX + x, y: minY + y, z: minZ + z })
-                            if (b) {
-                                b.setType('minecraft:air')
-                            } else {
-                                errorsCounter++
-                            }
-                        }
+                for (const b of new BlocksMegaArray(d, point1, point2)) {
+                    try {
+                        b.setType('minecraft:air')
+                    }
+                    catch {
+
                     }
                 }
-                if (errorsCounter === volume) p.sendMessage(`All blocks (${volume}) were too far to change them`)
-                else if (errorsCounter) p.sendMessage(`Some blocks (${errorsCounter} of ${volume}) were too far to change them`)
                 break
 
             case 1:

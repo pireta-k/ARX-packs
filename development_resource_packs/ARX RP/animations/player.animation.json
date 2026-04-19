@@ -475,7 +475,7 @@
 			"bones": {
 				"bust": {
 					"rotation": [
-						"-1 * ((query.property('arx:bust_size') == 1) * 20 + (query.property('arx:bust_size') == 2) * 30 + (query.property('arx:bust_size') == 3) * 40)",
+						"-10 * (query.property('arx:bust_size') + 1) + 2 * query.property('arx:bust_size') * query.modified_move_speed * math.cos(32.17 * 2 * query.modified_distance_moved)",
 						0,
 						0
 					],

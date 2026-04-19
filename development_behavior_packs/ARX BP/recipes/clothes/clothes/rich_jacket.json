@@ -8,26 +8,20 @@
     
     "tags": [ "clothes_crafting_table" ],
     "pattern": [
-      "A#A",
+      "B#B",
       "#B#",
-      "DCD"
+      "BCB"
     ],
     "key": {
       "#": {
         "item": "arx:cotton_fabric"
       },
-      "A": {
-        "item": "arx:cave_rat_skin"
-      },
       "B": {
-        "item": "arx:bat_skin"
+        "item": "minecraft:leather"
       },
       "C": {
         "item": "minecraft:dye",
         "data": 17
-      },
-      "D": {
-        "item": "arx:cow_skin"
       }
     },
     "result": {

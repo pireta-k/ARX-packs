@@ -8,7 +8,7 @@
       "brewing_stand"
     ],
     "input": "minecraft:potion_type:awkward",
-    "reagent": "arx:beast_heart",
+    "reagent": "arx:firebloom",
     "output": "minecraft:potion_type:fire_resistance"
   }
 }

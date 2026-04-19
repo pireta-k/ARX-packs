@@ -3,6 +3,13 @@
   "minecraft:tree_feature": {
     "description": {
       "identifier": "minecraft:roofed_tree_feature"
+    },
+    "canopy": {
+      "canopy_offset": {
+        "max": 1,
+        "min": 0
+      },
+      "leaf_block": "structure_void"
     }
   }
 }

@@ -4,7 +4,7 @@
         "components": {
             "minecraft:icon": "arx:wave_fish_fried",
             "minecraft:food": {
-                "nutrition": 4,
+                "nutrition": 7,
                 "saturation_modifier": 1
             },
             "minecraft:use_animation": "eat",

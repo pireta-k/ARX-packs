@@ -1,0 +1,30 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "arx:rats_potato"
+        },
+        "tags": [
+            "cooking_crafting_table"
+        ],
+        "pattern": [
+            "#A",
+            "A#",
+            "B "
+        ],
+        "key": {
+            "#": {
+                "item": "minecraft:potato"
+            },
+            "A": {
+                "item": "arx:cave_rat_meat"
+            },
+            "B": {
+                "item": "minecraft:bowl"
+            }
+        },
+        "result": {
+            "item": "arx:rats_potato"
+        }
+    }
+}

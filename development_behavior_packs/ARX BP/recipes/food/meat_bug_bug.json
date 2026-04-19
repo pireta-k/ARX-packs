@@ -13,10 +13,10 @@
         ],
         "key": {
             "#": {
-                "item": "arx:fried_meat_beatle_meat"
+                "item": "arx:fried_meat_beetle_meat"
             },
             "A": {
-                "item": "arx:hoof_bouillon"
+                "item": "arx:simple_bouillon"
             },
             "C": {
                 "item": "arx:salt"

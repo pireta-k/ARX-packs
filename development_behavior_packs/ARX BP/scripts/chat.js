@@ -331,7 +331,7 @@ export function parceChatCommand(player, trimmedMessage) {
     }
 }
 
-// Функция отправка сообщения в локальный чат
+// Send a message to chat
 function sendChatMessage(player, speech, prefix, clearDistance = 0, senderName = undefined) {
 
     /*

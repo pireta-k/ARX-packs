@@ -14,7 +14,7 @@
     ],
     "key": {
       "#": {
-        "item": "arx:leather_super"
+        "item": "arx:exquisite_leather"
       },
       "A": {
         "item": "minecraft:dye",
@@ -25,7 +25,7 @@
         "data": 7
       },
       "B": {
-        "item": "arx:allay_skin"
+        "item": "minecraft:leather"
       }
     },
     "result": {

@@ -17,57 +17,6 @@
             }
           ]
         },
-        //Человечина
-        {
-          "wants": [
-            {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 1,
-                "max": 2
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
-                {
-                  "item": "arx:human_meat"
-                },
-                {
-                  "item": "arx:human_skin"
-                }
-              ]
-            }
-          ]
-        },
-        //Органы
-        {
-          "wants": [
-            {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 1,
-                "max": 2
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
-                {
-                  "item": "minecraft:bone"
-                },
-                {
-                  "item": "arx:animal_eye"
-                },
-                {
-                  "item": "arx:liver"
-                }
-              ]
-            }
-          ]
-        },
         //Камни
         {
           "wants": [

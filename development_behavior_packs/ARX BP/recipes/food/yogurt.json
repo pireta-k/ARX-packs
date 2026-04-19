@@ -1,0 +1,33 @@
+{
+    "format_version": "1.12",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "arx:yogurt"
+        },
+        "tags": [
+            "cooking_crafting_table"
+        ],
+        "pattern": [
+            " B ",
+            "A A",
+            " B "
+        ],
+        "key": {
+            "A": {
+                "item": "minecraft:milk_bucket"
+            },
+            "B": {
+                "item": "arx:kavra"
+            }
+        },
+        "result": [
+            {
+                "item": "arx:yogurt"
+            },
+            {
+                "item": "minecraft:bucket",
+                "count": 2
+            }
+        ]
+    }
+}

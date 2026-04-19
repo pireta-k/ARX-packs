@@ -8,7 +8,7 @@
       "brewing_stand"
     ],
     "input": "minecraft:potion_type:awkward",
-    "reagent": "arx:brain",
+    "reagent": "arx:day_kosk",
     "output": "arx:potion_mp_regen"
   }
 }

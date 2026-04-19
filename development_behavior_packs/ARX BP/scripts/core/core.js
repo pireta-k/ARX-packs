@@ -1108,39 +1108,33 @@ const coreFramework = {
                 // Регенерация маны - рассчет
                 let mpRegenPower = 0.1
 
-                if (checkForItem(player, "Feet", "arx:ring_aluminum_beryl")) { mpRegenPower += 0.3 }
-                if (checkForItem(player, "Offhand", "arx:ring_aluminum_beryl")) { mpRegenPower += 0.3 }
+                if (checkForItem(player, "Feet", "arx:ring_aluminum_beryl")) mpRegenPower += 0.3
+                if (checkForItem(player, "Offhand", "arx:ring_aluminum_beryl")) mpRegenPower += 0.3
 
-                if (checkForItem(player, "Feet", "arx:ring_gold_beryl")) { mpRegenPower += 0.8 }
-                if (checkForItem(player, "Offhand", "arx:ring_gold_beryl")) { mpRegenPower += 0.8 }
+                if (checkForItem(player, "Feet", "arx:ring_gold_beryl")) mpRegenPower += 0.8
+                if (checkForItem(player, "Offhand", "arx:ring_gold_beryl")) mpRegenPower += 0.8
 
-                if (checkForItem(player, "Feet", "arx:ring_naginitis_beryl")) { mpRegenPower += 1.5 }
-                if (checkForItem(player, "Offhand", "arx:ring_naginitis_beryl")) { mpRegenPower += 1.5 }
+                if (checkForItem(player, "Feet", "arx:ring_naginitis_beryl")) mpRegenPower += 1.5
+                if (checkForItem(player, "Offhand", "arx:ring_naginitis_beryl")) mpRegenPower += 1.5
 
-                if (checkForItem(player, "Feet", "arx:ring_caryite_beryl")) { mpRegenPower += 2.5 }
-                if (checkForItem(player, "Offhand", "arx:ring_caryite_beryl")) { mpRegenPower += 2.5 }
+                if (checkForItem(player, "Feet", "arx:ring_caryite_beryl")) mpRegenPower += 2.5
+                if (checkForItem(player, "Offhand", "arx:ring_caryite_beryl")) mpRegenPower += 2.5
 
-                if (checkForItem(player, "Feet", "arx:ring_malafiotironite_beryl")) { mpRegenPower += 3.8 }
-                if (checkForItem(player, "Offhand", "arx:ring_malafiotironite_beryl")) { mpRegenPower += 3.8 }
+                if (checkForItem(player, "Feet", "arx:ring_malafiotironite_beryl")) mpRegenPower += 3.8
+                if (checkForItem(player, "Offhand", "arx:ring_malafiotironite_beryl")) mpRegenPower += 3.8
 
-                if (checkForItem(player, "Feet", "arx:ring_lamenite_beryl")) { mpRegenPower += 5 }
-                if (checkForItem(player, "Offhand", "arx:ring_lamenite_beryl")) { mpRegenPower += 5 }
+                if (checkForItem(player, "Feet", "arx:ring_lamenite_beryl")) mpRegenPower += 5
+                if (checkForItem(player, "Offhand", "arx:ring_lamenite_beryl")) mpRegenPower += 5
 
                 // Potions 
                 if (gDP(player, 'MPRegenBonusFromPotion') > 0) mpRegenPower += 0.3
                 if (gDP(player, 'MPRegenBonusFromPotionImproved') > 0) mpRegenPower += 1
                 // Perm
-                mpRegenPower += ((gDP(player, 'MPRegenPermanentBonus') / 10) ?? 0)
-
-                // Увеличение от бонуса фиоликса
-                if (player.getDynamicProperty('statsBonusByFiolix') > 0) { mpRegenPower += 1.5 }
+                mpRegenPower += ((gDP(player, 'MPRegenPermanentBonus') ?? 0) / 10)
 
                 // От черты
                 if (checkForTrait(player, 'wise')) { mpRegenPower += 0.2 }
                 if (checkForTrait(player, 'paranoid')) { mpRegenPower -= 0.2 }
-
-                // Штраф от увядания призрака
-                mpRegenPower -= player.getDynamicProperty("ghostWitheringLevel") * 0.2
 
                 // Воздействие стресса
                 switch (player.getDynamicProperty('stressLevel')) {
@@ -1203,10 +1197,10 @@ const coreFramework = {
                 }
 
                 // Увеличение от прокачки
-                maxMp += player.getDynamicProperty('skill:mana_level') * 5
+                maxMp += gDP(player, 'skill:mana_level', 0) * 5
 
                 // От пермабонуса
-                maxMp += player.getDynamicProperty('MPPermanentBonus')
+                maxMp += gDP(player, 'MPPermanentBonus', 0)
 
                 // Записываем максмп в дп
                 ssDP(player, "maxMp", maxMp)

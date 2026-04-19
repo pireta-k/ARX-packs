@@ -4,7 +4,7 @@
         "components": {
             "minecraft:icon": "arx:sea_turtle_meat",
             "minecraft:food": {
-                "nutrition": 2,
+                "nutrition": 3,
                 "saturation_modifier": 0.5
             },
             "minecraft:use_animation": "eat",

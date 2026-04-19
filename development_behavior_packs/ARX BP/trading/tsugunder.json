@@ -219,117 +219,117 @@
           "max_uses": 1
         },
         //Дорогой товар - руны
-        {
-          "wants": [
-            {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 15,
-                "max": 40
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
-                {
-                  "item": "arx:rune_affuono_b"
-                },
-                {
-                  "item": "arx:rune_arrako_b"
-                },
-                {
-                  "item": "arx:rune_din_b"
-                },
-                {
-                  "item": "arx:rune_disortari_b"
-                },
-                {
-                  "item": "arx:rune_elletera_b"
-                },
-                {
-                  "item": "arx:rune_floruum_b"
-                },
-                {
-                  "item": "arx:rune_flurri_b"
-                },
-                {
-                  "item": "arx:rune_hijo_b"
-                },
-                {
-                  "item": "arx:rune_horo_b"
-                },
-                {
-                  "item": "arx:rune_inoffo_b"
-                },
-                {
-                  "item": "arx:rune_kon_b"
-                },
-                {
-                  "item": "arx:rune_kotoka_b"
-                },
-                {
-                  "item": "arx:rune_laffaeti_b"
-                },
-                {
-                  "item": "arx:rune_low_b"
-                },
-                {
-                  "item": "arx:rune_marra_b"
-                },
-                {
-                  "item": "arx:rune_mega_b"
-                },
-                {
-                  "item": "arx:rune_orduino_b"
-                },
-                {
-                  "item": "arx:rune_recuro_b"
-                },
-                {
-                  "item": "arx:rune_sakiifori_b"
-                },
-                {
-                  "item": "arx:rune_san_b"
-                },
-                {
-                  "item": "arx:rune_sartagana_b"
-                },
-                {
-                  "item": "arx:rune_sempra_b"
-                },
-                {
-                  "item": "arx:rune_shumi_b"
-                },
-                {
-                  "item": "arx:rune_sin_b"
-                },
-                {
-                  "item": "arx:rune_sofiso_b"
-                },
-                {
-                  "item": "arx:rune_subversa_b"
-                },
-                {
-                  "item": "arx:rune_sukimo_b"
-                },
-                {
-                  "item": "arx:rune_trafantana_b"
-                },
-                {
-                  "item": "arx:rune_transkursio_b"
-                },
-                {
-                  "item": "arx:rune_watashi_b"
-                },
-                {
-                  "item": "arx:rune_yanamo_b"
-                }
-              ]
-            }
-          ],
-          "max_uses": 1
-        },
+        // {
+        //   "wants": [
+        //     {
+        //       "item": "arx:rat_coin",
+        //       "quantity": {
+        //         "min": 15,
+        //         "max": 40
+        //       }
+        //     }
+        //   ],
+        //   "gives": [
+        //     {
+        //       "choice": [
+        //         {
+        //           "item": "arx:rune_affuono_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_arrako_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_din_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_disortari_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_elletera_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_floruum_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_flurri_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_hijo_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_horo_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_inoffo_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_kon_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_kotoka_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_laffaeti_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_low_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_marra_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_mega_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_orduino_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_recuro_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_sakiifori_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_san_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_sartagana_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_sempra_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_shumi_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_sin_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_sofiso_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_subversa_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_sukimo_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_trafantana_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_transkursio_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_watashi_b"
+        //         },
+        //         {
+        //           "item": "arx:rune_yanamo_b"
+        //         }
+        //       ]
+        //     }
+        //   ],
+        //   "max_uses": 1
+        // },
         //Дорогой товар - крайнцы
         {
           "wants": [
