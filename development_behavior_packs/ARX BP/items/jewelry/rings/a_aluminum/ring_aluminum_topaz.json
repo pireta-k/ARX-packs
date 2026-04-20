@@ -15,9 +15,9 @@
                 "repair_items": [
                     {
                         "items": [
-                            "arx:jw_aluminum"
+                            "arx:aluminum_ingot"
                         ],
-                        "repair_amount": 50
+                        "repair_amount": 25
                     }
                 ]
             },

@@ -8,11 +8,13 @@
     
     "tags": [ "jewelry_crafting_table" ],
     "pattern": [
-      "I"
+      " I ",
+      "I I",
+      " I "
     ],
     "key": {
       "I": {
-        "item": "arx:jw_gold"
+        "item": "minecraft:gold_ingot"
       }
     },
     "result": {

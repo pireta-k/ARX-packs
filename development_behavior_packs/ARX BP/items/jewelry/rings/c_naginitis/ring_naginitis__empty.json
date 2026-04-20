@@ -15,9 +15,9 @@
                 "repair_items": [
                     {
                         "items": [
-                            "arx:jw_naginitis"
+                            "arx:naginitis_ingot"
                         ],
-                        "repair_amount": 250
+                        "repair_amount": 125
                     }
                 ]
             },

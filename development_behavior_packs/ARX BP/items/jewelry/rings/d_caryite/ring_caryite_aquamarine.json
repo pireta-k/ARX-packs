@@ -15,9 +15,9 @@
                 "repair_items": [
                     {
                         "items": [
-                            "arx:jw_caryite"
+                            "arx:caryite_ingot"
                         ],
-                        "repair_amount": 500
+                        "repair_amount": 250
                     }
                 ]
             },

@@ -24,9 +24,11 @@ export function registerCharacter(player) {
     }
     // Everything is fine
     else {
-        // Language
+        // Language check
         if (gDP(player, 'language') === undefined) ssDP(player, 'registerCharacterStage', -1)
+
         switch (player.getDynamicProperty('registerCharacterStage')) {
+
             case undefined:
             case -1: // Language -1
                 const form0 = new ActionFormData()

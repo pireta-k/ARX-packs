@@ -15,9 +15,9 @@
                 "repair_items": [
                     {
                         "items": [
-                            "arx:jw_gold"
+                            "minecraft:gold_ingot"
                         ],
-                        "repair_amount": 90
+                        "repair_amount": 45
                     }
                 ]
             },

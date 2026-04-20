@@ -3,6 +3,8 @@ import { getNearestPlayer } from '../../getNearestPlayer';
 import { getEntityFamilies } from '../../_main';
 import { system, MolangVariableMap } from "@minecraft/server"
 import { spellRegistry } from './spellRegistry';
+import { checkForItem } from '../../checkForItem';
+import { ssDP } from '../../DPOperations';
 
 // Создает и возвращает объект spellData, хранящий в себе всё, что может пригодиться в обработке заклинания
 function defineSpellData(player, runeSequence, currentTargetRaw) {
@@ -14,7 +16,7 @@ function defineSpellData(player, runeSequence, currentTargetRaw) {
     }
 
     // Определяем дальность действия заклинания
-    let spellDistance = 10
+    let spellDistance = defineCastDistance(player)
 
     // Определяем, по площади ли заклинание? Если оно содержит руну area, то по площади
     const isAreaSpell = runeSequence.includes("area")
@@ -83,6 +85,28 @@ function defineSpellData(player, runeSequence, currentTargetRaw) {
 
     // Всё составили, возвращаем
     return spellData
+}
+
+// Find the max distance a spell be casted on
+export function defineCastDistance(p) {
+    let distance = 10 // Basic
+
+    // Rings
+    if (checkForItem(p, 'Offhand', 'arx:ring_aluminum_aquamarine')) distance += 1
+    if (checkForItem(p, 'Feet', 'arx:ring_aluminum_aquamarine')) distance += 1
+    if (checkForItem(p, 'Offhand', 'arx:ring_gold_aquamarine')) distance += 2
+    if (checkForItem(p, 'Feet', 'arx:ring_gold_aquamarine')) distance += 2
+    if (checkForItem(p, 'Offhand', 'arx:ring_naginitis_aquamarine')) distance += 3
+    if (checkForItem(p, 'Feet', 'arx:ring_naginitis_aquamarine')) distance += 3
+    if (checkForItem(p, 'Offhand', 'arx:ring_caryite_aquamarine')) distance += 4
+    if (checkForItem(p, 'Feet', 'arx:ring_caryite_aquamarine')) distance += 4
+    if (checkForItem(p, 'Offhand', 'arx:ring_malafiotironite_aquamarine')) distance += 5
+    if (checkForItem(p, 'Feet', 'arx:ring_malafiotironite_aquamarine')) distance += 5
+    if (checkForItem(p, 'Offhand', 'arx:ring_lamenite_aquamarine')) distance += 6
+    if (checkForItem(p, 'Feet', 'arx:ring_lamenite_aquamarine')) distance += 6
+
+    ssDP(p, 'spellDistance', distance)
+    return distance
 }
 
 /**

@@ -696,14 +696,6 @@ item.arx:amul_magic_painit=§r§fOuter conductor §c[Mythical]\n§7§oWhen you c
 item.arx:amul_magic_titanite=§r§fInner conductor §c[Mythical]\n§7§oWhen you cast a spell on youself,\nreduce the spell's mana cost by 25 percent
 item.arx:amul_magic_zoisite=§r§fMixed condctor §c[Mythical]\n§7§oMana cost of any spell is reduced by 10 percent
 
-item.arx:jw_aluminum=§r§fЮвелирный алюминиевый слиток §a[Uncommon]
-item.arx:jw_caryite=§r§fЮвелирный кариитовый слиток §c[Mythical]
-item.arx:jw_naginitis=§r§fЮвелирный нагинитовый слиток §e[Legendary]
-item.arx:jw_gold=§r§fЮвелирный золотой слиток §b[Rare]
-item.arx:jw_lamenite=§r§fЮвелирный ламенитовый слиток §c[Mythical++]
-item.arx:jw_malafiotironite=§r§fЮвелирный малафиотиронитовый слиток §c[Mythical+]
-item.arx:jw_toliriite=§r§fЮвелирный толириитовый слиток §c[Mythical+]
-
 
 item.arx:ring_of_immortal_eagle=§r§fПерстень орла (Эффективность снятия отравления +500Ũ) §c[Mythical+++]
 
@@ -1133,7 +1125,6 @@ tile.arx:boiler_crafting_table.name=§r§fКотелок §g§o[Верстак]�
 tile.arx:forge_crafting_table.name=§r§fКузня §g§o[Верстак]§r§f §b[Rare]
 tile.arx:clothes_crafting_table.name=§r§fШвейный стол §g§o[Верстак]§r§f §a[Uncommon]
 tile.arx:cooking_crafting_table.name=§r§fСтол для готовки §g§o[Верстак]§r§f §b[Rare]
-tile.arx:glassworks_crafting_table.name=§r§fСтеклоплавильня §g§o[Верстак]§r§f §a[Uncommon]
 tile.arx:heavy_armor_crafting_table.name=§r§fВерстак для тяжёлых доспехов §g§o[Верстак]§r§f §b[Rare]
 tile.arx:jewelry_crafting_table.name=§r§fЮвелирный станок §g§o[Верстак]§r§f §b[Rare]
 tile.arx:leather_bench_crafting_table.name=§r§fДубильный станок §g§o[Верстак]§r§f §7[Common]
@@ -1141,7 +1132,6 @@ tile.arx:light_armor_crafting_table.name=§r§fВерстак для лёгки�
 tile.arx:loom_crafting_table.name=§r§fПрядильный станок §g§o[Верстак]§r§f §7[Common]
 tile.arx:pounder_crafting_table.name=§r§fСтупка §g§o[Верстак]§r§f §7[Common]
 tile.arx:rune_crafting_table.name=§r§fРуническая сфера §g§o[Верстак]§r§f §b[Rare]
-tile.arx:substractor.name=§r§fСубстактор §g§o[Верстак]§r§f §c[Mythical+]
 tile.arx:thermal_cooking_crafting_table.name=§r§fМангал §g§o[Верстак]§r§f §a[Uncommon]
 tile.arx:weapons_assembly_crafting_table.name=§r§fОружесборочная §g§o[Верстак]§r§f §a[Uncommon]
 tile.arx:tea_table.name=§r§fЧайный стол §g§o[Верстак]§r§f §b[Rare] 
@@ -1152,7 +1142,6 @@ tile.arx:coin_crafting_table_default.name=§r§fМонетный станок §
 
 
 tile.arx:lamp.name=§r§fМедная лампа §a[Uncommon]
-tile.arx:bronze_lamp.name=§r§fБронзовая лампа §b[Rare]
 tile.arx:chloronite_lamp.name=§r§fХлоронитовая лампа §c[Mythical]
 tile.arx:chloronite_hanging_lamp.name=§r§fХлоронитовая подвесная лампа §c[Mythical]
 tile.arx:precious_box.name=§r§fЛарец §b[Rare]
@@ -1329,7 +1318,6 @@ tile.arx:wooden_box.name=§r§fЯщик §7[Common]
 
 tile.arx:sandclock.name=§r§fПесочные часы §a[Uncommon]
 tile.arx:teddy_bear.name=§r§fПлюшевый мишка §b[Rare]
-tile.arx:cloakmedi.name=§r§fМедные часы §a[Uncommon]
 tile.arx:colorful_books.name=§r§fСтопка цветных книжек §a[Uncommon]
 tile.arx:copper_goblet.name=§r§fМедный кубок §a[Uncommon]
 tile.arx:plush_bunny.name=§r§fПлюшевый зайчик §b[Rare]
@@ -1520,7 +1508,7 @@ item.arx:magilight=§r§fМагисвет §g[Epic]\n§eЯркость 60Ũ\n§7
 
 
 item.arx:ring_aluminum__empty=§r§fАлюминиевая колечная оправа §a[Uncommon]
-item.arx:ring_aluminum_aquamarine=§r§fАлюминиевое кольцо с аквамарином §a[Uncommon]\n§o§7+50Ũ к скорости снятия интоксикации
+item.arx:ring_aluminum_aquamarine=§r§fАлюминиевое кольцо с аквамарином §a[Uncommon]\n§o§7+1 дальность заклинаний
 item.arx:ring_aluminum_beryl=§r§fАлюминиевое кольцо с бериллом §a[Uncommon]\n§o§7+0.3 маны в секунду
 item.arx:ring_aluminum_chrysolite=§r§fАлюминиевое кольцо с хризолитом §a[Uncommon]\n§o§7+5Ũ скорость бега
 item.arx:ring_aluminum_cornelian=§r§fАлюминиевое кольцо с сердоликом §a[Uncommon]\n§o§7+1 переносимый вес
@@ -1530,7 +1518,7 @@ item.arx:ring_aluminum_zircon=§r§fАлюминиевое кольцо с ци�
 item.arx:ring_aluminum_amethyst=§r§fКольцо гладиатора §a[Uncommon]\n§o§7Если ваша сила выше 1,\nто она будет снижена до 1
 
 item.arx:ring_gold__empty=§r§fЗолотая колечная оправа §b[Rare]
-item.arx:ring_gold_aquamarine=§r§fЗолотое кольцо с аквамарином §b[Rare]\n§o§7+100Ũ к скорости снятия интоксикации
+item.arx:ring_gold_aquamarine=§r§fЗолотое кольцо с аквамарином §b[Rare]\n§o§7+2 дальность заклинаний
 item.arx:ring_gold_beryl=§r§fЗолотое кольцо с бериллом §b[Rare]\n§o§7+0.8 маны в секунду
 item.arx:ring_gold_chrysolite=§r§fЗолотое кольцо с хризолитом §b[Rare]\n§o§7+10Ũ скорость бега
 item.arx:ring_gold_cornelian=§r§fЗолотое кольцо с сердоликом §b[Rare]\n§o§7+2 переносимый вес
@@ -1540,7 +1528,7 @@ item.arx:ring_gold_topaz=§r§fЗолотое кольцо с топазом §b
 item.arx:ring_gold_zircon=§r§fЗолотое кольцо с цирконом §b[Rare]\n§o§7+10Ũ к получаемому опыту
 
 item.arx:ring_naginitis__empty=§r§fНагинитовая колечная оправа §e[Legendary]
-item.arx:ring_naginitis_aquamarine=§r§fНагинитовое кольцо с аквамарином §e[Legendary]\n§o§7+200Ũ к скорости снятия интоксикации
+item.arx:ring_naginitis_aquamarine=§r§fНагинитовое кольцо с аквамарином §e[Legendary]\n§o§7+3 дальность заклинаний
 item.arx:ring_naginitis_beryl=§r§fНагинитовое кольцо с бериллом §e[Legendary]\n§o§7+1.5 маны в секунду
 item.arx:ring_naginitis_chrysolite=§r§fНагинитовое кольцо с хризолитом §e[Legendary]\n§o§7+20Ũ скорость бега
 item.arx:ring_naginitis_cornelian=§r§fНагинитовое кольцо с сердоликом §e[Legendary]\n§o§7+3 переносимый вес
@@ -1551,7 +1539,7 @@ item.arx:ring_naginitis_topaz=§r§fНагинитовое кольцо с то�
 item.arx:ring_naginitis_zircon=§r§fНагинитовое кольцо с цирконом §e[Legendary]\n§o§7+20Ũ к получаемому опыту
 
 item.arx:ring_caryite__empty=§r§fКариитовая колечная оправа §c[Mythical]
-item.arx:ring_caryite_aquamarine=§r§fКариитовое кольцо с аквамарином §c[Mythical]\n§o§7+300Ũ к скорости снятия интоксикации
+item.arx:ring_caryite_aquamarine=§r§fКариитовое кольцо с аквамарином §c[Mythical]\n§o§7+4 дальность заклинаний
 item.arx:ring_caryite_beryl=§r§fКариитовое кольцо с бериллом §c[Mythical]\n§o§7+2.5 маны в секунду
 item.arx:ring_caryite_chrysolite=§r§fКариитовое кольцо с хризолитом §c[Mythical]\n§o§7+30Ũ скорость бега
 item.arx:ring_caryite_cornelian=§r§fКариитовое кольцо с сердоликом §c[Mythical]\n§o§7+4 переносимый вес
@@ -1561,7 +1549,7 @@ item.arx:ring_caryite_zircon=§r§fКариитовое кольцо с цирк
 item.arx:ring_caryite_topaz=§r§fКариитовое кольцо с топазом §c[Mythical]\n§o§7Выстрелы ощутимо точнее и дальше
 
 item.arx:ring_malafiotironite__empty=§r§fМалафиотиронитовая колечная оправа §c[Mythical+]
-item.arx:ring_malafiotironite_aquamarine=§r§fМалафиотиронитовое кольцо с аквамарином §c[Mythical+]\n§o§7+400Ũ к скорости снятия интоксикации
+item.arx:ring_malafiotironite_aquamarine=§r§fМалафиотиронитовое кольцо с аквамарином §c[Mythical+]\n§o§7+5 дальность заклинаний
 item.arx:ring_malafiotironite_beryl=§r§fМалафиотиронитовое кольцо с бериллом §c[Mythical+]\n§o§7+3.8 маны в секунду
 item.arx:ring_malafiotironite_sapphire=§r§fМалафиотиронитовое кольцо с сапфиром §c[Mythical+]\n§o§7+40 к максимальной мане
 item.arx:ring_malafiotironite_zircon=§r§fМалафиотиронитовое кольцо с цирконом §c[Mythical+]\n§o§7+40Ũ к получаемому опыту
@@ -1573,7 +1561,7 @@ item.arx:ring_toliriite_ruby=§r§fТолириитовая кольцо с ру
 item.arx:ring_toliriite_topaz=§r§fТолириитовая кольцо с топазом §c[Mythical+]\n§o§7Выстрелы гораздо точнее и дальше
 
 item.arx:ring_lamenite__empty=§r§fЛаменитовая колечная оправа §c[Mythical++]
-item.arx:ring_lamenite_aquamarine=§r§fЛаменитовое кольцо с аквамарином §c[Mythical++]\n§o§7+500Ũ к скорости снятия интоксикации
+item.arx:ring_lamenite_aquamarine=§r§fЛаменитовое кольцо с аквамарином §c[Mythical++]\n§o§7+6 дальность заклинаний
 item.arx:ring_lamenite_beryl=§r§fЛаменитовое кольцо с бериллом §c[Mythical++]\n§o§7+5 маны в секунду
 item.arx:ring_lamenite_chrysolite=§r§fЛаменитовое кольцо с хризолитом §c[Mythical++]\n§o§7+50Ũ скорость бега
 item.arx:ring_lamenite_cornelian=§r§fЛаменитовое кольцо с сердоликом §c[Mythical++]\n§o§7+6 переносимый вес

@@ -38,9 +38,9 @@ import { isAdmin, getAdmins, getHoster } from './admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 
 // Type of release. 
-// Available: pre, special, stable
-export const RELEASE = 'pre'
-export const VERSION = [0, 1, 10]
+// Available: alpha, beta, special, stable
+export const RELEASE = 'alpha'
+export const VERSION = [0, 1, 12]
 
 world.afterEvents.playerButtonInput.subscribe((event) => {
     const button = event.button
@@ -637,11 +637,6 @@ system.beforeEvents.startup.subscribe(initEvent => {
                 // Мангал
                 case "arx:thermal_cooking_crafting_table":
                     d.runCommand(executeOnBlockPosition + "particle minecraft:campfire_smoke_particle ~ ~0.5 ~")
-                    break
-
-                // Стеклоплавильня
-                case "arx:glassworks_crafting_table":
-                    d.runCommand(executeOnBlockPosition + "particle minecraft:campfire_smoke_particle ~ ~1.5 ~")
                     break
 
                 default:

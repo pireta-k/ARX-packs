@@ -51,7 +51,7 @@
 			},
 			"minecraft:nameable": {},
 			"minecraft:health": {
-				"value": 20
+				"value": 14
 			},
 			"minecraft:hurt_on_condition": {
 				"damage_conditions": [
@@ -68,7 +68,7 @@
 				]
 			},
 			"minecraft:movement": {
-				"value": 0.22
+				"value": 0.14
 			},
 			"minecraft:behavior.random_stroll": {
 				"priority": 6,
@@ -94,8 +94,9 @@
 				"priority": 1
 			},
 			"minecraft:attack": {
-				"damage": 10,
-				"effect_duration": 2.0
+				"damage": 2,
+				"effect_duration": 5,
+				"effect_name": "poison"
 			},
 			"minecraft:behavior.nearest_attackable_target": {
 				"priority": 2,

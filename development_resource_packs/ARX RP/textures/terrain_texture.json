@@ -31,9 +31,6 @@
 		"arx_lamp": {
 			"textures": "textures/blocks/furniture/lamp"
 		},
-		"arx_bronze_lamp": {
-			"textures": "textures/blocks/furniture/bronze_lamp"
-		},
 		"arx_shield_and_swords": {
 			"textures": "textures/blocks/furniture/shield_and_swords"
 		},
@@ -195,9 +192,6 @@
 		"arx_clothes_crafting_table": {
 			"textures": "textures/blocks/furniture/clothes_crafting_table"
 		},
-		"arx_substractor": {
-			"textures": "textures/blocks/furniture/substractor"
-		},
 		"arx_alcohol_mashine": {
 			"textures": "textures/blocks/furniture/alcohol_mashine"
 		},
@@ -209,9 +203,6 @@
 		},
 		"arx_pounder_crafting_table": {
 			"textures": "textures/blocks/furniture/pounder_crafting_table"
-		},
-		"arx_glassworks_crafting_table": {
-			"textures": "textures/blocks/furniture/glassworks_crafting_table"
 		},
 		"arx_loom_crafting_table": {
 			"textures": "textures/blocks/furniture/loom_crafting_table"
@@ -523,9 +514,6 @@
 		"arx_teddy_bear": {
 			"textures": "textures/blocks/furniture/2.0.1/teddy_bear"
 		},
-		"arx_cloakmedi": {
-			"textures": "textures/blocks/furniture/2.0.1/cloakmedi"
-		},
 		"arx_colorful_books": {
 			"textures": "textures/blocks/furniture/2.0.1/colorful_books"
 		},
@@ -691,43 +679,6 @@
         },
         "wild_tea": {
             "textures": "textures/blocks/tea_update/wild_tea.png"
-        },
-
-		"potatoes_stage_0":{
-            "textures":"textures/blocks/vanilla_plants/potatoes_stage_0.png"
-        },
-        "potatoes_stage_1":{
-            "textures":"textures/blocks/vanilla_plants/potatoes_stage_1.png"
-        },
-        "potatoes_stage_2":{
-            "textures":"textures/blocks/vanilla_plants/potatoes_stage_2.png"
-        },
-        "potatoes_stage_3":{
-            "textures":"textures/blocks/vanilla_plants/potatoes_stage_3.png"
-        },
-        "carrots_stage_0":{
-            "textures":"textures/blocks/vanilla_plants/carrots_stage_0.png"
-        },
-        "carrots_stage_1":{
-            "textures":"textures/blocks/vanilla_plants/carrots_stage_1.png"
-        },
-        "carrots_stage_2":{
-            "textures":"textures/blocks/vanilla_plants/carrots_stage_2.png"
-        },
-        "carrots_stage_3":{
-            "textures":"textures/blocks/vanilla_plants/carrots_stage_3.png"
-        },
-        "beetroots_stage_0":{
-            "textures":"textures/blocks/vanilla_plants/beetroots_stage_0.png"
-        },
-        "beetroots_stage_1":{
-            "textures":"textures/blocks/vanilla_plants/beetroots_stage_1.png"
-        },
-        "beetroots_stage_2":{
-            "textures":"textures/blocks/vanilla_plants/beetroots_stage_2.png"
-        },
-        "beetroots_stage_3":{
-            "textures":"textures/blocks/vanilla_plants/beetroots_stage_3.png"
         },
 
 		"big_monitor": {

@@ -149,10 +149,6 @@ scoreboard objectives add saturation dummy saturation
 
 scoreboard objectives add uni_cool_down dummy uni_cool_down
 
-scoreboard objectives add mp_boost_by_amul_of_starpower dummy mp_boost_by_amul_of_starpower
-
-scoreboard objectives add e19_generator_enabled dummy e19_generator_enabled
-
 scoreboard objectives add spell_of_small_head dummy spell_of_small_head
 
 # Нокаут

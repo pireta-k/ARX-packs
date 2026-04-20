@@ -8,7 +8,7 @@
     
     "tags": [ "jewelry_crafting_table" ],
     "pattern": [
-      " I ",
+      "IR ",
       "RRR",
       " R "
     ],
@@ -17,7 +17,7 @@
         "item": "arx:amul_string"
       },
       "R": {
-        "item": "arx:jw_gold"
+        "item": "minecraft:gold_ingot"
       }
     },
     "result": {

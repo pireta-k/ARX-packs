@@ -1,25 +1,29 @@
 import { ActionFormData } from "@minecraft/server-ui"
 import { getScore } from "../scoresOperations"
 import { calculateXPMultiplier } from "../skillsOperations"
+import { defineCastDistance } from "../magic/spells/castJSSpell"
+import { gDP } from "../DPOperations"
 
 // UI
-export function infoAboutStats(player) {
-    // Recalculate XP bonus
-    calculateXPMultiplier(player)
+export function infoAboutStats(p) {
+    // Recalculate stats
+    calculateXPMultiplier(p)
+    defineCastDistance(p)
 
+    // Show
     const form = new ActionFormData()
         .title("Характеристики")
-        .body(getBodyText(player))
-        .show(player)
+        .body(getBodyText(p))
+        .show(p)
 }
 
-function getBodyText(player) {
+function getBodyText(p) {
     let bodyText = ''
 
     bodyText += "§e|§f "
 
     {
-        switch (player.getDynamicProperty('stressLevel')) {
+        switch (gDP(p, 'stressLevel')) {
             case 4:
                 bodyText += ' Стресс 4 (макс.) уровня.\n§e|§f Характеристики §4сильно понижены§f'
                 break
@@ -49,34 +53,36 @@ function getBodyText(player) {
                 break
             default:
                 bodyText += 'Непредвиденная ошибка определения состояния счастья'
-                console.warn('Непредвиденная ошибка определения состояния счастья при использовании <инфо> у ' + player.name)
+                console.warn('Непредвиденная ошибка определения состояния счастья при использовании <инфо> у ' + p.name)
         }
 
     }
 
     bodyText += "\n§8|§f\n"
 
-    bodyText += "§c|§f " + `Базовый урон: §b${player.getDynamicProperty('basicStrength')}§f\n`
+    bodyText += "§c|§f " + `Базовый урон: §b${gDP(p, 'basicStrength')}§f\n`
 
-    bodyText += "§c|§f " + `Загруженность: §b${player.getDynamicProperty('weighLoading')}§f из§b ${player.getDynamicProperty('weighLimit')}§f\n`
-
-    bodyText += "§8|§f\n"
-
-    bodyText += "§d|§f " + `Макс мана: §b${player.getDynamicProperty('maxMp')}§f\n`
-
-    bodyText += "§d|§f " + `Регенерация маны: §b${player.getDynamicProperty('mpRegenPower').toFixed(2)}§f в сек.\n`
+    bodyText += "§c|§f " + `Загруженность: §b${gDP(p, 'weighLoading')}§f из§b ${gDP(p, 'weighLimit')}§f\n`
 
     bodyText += "§8|§f\n"
 
-    bodyText += "§a|§f " + `Точность стрельбы: §b${player.getProperty("arx:ranged_attack_accuracy")}§f §7§o(20 = макс.)§r§f\n`
+    bodyText += "§d|§f " + `Макс мана: §b${gDP(p, 'maxMp')}§f\n`
 
-    bodyText += "§a|§f " + `Скорость: §b${player.getDynamicProperty('speedPower')}§fŨ\n`
+    bodyText += "§d|§f " + `Регенерация маны: §b${gDP(p, 'mpRegenPower').toFixed(2)}§f в сек.\n`
 
-    bodyText += "§a|§f " + `Усиление прыжка: §b${player.getDynamicProperty('jumpPower')}§f\n`
+    bodyText += "§d|§f " + `Дальность заклинаний: §b${gDP(p, 'spellDistance')}§f блоков\n`
 
     bodyText += "§8|§f\n"
 
-    bodyText += "§6|§f " + `Увеличение получаемого опыта: §b${player.getDynamicProperty('xpMultiplier')}§fx\n`
+    bodyText += "§a|§f " + `Точность стрельбы: §b${p.getProperty("arx:ranged_attack_accuracy")}§f §7§o(20 = макс.)§r§f\n`
+
+    bodyText += "§a|§f " + `Скорость: §b${gDP(p, 'speedPower')}§fŨ\n`
+
+    bodyText += "§a|§f " + `Усиление прыжка: §b${gDP(p, 'jumpPower')}§f\n`
+
+    bodyText += "§8|§f\n"
+
+    bodyText += "§6|§f " + `Увеличение получаемого опыта: §b${gDP(p, 'xpMultiplier')}§fx\n`
 
     return bodyText
 }

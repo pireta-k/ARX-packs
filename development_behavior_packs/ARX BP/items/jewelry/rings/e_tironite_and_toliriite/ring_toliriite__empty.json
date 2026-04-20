@@ -15,9 +15,9 @@
                 "repair_items": [
                     {
                         "items": [
-                            "arx:jw_toliriite"
+                            "arx:toliriite_ingot"
                         ],
-                        "repair_amount": 1000
+                        "repair_amount": 500
                     }
                 ]
             },

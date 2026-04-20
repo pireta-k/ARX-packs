@@ -8,16 +8,16 @@
     
     "tags": [ "jewelry_crafting_table" ],
     "pattern": [
-      "I",
-      "F",
-      "R"
+      " I ",
+      " F ",
+      "R R"
     ],
     "key": {
       "I": {
         "item": "arx:amul_string"
       },
       "R": {
-        "item": "arx:jw_lamenite"
+        "item": "arx:lamenite_ingot"
       },
       "F": {
         "item": "arx:ruby_gem"

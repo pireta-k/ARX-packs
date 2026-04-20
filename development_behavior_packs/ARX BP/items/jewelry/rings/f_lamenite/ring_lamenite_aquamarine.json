@@ -15,9 +15,9 @@
                 "repair_items": [
                     {
                         "items": [
-                            "arx:jw_lamenite"
+                            "arx:lamenite_ingot"
                         ],
-                        "repair_amount": 1500
+                        "repair_amount": 750
                     }
                 ]
             },

@@ -551,14 +551,14 @@
         "arx:king_steak": {
             "textures": "textures/items/food/king_steak.png"
         },
-        "arx:llama_in_wine": {
-            "textures": "textures/items/food/llama_in_wine.png"
-        },
         "arx:lasagna": {
             "textures": "textures/items/food/lasagna.png"
         },
         "arx:le_fishe_au_chocolat": {
             "textures": "textures/items/food/le_fishe_au_chocolat.png"
+        },
+        "arx:llama_in_wine": {
+            "textures": "textures/items/food/llama_in_wine.png"
         },
         "arx:loaf": {
             "textures": "textures/items/food/loaf.png"
@@ -1883,9 +1883,6 @@
         "arx:amul_of_splash": {
             "textures": "textures/items/jewelry/amulets/amul_of_splash.png"
         },
-        "arx:amul_of_starpower": {
-            "textures": "textures/items/jewelry/amulets/amul_of_starpower.png"
-        },
         "arx:amul_photoresonance": {
             "textures": "textures/items/jewelry/amulets/amul_photoresonance.png"
         },
@@ -1921,27 +1918,6 @@
         },
         "arx:shackles": {
             "textures": "textures/items/jewelry/amulets/shackles.png"
-        },
-        "arx:jw_aluminum": {
-            "textures": "textures/items/jewelry/jewelry_ingots/jw_aluminum.png"
-        },
-        "arx:jw_caryite": {
-            "textures": "textures/items/jewelry/jewelry_ingots/jw_caryite.png"
-        },
-        "arx:jw_gold": {
-            "textures": "textures/items/jewelry/jewelry_ingots/jw_gold.png"
-        },
-        "arx:jw_lamenite": {
-            "textures": "textures/items/jewelry/jewelry_ingots/jw_lamenite.png"
-        },
-        "arx:jw_malafiotironite": {
-            "textures": "textures/items/jewelry/jewelry_ingots/jw_malafiotironite.png"
-        },
-        "arx:jw_naginitis": {
-            "textures": "textures/items/jewelry/jewelry_ingots/jw_naginitis.png"
-        },
-        "arx:jw_toliriite": {
-            "textures": "textures/items/jewelry/jewelry_ingots/jw_toliriite.png"
         },
         "arx:ringgems": {
             "textures": "textures/items/jewelry/rings/ringgems.png"
