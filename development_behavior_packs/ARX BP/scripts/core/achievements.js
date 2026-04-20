@@ -23,7 +23,7 @@ export const achievementsList = { // Список со всеми достиже
         description: "Создать верстак",
         trigger: {
             type: "hasItem",
-            value: "arx:crafting_table"
+            value: "minecraft:crafting_table"
         }
     },
     "has_furnace": {
@@ -122,14 +122,6 @@ export const achievementsList = { // Список со всеми достиже
         trigger: {
             type: "hasItem",
             value: "arx:pounder_crafting_table"
-        }
-    },
-    "has_leather_bench_crafting_table": {
-        name: "Дубы тут не при чём",
-        description: "Создать дубильный станок",
-        trigger: {
-            type: "hasItem",
-            value: "arx:leather_bench_crafting_table"
         }
     },
     "has_weapons_assembly_crafting_table": {

@@ -2,41 +2,8 @@
     "resource_pack_name": "vanilla",
     "texture_name": "atlas.items",
     "texture_data": {
-        "arx:copper_axe": {
-            "textures": "textures/items/copper_axe.png"
-        },
-        "arx:copper_hoe": {
-            "textures": "textures/items/copper_hoe.png"
-        },
-        "arx:copper_pickaxe": {
-            "textures": "textures/items/copper_pickaxe.png"
-        },
-        "arx:copper_shovel": {
-            "textures": "textures/items/copper_shovel.png"
-        },
-        "arx:diamond_axe": {
-            "textures": "textures/items/diamond_axe.png"
-        },
-        "arx:diamond_hoe": {
-            "textures": "textures/items/diamond_hoe.png"
-        },
-        "arx:diamond_horse_armor": {
-            "textures": "textures/items/diamond_horse_armor.png"
-        },
-        "arx:diamond_pickaxe": {
-            "textures": "textures/items/diamond_pickaxe.png"
-        },
-        "arx:diamond_shovel": {
-            "textures": "textures/items/diamond_shovel.png"
-        },
         "arx:door_iron": {
             "textures": "textures/items/door_iron.png"
-        },
-        "arx:iron_axe": {
-            "textures": "textures/items/iron_axe.png"
-        },
-        "arx:iron_hoe": {
-            "textures": "textures/items/iron_hoe.png"
         },
         "arx:iron_horse_armor": {
             "textures": "textures/items/iron_horse_armor.png"
@@ -47,44 +14,11 @@
         "arx:iron_nugget": {
             "textures": "textures/items/iron_nugget.png"
         },
-        "arx:iron_pickaxe": {
-            "textures": "textures/items/iron_pickaxe.png"
-        },
-        "arx:iron_shovel": {
-            "textures": "textures/items/iron_shovel.png"
-        },
-        "arx:netherite_pickaxe": {
-            "textures": "textures/items/netherite_pickaxe.png"
-        },
         "arx:shears": {
             "textures": "textures/items/shears.png"
         },
         "arx:stick": {
             "textures": "textures/items/stick.png"
-        },
-        "arx:stone_axe": {
-            "textures": "textures/items/stone_axe.png"
-        },
-        "arx:stone_hoe": {
-            "textures": "textures/items/stone_hoe.png"
-        },
-        "arx:stone_pickaxe": {
-            "textures": "textures/items/stone_pickaxe.png"
-        },
-        "arx:stone_shovel": {
-            "textures": "textures/items/stone_shovel.png"
-        },
-        "arx:wood_axe": {
-            "textures": "textures/items/wood_axe.png"
-        },
-        "arx:wood_hoe": {
-            "textures": "textures/items/wood_hoe.png"
-        },
-        "arx:wood_pickaxe": {
-            "textures": "textures/items/wood_pickaxe.png"
-        },
-        "arx:wood_shovel": {
-            "textures": "textures/items/wood_shovel.png"
         },
         "arx:fist_symbol": {
             "textures": "textures/items/actions/fist_symbol.png"
@@ -112,9 +46,6 @@
         },
         "arx:fioletic_dose": {
             "textures": "textures/items/alchemy/fioletic_dose.png"
-        },
-        "arx:forcemeat": {
-            "textures": "textures/items/alchemy/forcemeat.png"
         },
         "arx:salt": {
             "textures": "textures/items/alchemy/salt.png"
@@ -497,6 +428,9 @@
         "arx:fish_soup": {
             "textures": "textures/items/food/fish_soup.png"
         },
+        "arx:forcemeat": {
+            "textures": "textures/items/food/forcemeat.png"
+        },
         "arx:fried_eggs": {
             "textures": "textures/items/food/fried_eggs.png"
         },
@@ -593,8 +527,8 @@
         "arx:rats_potato": {
             "textures": "textures/items/food/rats_potato.png"
         },
-        "arx:rat_monstr_with_potatoes_and_mayonnaise": {
-            "textures": "textures/items/food/rat_monstr_with_potatoes_and_mayonnaise.png"
+        "arx:rat_monster_with_potatoes_and_mayonnaise": {
+            "textures": "textures/items/food/rat_monster_with_potatoes_and_mayonnaise.png"
         },
         "arx:rat_potato_casserole": {
             "textures": "textures/items/food/rat_potato_casserole.png"
@@ -2234,8 +2168,8 @@
         "arx:rabbit_meat_fried": {
             "textures": "textures/items/food/meat/rabbit_meat_fried.png"
         },
-        "arx:rat_monstr_meat_fried": {
-            "textures": "textures/items/food/meat/rat_monstr_meat_fried.png"
+        "arx:rat_monster_meat_fried": {
+            "textures": "textures/items/food/meat/rat_monster_meat_fried.png"
         },
         "arx:sea_turtle_meat_fried": {
             "textures": "textures/items/food/meat/sea_turtle_meat_fried.png"
@@ -2276,8 +2210,8 @@
         "arx:meat_beetle_meat": {
             "textures": "textures/items/food/raw_meat/meat_beetle_meat.png"
         },
-        "arx:rat_monstr_meat": {
-            "textures": "textures/items/food/raw_meat/rat_monstr_meat.png"
+        "arx:rat_monster_meat": {
+            "textures": "textures/items/food/raw_meat/rat_monster_meat.png"
         },
         "arx:raw_venison": {
             "textures": "textures/items/food/raw_meat/raw_venison.png"

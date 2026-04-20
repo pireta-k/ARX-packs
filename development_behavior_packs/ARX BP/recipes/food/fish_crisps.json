@@ -8,12 +8,14 @@
             "cooking_crafting_table"
         ],
         "pattern": [
-            "# #",
-            " # "
+            "#A#"
         ],
         "key": {
             "#": {
                 "item": "minecraft:salmon"
+            },
+            "A": {
+                "item": "minecraft:fish"
             }
         },
         "result": {

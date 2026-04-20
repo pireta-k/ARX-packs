@@ -3,7 +3,7 @@
     "minecraft:item": {
         "components": {
             "minecraft:food": {
-                "nutrition": 4,
+                "nutrition": 16,
                 "saturation_modifier": 1
             },
             "minecraft:icon": "arx:rat_potato_casserole",

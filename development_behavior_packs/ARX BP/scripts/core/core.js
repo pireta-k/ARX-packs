@@ -78,8 +78,8 @@ const coreFramework = {
                     player.runCommand('spawnpoint @s -10000 4 -10000')
                 }
                 else {
-                    const loc = player.location
-                    const headBlockId = player.dimension.getBlock(player.getHeadLocation()).typeId
+                    const headBlockId = player.dimension?.getBlock(player.getHeadLocation())?.typeId
+                    if (!headBlockId) continue
                     if (headBlockId === 'minecraft:air' || headBlockId.startsWith('arx:dynamic_light_block_')) {
                         player.runCommand('spawnpoint @s ~ ~ ~')
                     }

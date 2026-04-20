@@ -8,7 +8,7 @@
             "cooking_crafting_table"
         ],
         "pattern": [
-            "# #",
+            "#S#",
             " A "
         ],
         "key": {
@@ -17,6 +17,9 @@
             },
             "A": {
                 "item": "minecraft:bowl"
+            },
+            "S": {
+                "item": "arx:salt"
             }
         },
         "result": {

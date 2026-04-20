@@ -1145,22 +1145,12 @@ item.totem.name=§r§fТотем бессмертия §4[Отозвано]
 tile.dragon_egg.name=§r§fЯйцо дракона §4[Отозвано]
 
 
-
-
 item.wooden_sword.name=§r§4[Отозвано]
 item.stone_sword.name=§r§4[Отозвано]
 item.golden_sword.name=§r§4[Отозвано]
 item.iron_sword.name=§r§4[Отозвано]
 item.diamond_sword.name=§r§4[Отозвано]
 item.netherite_sword.name=§r§4[Отозвано]
-
-
-
-
-item.wooden_axe.name=§r§f§7Каменный топор §7[Обычное]
-item.wooden_hoe.name=§r§f§7Мотыга из камня §7[Обычное]
-item.wooden_pickaxe.name=§r§f§7Каменная кирка §7[Обычное]
-item.wooden_shovel.name=§r§f§7Каменная лопата §7[Обычное]
 
 item.leather_chestplate.name=§r§4[Отозвано]
 item.leather_boots.name=§r§4[Отозвано]
@@ -1177,41 +1167,20 @@ item.golden_chestplate.name=§r§4[Отозвано]
 item.golden_helmet.name=§r§4[Отозвано]
 item.golden_boots.name=§r§4[Отозвано]
 
-item.stone_pickaxe.name=§r§fОловянная кирка §a[Необычное]
-item.stone_axe.name=§r§fЖелезный топор §a[Необычное]
-item.stone_hoe.name=§r§fЖелезная мотыга §a[Необычное]
-item.stone_shovel.name=§r§fЖелезная лопата §a[Необычное]
-
 item.chainmail_boots.name=§r§4[Отозвано]
 item.chainmail_chestplate.name=§r§4[Отозвано]
 item.chainmail_helmet.name=§r§4[Отозвано]
 item.chainmail_leggings.name=§r§4[Отозвано]
-
-item.iron_hoe.name=§r§fДюрастальная мотыга §g[Эпическое]
-item.iron_shovel.name=§r§fДюрастальная лопата §g[Эпическое]
-item.iron_axe.name=§r§fДюрастальной топор §g[Эпическое]
-item.iron_pickaxe.name=§r§fДюрастальная кирка §g[Эпическое]
 
 item.iron_boots.name=§r§4[Отозвано]
 item.iron_chestplate.name=§r§4[Отозвано]
 item.iron_helmet.name=§r§4[Отозвано]
 item.iron_leggings.name=§r§4[Отозвано]
 
-item.diamond_axe.name=§r§fКариитовый топор §c[Мифическое]
-item.diamond_hoe.name=§r§fКариитовая мотыга §c[Мифическое]
-item.diamond_pickaxe.name=§r§fКариитовая кирка §c[Мифическое]
-item.diamond_shovel.name=§r§fКариитовая лопата §c[Мифическое]
-
 item.diamond_boots.name=§r§4[Отозвано]
 item.diamond_chestplate.name=§r§4[Отозвано]
 item.diamond_helmet.name=§r§4[Отозвано]
 item.diamond_leggings.name=§r§4[Отозвано]
-
-
-item.netherite_pickaxe.name=§r§fСпектральная кирка §c[Мифическое++]
-item.netherite_axe.name=§r§fНезеритовый топор §c[Мифическое++]
-item.netherite_shovel.name=§r§fНезеритовая лопата §c[Мифическое++]
-item.netherite_hoe.name=§r§fНезеритовая мотыга §c[Мифическое++]
 
 item.netherite_boots.name=§r§4[Отозвано]
 item.netherite_leggings.name=§r§4[Отозвано]

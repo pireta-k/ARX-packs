@@ -49,7 +49,7 @@
                 ],
                 "volume": 1.0
             },
-            "arx:rat_monstr_meca": {
+            "arx:rat_monster_meca": {
                 "events": {
                     "step": {
                         "sound": "meca_motor",

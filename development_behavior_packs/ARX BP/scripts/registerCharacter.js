@@ -3,11 +3,13 @@ import { getScore, setScore } from "./scoresOperations"
 import { gDP, ssDP } from "./DPOperations"
 import { world } from "@minecraft/server"
 import { fl, setPlayerLanguage } from "./lang/fetchLocalization"
+import { showLanguageForm } from "./lang/form"
+import { RELEASE } from "./_main"
 
 const thirstRegStep = 10
 
 // Register character
-export function registerCharacter(player) {
+export async function registerCharacter(player) {
     // Player already has a character
     if (player.getDynamicProperty('hasRegisteredCharacter') === true) {
         const formNo = new ActionFormData()
@@ -24,29 +26,32 @@ export function registerCharacter(player) {
     }
     // Everything is fine
     else {
+        // Version notification check
+        if (RELEASE != 'stable' && !gDP(player, 'hasAlreadySeenVersionWarning')) ssDP(player, 'registerCharacterStage', -9)
         // Language check
-        if (gDP(player, 'language') === undefined) ssDP(player, 'registerCharacterStage', -1)
+        if (gDP(player, 'language') === undefined) ssDP(player, 'registerCharacterStage', -10)
 
         switch (player.getDynamicProperty('registerCharacterStage')) {
 
             case undefined:
-            case -1: // Language -1
-                const form0 = new ActionFormData()
-                    .title(fl(player, 'lobby.registration.lang.title'))
-                    .body(fl(player, 'lobby.registration.lang.body'))
-                    .button("English", 'textures/ui/registration/lang_en')
-                    .button("Русский", 'textures/ui/registration/lang_ru')
+            case -10: // Language
+                const responce = await showLanguageForm(player)
+                if (responce) setRegWindow(player, thirstRegStep)
+                break
+
+            case -9: // Warning
+                const formWarning = new ModalFormData()
+                    .title(fl(player, 'lobby.registration.notStableRelease.title'))
+                    .label(fl(player, `lobby.registration.notStableRelease.${RELEASE}`)) // alpha | beta | special
+                    .submitButton(fl(player, 'lobby.registration.notStableRelease.confirm'))
 
                     .show(player)
                     .then((response) => {
-                        if (response.selection === 0) {
-                            setPlayerLanguage(player, 'en')
-                            setRegWindow(player, thirstRegStep)
-                        } else if (response.selection === 1) {
-                            setPlayerLanguage(player, 'ru')
+                        if (response.formValues) {
                             setRegWindow(player, thirstRegStep)
                         }
                     })
+                ssDP(player, 'hasAlreadySeenVersionWarning', true)
                 break
 
             case 10: // Выбор пола 10
@@ -164,14 +169,14 @@ export function registerCharacter(player) {
                                 setRegWindow(player, 42)
                             }
                             // It is balanced
-                            else {    
+                            else {
                                 ssDP(player, 'playerTaste_meat', tasteDPs[fv[0]])
                                 ssDP(player, 'playerTaste_fish', tasteDPs[fv[1]])
                                 ssDP(player, 'playerTaste_bread', tasteDPs[fv[2]])
                                 ssDP(player, 'playerTaste_dairy', tasteDPs[fv[3]])
                                 ssDP(player, 'playerTaste_herbal', tasteDPs[fv[4]])
                                 ssDP(player, 'playerTaste_sweet', tasteDPs[fv[5]])
-                                
+
                                 setRegWindow(player, 50)
                             }
                         }
@@ -306,7 +311,6 @@ export function registerCharacter(player) {
                         if (response.selection != undefined) { // Игрок нажал хоть что-то
                             if (response.selection === 0) {
                                 player.teleport(gDP(world, 'worldSpawnPoint'), { dimension: world.getDimension('minecraft:overworld'), checkForBlocks: false, keepVelocity: false })
-                                player.runCommand("function tp/2_spawn")
 
                                 ssDP(player, "registerCharacterStage", thirstRegStep)
                                 ssDP(player, "hasRegisteredCharacter", true)

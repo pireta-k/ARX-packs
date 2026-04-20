@@ -3,7 +3,7 @@
     "minecraft:item": {
         "components": {
             "minecraft:food": {
-                "nutrition": 4,
+                "nutrition": 3,
                 "saturation_modifier": 1
             },
             "minecraft:icon": "arx:fire_berry",

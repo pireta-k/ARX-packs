@@ -1,0 +1,33 @@
+{
+  "format_version": "1.8.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "arx:rat_monster_spawn",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/mobs/rat_monster"
+      },
+      "geometry": {
+        "default": "geometry.rat_monster"
+      },
+      "animations": {
+        "dance": "animation.rat_monster.dance"
+      },
+      "animation_controllers": [
+        {
+          "basic": "controller.animation.rat_monster_spawn.basic"
+        }
+      ],
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#0c0202",
+        "overlay_color": "#742a2a"
+      }
+    }
+  }
+}

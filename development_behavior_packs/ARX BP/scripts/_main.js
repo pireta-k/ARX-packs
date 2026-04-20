@@ -36,11 +36,13 @@ import { getActiveStaffChannel } from "./magic/getActiveStaffChannel"
 import { md5, obj2str } from "./converters"
 import { isAdmin, getAdmins, getHoster } from './admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
+import { showLanguageForm } from "./lang/form"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
 export const RELEASE = 'alpha'
-export const VERSION = [0, 1, 12]
+export const VERSION = [0, 1, 13]
+export const REPOSITORY = 'https://github.com/Ellisy1/ARX-packs'
 
 world.afterEvents.playerButtonInput.subscribe((event) => {
     const button = event.button
@@ -108,39 +110,6 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
     // Restart music
     ssDP(player, 'musicLocation', undefined)
 
-    // Is this the thirst time the player entered Arx?
-    const playedBefore = player.getDynamicProperty('hasEverPlayedArx')
-    if (!playedBefore) {
-        // Notify admins about requred verification
-        if (world.getDynamicProperty('requireUserVerification')) {
-            for (const admin of getAdmins()) {
-                slfs(admin, 'lobby.new_player_entered_arx', [player.name])
-            }
-        }
-        // Check GM
-        if (player.getGameMode() === 'Creative') {
-            player.setGameMode("Survival")
-            if (world.getPlayers().length > 1) { // Notify moderator about player's gamemode changing 
-                for (const admin of getAdmins()) {
-                    slfs(admin, 'lobby.new_player_auto_gamemode_change', [player.name])
-                }
-            }
-        }
-        // Give Info book
-        {
-            const item = new ItemStack("arx:united_player_data", 1)
-            item.lockMode = "slot"
-            item.keepOnDeath = true
-            player.getComponent("inventory").container.setItem(8, item)
-        }
-        // Set unique id
-        {
-            ssDP(player, 'id', md5(player.name) + Math.random() * 1000000)
-        }
-
-        ssDP(player, 'hasEverPlayedArx', true)
-    }
-
     ssDP(player, 'camera:activeCamera', false)
     ssDP(player, 'camera:tickCountdownToNextTimecode', 0)
     ssDP(player, 'camera:numOfProcessedTimecodes', 0)
@@ -153,11 +122,11 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
         let arxEverLoaded = world.getDynamicProperty('arxEverLoaded')
         // It's the first time
         if (!arxEverLoaded) {
+            console.warn('Start')
             player.runCommand("function world_reg/_world_reg") // Register scores 
             setScore(player, 'verify', 2) // Register the player as a hoster
+            ssDP(player, 'isHoster', true)
             world.setDefaultSpawnLocation({ x: -10000, y: 4, z: -10000 })
-            ssDP(world, 'initialWorldSpawnPoint', player.location) // The location of the first spawnpoint
-            ssDP(world, 'worldSpawnPoint', player.location) // The location where a player spawn after registration
 
             // Gamerules default settings
             world.gameRules.sendCommandFeedback = false
@@ -174,17 +143,33 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
             // Arx default settings
             ssDP(world, 'localChatEnabled', true)
 
-            // Remember who is hoster
-            ssDP(player, 'isHoster', true)
-
             const d = world.getDimension('minecraft:overworld')
 
+            // Create tickarea
             d.runCommand('tickingarea add -9980 0 -9980 -10020 0 -10020 lobbyReg true')
+            const delay = (ticks) => new Promise(resolve => system.runTimeout(resolve, ticks));
+            await delay(1)
 
+            // Wait till the hoster is loaded
+            await waitUntilHosterIsLoaded(player)
+            console.warn('Hoster is loaded')
+            player.runCommand('camera @s fade time 0 2 0 color 10 10 10')
+            ssDP(world, 'worldSpawnPoint', player.location) // The location where a player spawn after registration
+
+            // Creates lobby and verifies it
+            await createLobby(d, player)
+
+            // Loading screen for hoster
+            player.runCommand('camera @s fade time 0 2 0 color 10 10 10')
+            player.runCommand('title @s title §gArx Ultima')
+
+            ssDP(world, 'arxEverLoaded', true)
+
+            // Functions 
             async function createLobby(d, hoster) {
                 // Is the world completely loaded?
                 try {
-
+                    console.warn('Trying to create lobby...')
                     hoster.teleport({ x: -9999.5, y: 4, z: -9999.5 }, { checkForBlocks: true, dimension: d, facingLocation: { x: -9999.5, y: 4, z: -9993 }, keepVelocity: false })
                     hoster.runCommand('fill ~-10 ~-10 ~-10 10 10 10 air')
                     // Verify lobby loading
@@ -221,8 +206,6 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
                 d.runCommand('tickingarea remove lobbyReg')
             }
 
-            const delay = (ticks) => new Promise(resolve => system.runTimeout(resolve, ticks));
-
             async function waitUntilHosterIsLoaded(hoster) {
                 hoster.addEffect('instant_health', 60, { amplifier: 255, showParticles: false })
                 const hosterLoaded = await isPlayerCompletelyLoaded(hoster)
@@ -231,16 +214,40 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
                     await waitUntilHosterIsLoaded(hoster)
                 }
             }
-
-            await waitUntilHosterIsLoaded(player)
-
-            await createLobby(d, player)
-            ssDP(world, 'arxEverLoaded', true)
-
-            // Loading screen for hoster
-            player.runCommand('camera @s fade time 0 2 0 color 10 10 10')
-            player.runCommand('title @s title §gArx Ultima')
         }
+    }
+
+    // Is this the thirst time the player entered Arx?
+    const playedBefore = player.getDynamicProperty('hasEverPlayedArx')
+    if (!playedBefore) {
+        // Notify admins about requred verification
+        if (world.getDynamicProperty('requireUserVerification')) {
+            for (const admin of getAdmins()) {
+                slfs(admin, 'lobby.new_player_entered_arx', [player.name])
+            }
+        }
+        // Check GM
+        if (player.getGameMode() === 'Creative') {
+            player.setGameMode("Survival")
+            if (world.getPlayers().length > 1) { // Notify moderator about player's gamemode changing 
+                for (const admin of getAdmins()) {
+                    slfs(admin, 'lobby.new_player_auto_gamemode_change', [player.name])
+                }
+            }
+        }
+        // Give Info book
+        {
+            const item = new ItemStack("arx:united_player_data", 1)
+            item.lockMode = "slot"
+            item.keepOnDeath = true
+            player.getComponent("inventory").container.setItem(8, item)
+        }
+        // Set unique id
+        {
+            ssDP(player, 'id', md5(player.name) + Math.random() * 1000000)
+        }
+
+        ssDP(player, 'hasEverPlayedArx', true)
     }
 });
 
@@ -756,7 +763,7 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
         iDP(player, 'stress', 4000)
 
         // Выставляем откат нокаута
-        ssDP(player, 'respawnDelay', 60 - player.getDynamicProperty('skill:fortitude_level') * 2)
+        ssDP(player, 'respawnDelay', 40 - player.getDynamicProperty('skill:fortitude_level') * 2)
 
         // Если мы должны умереть по рп
         if (getScore(player, 'knockout_row_sounter') >= 2) {
@@ -856,7 +863,7 @@ const bleedingMobs = [
 
     'minecraft:villager', 'minecraft:pillager',
 
-    "arx:cave_rat", "arx:fat_larva", "arx:deer", "arx:tsugunder", "arx:snow_lady", "arx:snow_bars", "arx:small_rat_white", "arx:small_rat_black", "arx:rat_monstr_white", "arx:rat_monstr",
+    "arx:cave_rat", "arx:fat_larva", "arx:deer", "arx:tsugunder", "arx:snow_lady", "arx:snow_bars", "arx:small_rat_white", "arx:small_rat_black", "arx:rat_monster_white", "arx:rat_monster",
     "arx:rat_eliminator", "arx:leech", "arx:larva", "arx:kapibara", "arx:hungry_rat", "arx:goose", "arx:gasgolder_istribitor", "arx:gasgolder", "arx:gabz", "arx:frintser", "arx:fiercewolf", "arx:crocodile",
     "arx:buffalo", "arx:big_leech", "arx:bear", "arx:baguk"
 ]

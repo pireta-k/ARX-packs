@@ -419,14 +419,14 @@ export let spellRegistry = {
         color: '#8832cb',
         description: 'заклинание броска крысиным монстром',
         validTargets: [1],
-        handler: (player) => { throwMob(player, 'arx:rat_monstr', 1, 'become_agressive') }
+        handler: (player) => { throwMob(player, 'arx:rat_monster', 1, 'become_agressive') }
     },
     "invocatio rattum magna magna alternus": {
         mpCost: 150,
         color: '#8832cb',
         description: 'заклинание броска белым крысиным монстром',
         validTargets: [1],
-        handler: (player) => { throwMob(player, 'arx:rat_monstr_white', 1, 'become_agressive') }
+        handler: (player) => { throwMob(player, 'arx:rat_monster_white', 1, 'become_agressive') }
     },
 
     // Levitation

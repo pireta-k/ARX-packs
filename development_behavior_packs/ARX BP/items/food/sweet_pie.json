@@ -3,7 +3,7 @@
     "minecraft:item": {
         "components": {
             "minecraft:food": {
-                "nutrition": 4,
+                "nutrition": 6,
                 "saturation_modifier": 1
             },
             "minecraft:icon": "arx:sweet_pie",

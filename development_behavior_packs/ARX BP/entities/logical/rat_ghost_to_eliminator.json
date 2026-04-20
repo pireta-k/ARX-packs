@@ -37,8 +37,8 @@
 					"command": [
 						"function summon_rat_eliminator",
 						"effect @a[r=15] blindness 3 0 true",
-						"summon arx:rat_monstr ~ ~ ~ ~ ~ become_agressive",
-						"summon arx:rat_monstr ~ ~ ~ ~ ~ become_agressive"
+						"summon arx:rat_monster ~ ~ ~ ~ ~ become_agressive",
+						"summon arx:rat_monster ~ ~ ~ ~ ~ become_agressive"
 					]
 				},
 				"add": {

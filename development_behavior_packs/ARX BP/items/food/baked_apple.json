@@ -4,7 +4,7 @@
         "components": {
             "minecraft:icon": "arx:baked_apple",
             "minecraft:food": {
-                "nutrition": 4,
+                "nutrition": 5,
                 "saturation_modifier": 1
             },
             "minecraft:use_animation": "eat",

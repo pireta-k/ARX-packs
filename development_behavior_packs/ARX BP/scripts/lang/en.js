@@ -1,5 +1,4 @@
 // Insertions are defined as $num-of-insertion$
-
 export const enLocalization = {
     'lobby.statue_of_sinriada': "A statue of a tall women. The text on the nameplate is highly damaged, you can't understand it",
     'lobby.verify.new_player_entered_arx': "Player $0$ §ajust entered Arx for the first time§f! Verification required. Use !verify command",
@@ -8,10 +7,15 @@ export const enLocalization = {
     'lobby.registration.lang.title': "Language",
     'lobby.registration.lang.body': "Pick your language",
 
+    'lobby.registration.notStableRelease.title': "§cWARNING",
+    'lobby.registration.notStableRelease.alpha': `This is an §cALPHA§f Arx Ultima version.\nIt's still highly undeveloped and unstable, and is not recommended for playing.`,
+    'lobby.registration.notStableRelease.beta': `This is a §bBETA§f Arx Ultima version.\nIt can be a little unstable, but it's already suitable for playing.`,
+    'lobby.registration.notStableRelease.special': `This is a §eSPECIAL§f Arx Ultima version.\nIt has some modifications and differs from the original Arx. If you did not receive this version directly from the developers, it's highly recommended to download the latest stable release.`,
+    'lobby.registration.notStableRelease.confirm': "I understand, continue",
+
     'food.iron_pie': "§cThere's something sharp in this pie!",
     'food.permanent_mp_potion.successful': '§aMax mana §d+1§a!',
     'food.permanent_mp_potion.max_already_reached': "§cYou are already so powerful that this potion won't strengthen you further.",
-    'food.thirst_meal': "[§aGuide§f] > §aThis meal restores your §dhunger bar fully§a for about 5 minutes§f.\n[§aGuide§f] > §aThe tastier the food§f, §athe more happiness§f and §astronger regeneration§f you'll gain when eating it.\n",
     'food.cannot_gain_happines': "§eYou've eaten recently, so you can't enjoy the taste now.",
     'food.tasty': 'Tasty!',
     'food.not_tasty': 'Not tasty!',

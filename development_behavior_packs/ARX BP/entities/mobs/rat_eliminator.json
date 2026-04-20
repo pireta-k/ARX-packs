@@ -145,7 +145,7 @@
 			"arx:summon_rat_monster": {
 				"queue_command": {
 					"command": [
-						"summon arx:rat_monstr ~ ~ ~ ~ ~ spawned_by_rat_eliminator",
+						"summon arx:rat_monster ~ ~ ~ ~ ~ spawned_by_rat_eliminator",
 						"playsound mob.rat_eliminator.spawn @a ~ ~ ~",
 						"particle arx:rat_ghost_despawn ~ ~1.5 ~"
 					]

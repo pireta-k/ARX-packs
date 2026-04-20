@@ -16,9 +16,7 @@ export function launchCameraUI(player) {
 
     const form = new ActionFormData()
         .title("Камера")
-
-        .body('[§c!§f] Используйте камеру ТОЛЬКО по прямому назначению! Использование камеры в нон-рп целях может быть отслежено модерацией и будет рассматриваться как тяжёлое нарушение правил.\n')
-
+        
         .button(`Редактировать таймлайн\n§o${timeline[player.name].length} элементов`, 'textures/ui/camera/edit_timeline')
         .button("Запустить камеру", 'textures/ui/camera/launch_camera')
         .button("Подсветить существующие таймкоды", 'textures/ui/camera/indicate_timecodes')

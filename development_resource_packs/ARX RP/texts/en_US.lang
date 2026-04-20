@@ -489,7 +489,7 @@ item.arx:raw_venison=§r§fСырая оленина  §a[Uncommon]
 item.arx:snow_bars_meat=§r§fСырое мясо снежного барса  §b[Rare]
 item.arx:small_rat_meat=§r§fСырое мясо маленькой крысы  §a[Uncommon]
 item.arx:sea_turtle_meat=§r§fСырое мясо морской черепахи  §a[Uncommon]
-item.arx:rat_monstr_meat=§r§fСырое мясо крысиного монстра  §b[Rare]
+item.arx:rat_monster_meat=§r§fСырое мясо крысиного монстра  §b[Rare]
 item.arx:meat_beetle_meat=§r§fСырое мясо мясного жука  §a[Uncommon]
 item.arx:llama_meat=§r§fСырое мясо ламы  §a[Uncommon]
 item.arx:kapibara_meat=§r§fСырое мясо капибары  §a[Uncommon]
@@ -512,7 +512,7 @@ item.arx:fried_horse_meat=§r§fЖареная конина  §b[Rare]
 item.arx:fried_kapibara_meat=§r§fЖареное мясо капибары  §a[Uncommon]
 item.arx:fried_llama_meat=§r§fЖареное мясо ламы  §a[Uncommon]
 item.arx:fried_meat_beetle_meat=§r§fЖареное мясо мясного жука  §a[Uncommon]
-item.arx:fried_rat_monstr_meat=§r§fЖареное мясо крысиного монстра  §b[Rare]
+item.arx:fried_rat_monster_meat=§r§fЖареное мясо крысиного монстра  §b[Rare]
 item.arx:fried_sea_turtle_meat=§r§fЖареное мясо морской черепахи  §a[Uncommon]
 item.arx:fried_small_rat_meat=§r§fЖареное мясо маленькой крысы  §a[Uncommon]
 item.arx:fried_snow_bars_meat=§r§fЖареное мясо снежного барса  §b[Rare]
@@ -562,7 +562,7 @@ item.salmon.name=Raw Salmon  §a[Uncommon]
 
 ## === MEAT === 
 item.arx:borsch=§r§fБорщ  §g[Epic]
-item.arx:simple_bouillon=§r§fБульон из копыт  §a[Uncommon]
+item.arx:simple_bouillon=§r§fПростой бульон  §a[Uncommon]
 item.arx:steamed_dolphin=§r§fДельфин на пару  §a[Uncommon]
 item.arx:sausage=§r§fКолбаска  §b[Rare]
 item.arx:king_steak=§r§fКоролевский стейк  §g[Epic]
@@ -570,7 +570,7 @@ item.arx:cutlet=§r§fКотлета  §b[Rare]
 item.arx:bloody_steak=§r§fКровавый стейк  §g[Epic]
 item.arx:rat_potato_casserole=§r§fКрысиная картофельная запеканка  §b[Rare]
 item.arx:small_rat_cutlet=§r§fКрысиная котлетка  §a[Uncommon]
-item.arx:rat_monstr_with_potatoes_and_mayonnaise=§r§fКрысиный монстр с картошкой и майонезом  §b[Rare]
+item.arx:rat_monster_with_potatoes_and_mayonnaise=§r§fКрысиный монстр с картошкой и майонезом  §b[Rare]
 item.arx:chicken_in_vodka=§r§fКурица в водке  §b[Rare]
 item.arx:llama_in_wine=§r§fЛама в вине  §g[Epic]
 item.arx:fried_frog_legs_in_elvish=§r§fЛягушачьи ножки по-эльфийски  §b[Rare]
@@ -590,6 +590,7 @@ item.arx:chicken_crisps=§r§fЦыплячьи хрустяшки  §g[Epic]
 item.arx:camel_shashlik=§r§fШашлык из верблюда  §b[Rare]
 item.arx:horse_shashlik=§r§fШашлык из лошади  §b[Rare]
 item.arx:fried_eggs=§r§fЯичница  §a[Uncommon]
+item.arx:forcemeat=§r§fФарш  §b[Rare]\n§7§oМожет быть сделан почти из любого мяса
 
 ## === FISH === 
 item.arx:shark_soup=§r§fАкулий суп  §g[Epic]
@@ -1118,7 +1119,6 @@ tile.arx:divine_altar.name=§r§fБожественный алтарь §e[Legen
 
 
 
-tile.arx:crafting_table.name=§r§fПростой верстак §g§o[Верстак]§r §7[Common]
 tile.arx:alchemy_crafting_table.name=§r§fАлхимический стол §g§o[Верстак]§r§f §b[Rare]
 tile.arx:alcohol_mashine.name=§r§fСамогонный аппарат §g§o[Верстак]§r§f §b[Rare]
 tile.arx:boiler_crafting_table.name=§r§fКотелок §g§o[Верстак]§r§f §a[Uncommon]
@@ -1127,7 +1127,6 @@ tile.arx:clothes_crafting_table.name=§r§fШвейный стол §g§o[Вер
 tile.arx:cooking_crafting_table.name=§r§fСтол для готовки §g§o[Верстак]§r§f §b[Rare]
 tile.arx:heavy_armor_crafting_table.name=§r§fВерстак для тяжёлых доспехов §g§o[Верстак]§r§f §b[Rare]
 tile.arx:jewelry_crafting_table.name=§r§fЮвелирный станок §g§o[Верстак]§r§f §b[Rare]
-tile.arx:leather_bench_crafting_table.name=§r§fДубильный станок §g§o[Верстак]§r§f §7[Common]
 tile.arx:light_armor_crafting_table.name=§r§fВерстак для лёгких доспехов §g§o[Верстак]§r§f §a[Uncommon]
 tile.arx:loom_crafting_table.name=§r§fПрядильный станок §g§o[Верстак]§r§f §7[Common]
 tile.arx:pounder_crafting_table.name=§r§fСтупка §g§o[Верстак]§r§f §7[Common]
@@ -1382,7 +1381,6 @@ tile.arx:grim_stonebricks.name=§r§fПорочный кирпич §e[Legendary
 
 
 item.spawn_egg.entity.arx:whipping_dummy.name=§r§fМанекен для битья §b[Rare]\n§7§oОтображает полученный урон
-item.arx:forcemeat=§r§fФарш §b[Rare]\n§7§oМожет быть сделан почти из любого мяса
 
 
 item.arx:black_tea=§r§fЧёрный чай §a[Uncommon] 

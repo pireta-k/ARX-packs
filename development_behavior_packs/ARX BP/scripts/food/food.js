@@ -26,7 +26,7 @@ export const foodRegistry = {
         "arx:llama_in_wine": 60,
         "arx:meat_bug_bug": 30,
         "arx:pirate_steak": 48,
-        "arx:rat_monstr_with_potatoes_and_mayonnaise": 68,
+        "arx:rat_monster_with_potatoes_and_mayonnaise": 68,
         "arx:rat_potato_casserole": 65,
         "arx:reconstruction_meat_cake": 58,
         "arx:salo": 18,
@@ -35,6 +35,7 @@ export const foodRegistry = {
         "arx:snow_bars_steak": 60,
         "arx:steamed_dolphin": 35,
         "arx:stew": 55,
+        "arx:forcemeat": 10,
 
         "arx:fried_camel_meat": 24,
         "arx:fried_cave_rat_meat": 20,
@@ -47,7 +48,7 @@ export const foodRegistry = {
         "arx:fried_kapibara_meat": 20,
         "arx:fried_llama_meat": 20,
         "arx:fried_meat_beetle_meat": 20,
-        "arx:fried_rat_monstr_meat": 22,
+        "arx:fried_rat_monster_meat": 22,
         "arx:fried_sea_turtle_meat": 20,
         "arx:fried_small_rat_meat": 20,
         "arx:fried_snow_bars_meat": 20,
@@ -64,7 +65,7 @@ export const foodRegistry = {
         "arx:llama_meat": -10,
         "arx:meat_beetle_meat": -10,
         "arx:rabbit_meat": -10,
-        "arx:rat_monstr_meat": -12,
+        "arx:rat_monster_meat": -12,
         "arx:sea_turtle_meat": -10,
         "arx:small_rat_meat": -10,
         "arx:snow_bars_meat": -10,
@@ -131,7 +132,7 @@ export const foodRegistry = {
     bread: {
         "arx:apple_pie": 60,
         "arx:bandit_pie": 55,
-        "arx:beefbread": 40,
+        "arx:beefbread": 30,
         "arx:cactus_sandwich": 26,
         "arx:eggbread": 35,
         "arx:fiercebread": 50,
@@ -271,12 +272,6 @@ export function onFoodConsume(player, itemStack) {
 
     // Get food's deleciousness
     const foodTaste = foodRegistry[foodType][foodId]
-
-    // Tip
-    if (player.getDynamicProperty('hasEverAteSomething') !== true) {
-        sl(player, 'food.thirst_meal')
-        ssDP(player, 'hasEverAteSomething', true)
-    }
 
     // Happiness bonus
     let happinessBonus = (playerTaste * 1.3) + foodTaste

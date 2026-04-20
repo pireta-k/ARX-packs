@@ -8,7 +8,9 @@
             "cooking_crafting_table"
         ],
         "pattern": [
-            "###"
+            " # ",
+            "###",
+            " # "
         ],
         "key": {
             "#": {

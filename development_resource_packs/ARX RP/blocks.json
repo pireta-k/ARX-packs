@@ -1,11 +1,5 @@
 {
 	"format_version": "1.21.40",
-	"frame": {
-		"blockshape": "invisible"
-	},
-	"glow_frame": {
-		"blockshape": "invisible"
-	},
 	"arx:broken_minibot": {
 		"sound": "stone"
 	},

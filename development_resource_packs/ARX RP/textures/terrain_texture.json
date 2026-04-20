@@ -10,9 +10,6 @@
 		"arx_nest": {
 			"textures": "textures/blocks/nature/nest/nest"
 		},
-		"arx_crafting_table": {
-			"textures": "textures/blocks/vanilla/crafting_table"
-		},
 		"arx_mushroom": {
 			"textures": "textures/blocks/nature/mushrooms/mushroom"
 		},
@@ -233,10 +230,6 @@
 			"textures": "textures/blocks/furniture/coin_crafting_table_default"
 		},
 
-		"arx_leather_bench_crafting_table": {
-			"textures": "textures/blocks/furniture/leather_bench_crafting_table"
-		},
-		
 		"arx_chromakey_black": {
 			"textures": "textures/blocks/chromakeys/chromakey_black"
 		},
@@ -738,8 +731,8 @@
 		},
 
 
-		"rat_monstr_meca_head": {
-			"textures": "textures/entity/mobs/rat_monstr_meca"
+		"rat_monster_meca_head": {
+			"textures": "textures/entity/mobs/rat_monster_meca"
 		},
 
 

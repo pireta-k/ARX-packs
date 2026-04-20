@@ -1,0 +1,41 @@
+{
+  "format_version": "1.8.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "arx:rat_monster_meca",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/mobs/rat_monster_meca"
+      },
+      "geometry": {
+        "default": "geometry.rat_monster_meca"
+      },
+      "animations": {
+        "look_at_target_default": "animation.humanoid.look_at_target.default",
+        "look_at_target_gliding": "animation.humanoid.look_at_target.gliding",
+        "look_at_target_swimming": "animation.humanoid.look_at_target.swimming",
+        "walk": "animation.rat_monster.walk",
+        "run_attack": "animation.rat_monster.run_attack",
+        "attack": "animation.rat_monster.attack"
+      },
+      "animation_controllers": [
+        {
+          "move": "controller.animation.rat_monster_meca.walk"
+        },
+        {
+          "look_at_target": "controller.animation.humanoid.look_at_target"
+        }
+      ],
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#0c0202",
+        "overlay_color": "#422910"
+      }
+    }
+  }
+}

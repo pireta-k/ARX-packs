@@ -3,7 +3,7 @@
     "minecraft:item": {
         "components": {
             "minecraft:food": {
-                "nutrition": 4,
+                "nutrition": 7,
                 "saturation_modifier": 1
             },
             "minecraft:icon": "arx:cake_contemplator",
