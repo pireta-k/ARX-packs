@@ -12,7 +12,8 @@
 			},
 			"minecraft:type_family": {
 				"family": [
-					"furniture"
+					"furniture",
+					"untargetable"
 				]
 			},
 			"minecraft:collision_box": {

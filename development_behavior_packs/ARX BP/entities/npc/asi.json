@@ -13,7 +13,8 @@
 			},
 			"minecraft:type_family": {
 				"family": [
-					"npc"
+					"npc",
+					"untargetable"
 				]
 			},
 			"minecraft:behavior.look_at_entity": {

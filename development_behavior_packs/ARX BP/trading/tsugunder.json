@@ -152,30 +152,30 @@
             }
           ]
         },
-        // //Зелья
-        // {
-        //   "wants": [
-        //     {
-        //       "item": "arx:rat_coin",
-        //       "quantity": {
-        //         "min": 5,
-        //         "max": 30
-        //       }
-        //     }
-        //   ],
-        //   "gives": [
-        //     {
-        //       "choice": [
-        //         {
-        //           "item": "arx:hole_bottle_mp_potion"
-        //         },
-        //         {
-        //           "item": "arx:long_bottle_blood"
-        //         }
-        //       ]
-        //     }
-        //   ]
-        // },
+        //Зелья
+        {
+          "wants": [
+            {
+              "item": "arx:rat_coin",
+              "quantity": {
+                "min": 5,
+                "max": 30
+              }
+            }
+          ],
+          "gives": [
+            {
+              "choice": [ // TO-DO
+                {
+                  "item": "arx:hole_bottle_mp_potion"
+                },
+                {
+                  "item": "arx:long_bottle_blood"
+                }
+              ]
+            }
+          ]
+        },
         //Дорогой товар - крынцы
         {
           "wants": [

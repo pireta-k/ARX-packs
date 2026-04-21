@@ -729,9 +729,8 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
         // Спавним гроб
         player.runCommand("summon arx:grave ^ ^ ^")
 
-        // Выдаем блокировщики слота
-        player.runCommand(`give @s arx:slot_blocker 100 0 {"item_lock": { "mode": "lock_in_slot" } }`)
-        player.runCommand(`kill @e[type=item, name="§r§cВы в нокауте, ваш инвентарь заблокирован", r=4]`)
+        // Set slot blockers
+        player.runCommand(`give @s arx:slot_blocker 35 0 {"item_lock": { "mode": "lock_in_slot" } }`)
 
         // Чистим данные о маги-фонарях
         ssDP(player, 'allowMagilight', 0)

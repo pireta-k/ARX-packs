@@ -48,7 +48,8 @@ function defineSpellData(player, runeSequence, currentTargetRaw) {
         else if (currentTargetRaw === 2) {
             const rayHits = player.getEntitiesFromViewDirection({ maxDistance: spellDistance, includeLiquidBlocks: false, includePassableBlocks: false })
                 .filter(hit => hit.entity.name !== player.name) // Remove the caster, if he got to the raycast somehow
-            
+                .filter(hit => !getEntityFamilies(hit.entity).includes('untargetable'))
+
             // If we got no entites, try to find them via blockRayCast
             if (rayHits.length === 0) {
 
@@ -69,11 +70,13 @@ function defineSpellData(player, runeSequence, currentTargetRaw) {
         if (currentTargetRaw === 1) {
             targets = player.dimension.getEntities({ location: player.location, maxDistance: spellDistance })
                 .filter(entity => !getEntityFamilies(entity).includes('furniture'))
-        } 
+                .filter(entity => !getEntityFamilies(entity).includes('untargetable'))
+        }
         // Get all entities, excluding the caster
         else {
             targets = player.dimension.getEntities({ location: player.location, maxDistance: spellDistance })
                 .filter(entity => !getEntityFamilies(entity).includes('furniture'))
+                .filter(entity => !getEntityFamilies(entity).includes('untargetable'))
                 .filter(hit => hit.entity.name !== player.name)
         }
     }
