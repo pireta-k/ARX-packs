@@ -12,10 +12,10 @@ export function infoAboutTastes(player) {
 function tasteBodyString(player) {
     let resultString = '§eВаши вкусы§f:\n'
 
-    const tastes = ['meat', 'fish', 'bread', 'dairy', 'herbal', 'sweet']
-    const tastes_ru = ['Мясное', 'Рыбное', 'Хлебное', 'Молочное', 'Травяное', 'Сладкое']
+    const tastes = ['meat', 'fish', 'bread', 'dairy', 'herbal']
+    const tastes_ru = ['Мясное', 'Рыбное', 'Хлебное', 'Молочное', 'Травяное']
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < tastes.length; i++) {
         const currentTaste = player.getDynamicProperty("playerTaste_" + tastes[i])
 
         let currentTasteColor

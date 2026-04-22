@@ -47,9 +47,6 @@
 			"textures": "textures/blocks/nature/mushrooms/blue_cave_mushrooms"
 		},
 
-		"arx_cactus_flower": {
-			"textures": "textures/blocks/nature/cactus_flower"
-		},
 		"arx_day_kosk": {
 			"textures": "textures/blocks/nature/day_kosk"
 		},
@@ -189,9 +186,6 @@
 		"arx_clothes_crafting_table": {
 			"textures": "textures/blocks/furniture/clothes_crafting_table"
 		},
-		"arx_alcohol_mashine": {
-			"textures": "textures/blocks/furniture/alcohol_mashine"
-		},
 		"arx_jewelry_crafting_table": {
 			"textures": "textures/blocks/furniture/jewelry_crafting_table"
 		},
@@ -244,16 +238,6 @@
 		},
 		"arx_chromakey_blue": {
 			"textures": "textures/blocks/chromakeys/chromakey_blue"
-		},
-
-		"arx_cactus_column": {
-			"textures": "textures/blocks/nature/cactus/cactus_column"
-		},
-		"arx_cactus_top": {
-			"textures": "textures/blocks/nature/cactus/cactus_top"
-		},
-		"arx_cactus_corner": {
-			"textures": "textures/blocks/nature/cactus/cactus_corner"
 		},
 
 

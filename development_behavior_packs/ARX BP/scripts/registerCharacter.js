@@ -164,7 +164,7 @@ export async function registerCharacter(player) {
                             if (resultWeight == 15) {
                                 setRegWindow(player, 43)
                             }
-                            // It is NOT
+                            // It is unbalanced
                             else if (resultWeight > 3) {
                                 setRegWindow(player, 42)
                             }
@@ -175,7 +175,6 @@ export async function registerCharacter(player) {
                                 ssDP(player, 'playerTaste_bread', tasteDPs[fv[2]])
                                 ssDP(player, 'playerTaste_dairy', tasteDPs[fv[3]])
                                 ssDP(player, 'playerTaste_herbal', tasteDPs[fv[4]])
-                                ssDP(player, 'playerTaste_sweet', tasteDPs[fv[5]])
 
                                 setRegWindow(player, 50)
                             }

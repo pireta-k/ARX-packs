@@ -15,7 +15,7 @@
                 "item": "minecraft:bread"
             },
             "A": {
-                "item": "arx:cactus"
+                "item": "cactus"
             }
         },
         "result": {

@@ -126,7 +126,6 @@ item.arx:vodka=§r§fVodka §b[Rare]\n§7It's very strong!
 item.arx:wine=§r§fWine §b[Rare]\n§7Night vision (0:20)
 
 ## Alchemy
-item.arx:cactus=§r§fКактус §7[Common]
 item.arx:claws=§r§fКогти §b[Rare]
 item.arx:desert_essence=§r§fЭссенция пустыни §g[Epic]
 item.arx:fang=§r§fКлык §b[Rare]
@@ -1120,7 +1119,6 @@ tile.arx:divine_altar.name=§r§fБожественный алтарь §e[Legen
 
 
 tile.arx:alchemy_crafting_table.name=§r§fАлхимический стол §g§o[Верстак]§r§f §b[Rare]
-tile.arx:alcohol_mashine.name=§r§fСамогонный аппарат §g§o[Верстак]§r§f §b[Rare]
 tile.arx:boiler_crafting_table.name=§r§fКотелок §g§o[Верстак]§r§f §a[Uncommon]
 tile.arx:forge_crafting_table.name=§r§fКузня §g§o[Верстак]§r§f §b[Rare]
 tile.arx:clothes_crafting_table.name=§r§fШвейный стол §g§o[Верстак]§r§f §a[Uncommon]
@@ -1216,12 +1214,6 @@ tile.arx:xp_stone_ore.name=§r§fЭкспиринциальная руда §g[E
 tile.arx:xp_sand_ore.name=§r§fЭкспиринциальная песчанная руда §g[Epic]
 tile.arx:xp_nether_ore.name=§r§fЭкспиринциальная адская руда §g[Epic]
 
-
-
-tile.arx:cactus_column.name=§r§fКактусовая колонна §7[Common]
-tile.arx:cactus_corner.name=§r§fКактусовый угол §7[Common]
-tile.arx:cactus_flower.name=§r§fКактусовый цветок §7[Common]
-tile.arx:cactus_top.name=§r§fКактусовое навершие §7[Common]
 
 tile.arx:fly_agaric.name=§r§fМухомор §a[Uncommon]
 tile.arx:mp_mushroom.name=§r§fГриб маны §a[Uncommon]

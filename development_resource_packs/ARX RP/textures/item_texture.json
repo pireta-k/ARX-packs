@@ -23,9 +23,6 @@
         "arx:fist_symbol": {
             "textures": "textures/items/actions/fist_symbol.png"
         },
-        "arx:cactus": {
-            "textures": "textures/items/alchemy/cactus.png"
-        },
         "arx:chitin": {
             "textures": "textures/items/alchemy/chitin.png"
         },
