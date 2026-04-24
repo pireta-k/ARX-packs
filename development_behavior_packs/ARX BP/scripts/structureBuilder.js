@@ -2,7 +2,9 @@ import { world, system } from "@minecraft/server"
 import { checkForItem } from "./checkForItem"
 import { gDP, ssDP } from "./DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
-import { obj2str } from "./converters"
+import { obj2str, str2obj } from "./converters"
+
+let ACSSStorage = {}
 
 // StructureBuilder namespace - sb
 
@@ -156,13 +158,13 @@ export async function onUseSBHammer(p) {
         if (hasAllPoints) {
             form.button('Delete blocks')
             form.button('Fill with block')
-            form.button('Save ACSS') // ACSS Arx Compressed Structure String
+            form.button('Save ACSS') // ACSS is Arx Compressed Structure String
             form.button('Load ACSS')
         }
 
         form.show(p).then(async r => {
             switch (r.selection) {
-                case 0:
+                case 0: // Delete blocks
                     for await (const b of new BlocksMegaArray(d, point1, point2)) {
                         try {
                             b.setType('minecraft:air')
@@ -173,10 +175,10 @@ export async function onUseSBHammer(p) {
                     }
                     break
 
-                case 1:
+                case 1: // Fill blocks
                     const form3 = new ModalFormData()
                         .title("Fill with block")
-                        .textField(`Enter a block ID`, "bedrock")
+                        .textField(`Enter a block ID`, "namespace:id")
                         .submitButton('Fill')
 
                         .show(p).then(async r => {
@@ -190,17 +192,90 @@ export async function onUseSBHammer(p) {
                                         b.setType(blockId)
                                     }
                                     catch {
-
+                                        console.error('Cannot set a block')
                                     }
                                 }
                             }
                         })
-
-                case 2:
-                    await saveACSS(d, point1, point2)
-                    p.sendMessage('§bACSS sent to log')
                     break
 
+                case 2: // Save ACSS
+                    const acss = await saveACSS(d, point1, point2)
+                    const ACSSSaveForm = new ActionFormData()
+                        .title("Save ACSS")
+                        .button('Save in log')
+                        .button('Save in RAM')
+                        .button('Save in DP')
+                    ACSSSaveForm.show(p).then(async r2 => {
+                        switch (r2.selection) {
+
+                            case 0:
+                                console.warn(acss)
+                                p.sendMessage('§bACSS sent to log')
+                                break
+
+                            case 1:
+                                ACSSStorage[gDP(p, 'id')] = acss
+                                p.sendMessage('§bACSS saved in RAM')
+                                break
+
+                            case 2:
+                                let DP2SaveACSS = undefined
+                                const ACSSSave2DPForm = new ModalFormData()
+                                    .title("Save ACSS to DP")
+                                    .textField(`Enter DP name`, "any")
+                                    .submitButton('Save')
+
+                                await ACSSSave2DPForm.show(p).then(async r => {
+
+                                    if (r.formValues) {
+                                        DP2SaveACSS = r.formValues[0].trim()
+                                    }
+                                })
+                                ssDP(p, DP2SaveACSS, acss)
+                                p.sendMessage('§bACSS saved in DP')
+                                break
+                        }
+                    })
+                    break
+
+                case 3: // Load ACSS
+                    let acssJSON = ''
+
+                    const ACSSLoadForm = new ActionFormData()
+                        .title("Load ACSS")
+                        .button('Load from RAM')
+                        .button('Load from DP')
+                    await ACSSLoadForm.show(p).then(async r2 => {
+                        switch (r2.selection) {
+
+                            case 0:
+                                acssJSON = ACSSStorage[gDP(p, 'id')]
+                                break
+
+                            case 1:
+                                const ACSSLoadFromDPForm = new ModalFormData()
+                                    .title("Load ACSS from DP")
+                                    .textField(`Enter DP name`, "any")
+                                    .submitButton('Load')
+
+                                await ACSSLoadFromDPForm.show(p).then(async r => {
+
+                                    if (r.formValues) {
+                                        const responce = r.formValues[0].trim()
+                                        acssJSON = gDP(p, responce)
+                                    }
+                                })
+                                break
+                        }
+                    })
+
+                    if (!acssJSON) {
+                        p.sendMessage('§cCannot get ACSS this way. Aborted.')
+                        return null
+                    }
+                    await loadACSS(p, acssJSON, d, point1)
+                    break
             }
         })
     }
@@ -210,57 +285,233 @@ async function saveACSS(d, p1, p2) {
     // ACSS obj
     let acss = {
         head: {},
-        body: []
+        palette: {},
+        b3d: ''
     }
     // Basic headers
     acss.head = {
         v: 1, // Version
         s: [ // Size
-            Math.abs(p1.x - p2.x + 1),
-            Math.abs(p1.y - p2.y + 1),
-            Math.abs(p1.z - p2.z + 1),
+            Math.abs(p1.x - p2.x) + 1,
+            Math.abs(p1.y - p2.y) + 1,
+            Math.abs(p1.z - p2.z) + 1,
         ]
     }
 
     const alphabet = 'abcdefghijklmnopqrstuvwxyz'
-    const alphabetLength = alphabet.length
-    let allBlocks = [] // List of all blocks as it is
-    let uniqueBlocks = [] // How many times we met every block?
+    let uniqueBlockDatas = [] // Unique blocks array
+    let blocks3DArray = ''
 
-    // Get all blocks and count them
+    // Get unique arrays of blocks 
     for await (const b of new BlocksMegaArray(d, p1, p2)) {
-        allBlocks.push(b.typeId)
 
-        if (!uniqueBlocks.includes(b.typeId)) {
-            uniqueBlocks.push(b.typeId)
+        const bd = blockData(b)
+        if (!uniqueBlockDatas.includes(bd)) {
+            uniqueBlockDatas.push(bd)
         }
+
     }
 
     // Create palette
-    const differentBlocks = uniqueBlocks.length
-    const symPerBlock = Math.ceil(differentBlocks / alphabetLength)
+    const differentBlocks = uniqueBlockDatas.length
+    const symPerBlock = Math.ceil(Math.log(differentBlocks + 1) / Math.log(alphabet.length)) || 1
     acss.head.spb = symPerBlock // Remember
 
-    let palette = {} // Blocks palette
+    let palette = {} // Blocks palette KEY = BLOCKDATA
+    let paletteReverse = {} // Same as palette, but key - value are switched
     for (let i = 0; i < differentBlocks; i++) {
-        palette[uniqueBlocks[i]] = indexToSymbol(i, alphabet)
+        const key = indexToSymbol(i, alphabet, symPerBlock)
+        palette[key] = uniqueBlockDatas[i]
+        paletteReverse[uniqueBlockDatas[i]] = key
+    }
+    acss.palette = palette
+
+    // make 3D array
+    {
+        for await (const b of new BlocksMegaArray(d, p1, p2)) {
+            blocks3DArray += paletteReverse[blockData(b)]
+        }
+        // Apply RLE
+        blocks3DArray = RLE(blocks3DArray, 'compress', symPerBlock)
     }
 
-    // Create result string
-    let blockStr = ''
+    // Write to body
+    acss.b3d = blocks3DArray
 
-    console.warn(obj2str(palette))
+    const resultJSON = obj2str(acss)
+    return resultJSON
 }
 
-function indexToSymbol(index, alphabet) {
+async function loadACSS(p, acssJSON, d, p1) {
+
+    // === ACSS validation ===
+    // Validate ACSS JSON
+    let acss = undefined
+    try {
+        acss = str2obj(acssJSON)
+    }
+    catch (error) {
+        p.sendMessage(`§cACSS fatal error: ${error}.\nACSS loading aborted`)
+        return null
+    }
+    // ACSS basic check
+    if (!acss) {
+        p.sendMessage('§cACSS error: No ACSS')
+        return null
+    }
+    // Validate headers
+    const version = acss.head?.v
+    if (!version || typeof version !== "number") {
+        p.sendMessage('§cACSS error: No version data in provided ACSS')
+        return null
+    }
+    const size = acss.head?.s
+    if (!size || typeof size !== 'object' || size.length !== 3 || size.some(n => n <= 0)) {
+        p.sendMessage('§cACSS error: Incorrect 3Darray size in provided ACSS')
+        return null
+    }
+    const symPerBlock = acss.head?.spb
+    if (!symPerBlock || typeof symPerBlock !== 'number' || symPerBlock < 1) {
+        p.sendMessage('§cACSS error: Incorrect SymbolsPerBlock in provided ACSS')
+        return null
+    }
+
+    // Validate palette
+    const palette = acss.palette
+    if (!palette || typeof palette !== 'object') {
+        p.sendMessage('§cACSS error: Incorrect palette in provided ACSS')
+        return null
+    }
+
+    // Validate b3d
+    const blocks3D = acss.b3d
+    if (!blocks3D || typeof blocks3D !== 'string') {
+        p.sendMessage('§cACSS error: Incorrect blocks3D in provided ACSS')
+        return null
+    }
+
+    // Get the 2nd point
+    const p2 = {
+        x: p1.x + size[0] - 1,
+        y: p1.y + size[1] - 1,
+        z: p1.z + size[2] - 1
+    }
+
+    // Unwind b3d RLE
+    const fullb3d = RLE(blocks3D, 'decompress', symPerBlock)
+
+    // Validate volume 
+    const defactoVolume = fullb3d.length / symPerBlock // Volume in blocks
+    const expectedVolume = size[0] * size[1] * size[2]
+
+    if (defactoVolume !== expectedVolume) {
+        p.sendMessage(`§cACSS error: expected b3d volume (${expectedVolume}) doesn't match with its defacto volume (${defactoVolume})`)
+        return null
+    }
+
+    // Set blocks
+    let blockIndex = 0
+    for await (const b of new BlocksMegaArray(d, p1, p2)) {
+        const offset = blockIndex * symPerBlock
+        const blockKey = fullb3d.slice(offset, offset + symPerBlock)
+        b.setType(acss.palette[blockKey])
+        blockIndex++
+    }
+
+    p.sendMessage('§bACSS loaded')
+}
+
+// Compress block id. Mode: compress / decompress
+function blockData(b = undefined, mode = 'compress') {
+    let result = ''
+    if (mode === 'compress') { // Compress
+        // No block given
+        if (!b.isValid) {
+            console.error('blockData(): compress mode requires a valid block. Function aborted')
+            return 'ERROR'
+        }
+        if (b.typeId.startsWith('minecraft:')) {
+            result = b.typeId.slice(10)
+        } else {
+            result = b.typeId
+        }
+    }
+    else { // Decompress
+
+    }
+
+    return result || 'air' // Fallback
+}
+
+/**
+ * RLE для палитры с фиксированной длиной символа
+ * @param {string} str - Входная строка
+ * @param {'compress'|'decompress'} mode - Режим
+ * @param {number} spb - Длина одного символа палитры (из head.spb)
+ * @returns {string} - Результат
+ */
+function RLE(str, mode = 'compress', spb = 1) {
+    if (mode === 'decompress') {
+        let result = ''
+        let i = 0
+
+        while (i < str.length) {
+            // 1. Читаем число (повторы)
+            let numStr = ''
+            while (i < str.length && /\d/.test(str[i])) {
+                numStr += str[i]
+                i++
+            }
+            const count = numStr ? parseInt(numStr, 10) : 1
+
+            // 2. Читаем символ ФИКСИРОВАННОЙ длины
+            if (i + spb > str.length) {
+                console.warn(`RLE: Truncated symbol at pos ${i} (need ${spb}, got ${str.length - i})`)
+                break // или throw new Error(...)
+            }
+            const symbol = str.slice(i, i + spb)
+            i += spb
+
+            // 3. Повторяем
+            result += symbol.repeat(count)
+        }
+        return result
+    }
+
+    else { // compress
+        if (!str || str.length % spb !== 0) {
+            console.warn(`RLE: Input length ${str?.length} not divisible by spb=${spb}`)
+            return str
+        }
+
+        let result = ''
+        let i = 0
+
+        while (i < str.length) {
+            const symbol = str.slice(i, i + spb)
+            let count = 1
+            i += spb
+
+            while (i + spb <= str.length && str.slice(i, i + spb) === symbol) {
+                count++
+                i += spb
+            }
+
+            result += (count > 1 ? count : '') + symbol
+        }
+        return result
+    }
+}
+
+function indexToSymbol(index, alphabet, fixedLen) {
     let sym = ''
     const base = alphabet.length
-    
-    do {
-        sym = alphabet[index % base] + sym
-        index = Math.floor(index / base) - 1  // -1 для корректного перехода: z→aa
-    } while (index >= 0)
-    
+
+    for (let i = 0; i < fixedLen; i++) {
+        sym = alphabet[index % base] + sym;
+        index = Math.floor(index / base);
+    }
+
     return sym
 }
 
