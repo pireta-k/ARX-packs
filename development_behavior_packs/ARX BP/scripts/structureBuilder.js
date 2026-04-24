@@ -73,7 +73,7 @@ class BlocksMegaArray {
                 // Minimal vertex of the area
                 min: { x: Math.max(chunk.absPos.x, this.anchor.x), y: chunk.height.min, z: Math.max(chunk.absPos.z, this.anchor.z) },
                 // Top vertex of the area
-                max: { x: Math.min(chunk.absPos.x + 32, this.top.x), y: chunk.height.max, z: Math.min(chunk.absPos.z + 32, this.top.z) }
+                max: { x: Math.min(chunk.absPos.x + 31, this.top.x), y: chunk.height.max, z: Math.min(chunk.absPos.z + 31, this.top.z) }
             }
 
             await chunk.startTick()
@@ -413,8 +413,18 @@ async function loadACSS(p, acssJSON, d, p1) {
     let blockIndex = 0
     for await (const b of new BlocksMegaArray(d, p1, p2)) {
         const offset = blockIndex * symPerBlock
+        // Get block key in palette
         const blockKey = fullb3d.slice(offset, offset + symPerBlock)
-        b.setType(acss.palette[blockKey])
+        // Get block data
+        const blockDataRaw = acss.palette[blockKey]
+        const bd = blockData(blockDataRaw, 'decompress')
+        b.setType(bd.id)
+        if (bd.perms) {
+            for (const perm in bd.perms) {
+                const newPermutation = b.permutation.withState(perm, bd.perms[perm])
+                b.setPermutation(newPermutation)
+            }
+        }
         blockIndex++
     }
 
@@ -422,26 +432,42 @@ async function loadACSS(p, acssJSON, d, p1) {
 }
 
 // Compress block id. Mode: compress / decompress
-function blockData(b = undefined, mode = 'compress') {
-    let result = ''
-    if (mode === 'compress') { // Compress
+function blockData(b, mode = 'compress') {
+    let result
+    if (mode === 'compress') { // Compress (Get string from block object)
         // No block given
         if (!b.isValid) {
             console.error('blockData(): compress mode requires a valid block. Function aborted')
             return 'ERROR'
         }
+        // ID
         if (b.typeId.startsWith('minecraft:')) {
             result = b.typeId.slice(10)
         } else {
             result = b.typeId
         }
-    }
-    else { // Decompress
+        // Permutations
+        let perms = b.permutation.getAllStates() // Get
+        if (Object.keys(perms).length !== 0) {  // If block has any permutations
 
+            // Write in result
+            result = result + '<' + JSON.stringify(perms).replace(/"/g, "'")
+        }
+    }
+    else { // Decompress (Get object from string)
+        result = {}
+        // 0 - id, 1 - permutations
+        const data = b.split('<')
+        result.id = data[0]
+
+        if (data.length > 1) { // We have permutations
+            result.perms = JSON.parse(data[1].replace(/'/g, '"'))
+        }
     }
 
-    return result || 'air' // Fallback
+    return result
 }
+
 
 /**
  * RLE для палитры с фиксированной длиной символа

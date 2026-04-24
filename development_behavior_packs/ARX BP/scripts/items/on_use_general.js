@@ -12,6 +12,7 @@ import { clearTraits, acquireTrait } from '../traits/traitsOperations'
 import { iDP, ssDP, gDP } from "../DPOperations";
 import { sl } from "../lang/fetchLocalization";
 import { onUseSBHammer } from "../structureBuilder";
+import { prospect } from '../prospect'
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
@@ -22,9 +23,8 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Тест
         case "arx:mod_sword":
             if (manageCD(player)) {
-                console.warn(gDP(item, 'everHolded'))
-
-                player.dimension.runCommand(`tickingarea add 0 0 0 0 0 0 sb true`)
+                const b = await prospect(player.dimension, player.location.x, player.location.z)
+                console.warn(b.typeId)
             }
             break
 

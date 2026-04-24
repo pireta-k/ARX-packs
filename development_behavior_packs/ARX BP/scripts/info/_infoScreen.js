@@ -10,6 +10,7 @@ import { knownSpellsBook } from "./knownSpellsBook"
 import { infoAboutTraits } from "./infoAboutTraits"
 import { arxSettings } from "./arxSettings"
 import { guide } from "./guide"
+import { infoAboutArxDevs } from "./devs"
 
 import { getStabilityTestResult } from '../stabilityTesting'
 
@@ -52,11 +53,10 @@ export function infoScreen(player) {
                 case 7: infoAboutAchievements(player); break;
                 case 8: arxSettings(player); break;
                 case 9: infoAboutStatistics(player); break;
-                case 10: player.runCommand('function info/authors'); break
+                case 10: infoAboutArxDevs(player); break
             }
         })
     } else {
-        console.warn(`Игрок ${player.name} использовал инфо, хотя не имеет зарегистрированного персонажа`)
         player.sendMessage("§cВы не имеете зарегистрированного персонажа, невозможно вызвать <Инфо>.")
     }
 }

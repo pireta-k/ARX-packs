@@ -58,4 +58,10 @@ export const enLocalization = {
     'potion.perm.can_use_more': 'You can drink $0$ more!',
     'potion.perm.cannot_drink_more': '§eRemember, you can\'t drink this potion any more!',
     'potion.perm.drank_over_limit': '§cYou have already reached your limit with this type of potion! It has no effect on you...',
+
+    'info.devs.title': 'Arx devs',
+    'info.devs.lead': 'Arx Lead Developer',
+    'info.devs.music': 'In-game music',
+    'info.devs.thanks': 'Special thanks',
+
 }

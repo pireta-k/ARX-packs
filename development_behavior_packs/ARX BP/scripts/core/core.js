@@ -234,6 +234,22 @@ const coreFramework = {
             }
         }
     },
+    wateringCropsBySoaking: {
+        tickSpeed: 80,
+        operations: () => {
+            for (const player of world.getPlayers()) {
+                if (gDP(player, 'wetness', 0) > 0) {
+                    const blocksBelow = player.getAllBlocksStandingOn().filter(b => b.typeId === 'minecraft:farmland')
+                    for (const b of blocksBelow) {
+                        const moisturing = b.permutation.getState('moisturized_amount') // 0 - 7 inclusive
+                        if (moisturing < 7) {
+                            b.setPermutation(b.permutation.withState('moisturized_amount', moisturing + 1))
+                        }
+                    }
+                }
+            }
+        }
+    },
     // Autoclicker tracker
     autoclickerTracker: {
         tickSpeed: 2,
