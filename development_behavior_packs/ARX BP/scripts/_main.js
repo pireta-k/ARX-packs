@@ -5,7 +5,7 @@ import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, 
 import { ActionFormData } from "@minecraft/server-ui"
 
 // Imports - Arx functions 
-import { getScore, setScore } from './scoresOperations'
+import { getScore, incScore, setScore } from './scoresOperations'
 import { increaseSkillProgress, wipeSkillsProgress } from './skillsOperations'
 import { onConsume } from './food/onConsume'
 import { registerCharacter } from "./registerCharacter"
@@ -169,7 +169,7 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
             async function createLobby(d, hoster) {
                 // Is the world completely loaded?
                 try {
-                    console.warn('Trying to create lobby...')
+                    console.log('Trying to create lobby...')
                     hoster.teleport({ x: -9999.5, y: 4, z: -9999.5 }, { checkForBlocks: true, dimension: d, facingLocation: { x: -9999.5, y: 4, z: -9993 }, keepVelocity: false })
                     hoster.runCommand('fill ~-10 ~-10 ~-10 10 10 10 air')
                     // Verify lobby loading
@@ -641,11 +641,6 @@ system.beforeEvents.startup.subscribe(initEvent => {
                     d.runCommand(executeOnBlockPosition + "particle minecraft:lava_particle ~ ~1 ~")
                     break
 
-                // Мангал
-                case "arx:thermal_cooking_crafting_table":
-                    d.runCommand(executeOnBlockPosition + "particle minecraft:campfire_smoke_particle ~ ~0.5 ~")
-                    break
-
                 default:
                     // Блок - светящийся блок
                     if (event.block.type.id.startsWith("arx:dynamic_light_block")) {
@@ -721,7 +716,7 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
         // Сообщаем о том, что произошло с игроком, если это его первый нокаут
         if (player.getDynamicProperty('hasEverBeenKnocked') !== true) {
             ssDP(player, 'hasEverBeenKnocked', true)
-            player.runCommand(`tellraw @s { "rawtext": [ { "text": "[§aГид§f] > §cВы в нокауте§f. Ничего страшного, это не смерть. Вы полежите около минуты и снова очнётесь. §aВаши вещи§f лежат рядом с вами в деревянном ящике (если они у вас вообще были)." } ] }`)
+            player.sendMessage('[§aГид§f] > §cВы в нокауте§f. Ничего страшного, это не смерть. Вы полежите около минуты и снова очнётесь. §aВаши вещи§f лежат рядом с вами в деревянном ящике (если они у вас вообще были).')
         }
 
         ssDP(player, 'blockingResistanceCD', 0)
@@ -930,34 +925,11 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
 
             if (valueToAccure > 0) iDP(player, 'stress', valueToAccure)
         }
-        // Если мы на алтаре
+        // Visual
         {
-            // Проверяем допуск по типу урона
-            if (damager?.typeId === 'minecraft:player' && damageCause === 'entityAttack') {
-                if (world.getDimension(damaged.dimension.id).getBlock({ x: damaged.location.x, y: damaged.location.y - 1, z: damaged.location.z }).typeId === 'arx:divine_altar') {
-                    // Проверяем допуск по тому, не призрак ли игрок
-                    if (damaged.getProperty('arx:is_ghost') === false) {
-                        if (damaged.getDynamicProperty('characterLifeSec') > 72000) {
-                            // Проверяем допуск по тому, нокнут ли игрок
-                            if (damaged.getDynamicProperty('respawnDelay') > 0) {
-                                // Проверям допуск по наличию алтаря
-                                setScore(player, 'knockout_row_sounter', 99)
-                                player.runCommand('loot spawn ~ ~1 ~ loot "custom/gold_feather"')
-
-                                player.runCommand('kill @s')
-                                console.warn('Разрешен дроп пера')
-                            } else {
-                                damager.sendMessage('§cДля убийства на алтаре, убиваемый персонаж должен быть вырублен')
-                            }
-                        } else {
-                            damager.sendMessage('§cЭтот персонаж слишком мало прожил, и пока перо получить с него невозможно')
-                        }
-                    } else {
-                        damager.sendMessage('§cВы не можете убить на алтаре призрачное существо')
-                    }
-                }
-            }
-
+            player.runCommand('camerashake add @s 0.5 0.1 rotational')
+            player.runCommand('camerashake add @s 0.2 0.1 positional')
+            player.addEffect('blindness', 20, { amplifier: 0, showParticles: false })
         }
         // Обработка черты "добрый"
         const nearbyPlayers = getPlayersInRadius(player, 10, false)
@@ -966,8 +938,8 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
                 if (hurtEvent.damage > 0) iDP(nearbyPlayer, 'stress', 30 * hurtEvent.damage)
             }
         }
-
-        player.runCommand('function javascript/on_get_damage')
+        // Hits counter
+        incScore(player, 'count_hits')
     }
     else if (damaged.typeId === "arx:whipping_dummy") { // Если ранили куклу для битья
         damaged?.runCommand(`tellraw @a[r=8] { "rawtext": [ { "text": "§cDMG >>> §l§f${hurtEvent.damage.toFixed(1)}" } ] }`)

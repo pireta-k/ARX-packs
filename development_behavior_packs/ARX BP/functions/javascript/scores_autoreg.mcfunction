@@ -7,7 +7,6 @@ scoreboard players add @a mark 0
 scoreboard players add @a poisoning 0
 scoreboard players add @a pois_dec 0
 scoreboard players add @a move_delay 0
-scoreboard players add @a on_hurt_delay 0
 scoreboard players add @a battle_delay 0
 scoreboard players add @a water_block_saki 0
 scoreboard players add @a sin_host_block 0

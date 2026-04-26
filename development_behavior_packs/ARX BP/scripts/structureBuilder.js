@@ -191,8 +191,9 @@ export async function onUseSBHammer(p) {
                                     try {
                                         b.setType(blockId)
                                     }
-                                    catch {
-                                        console.error('Cannot set a block')
+                                    catch (error) {
+                                        p.sendMessage(`§cError. Probably "${blockId}" isn't an id of an actual block`)
+                                        break
                                     }
                                 }
                             }

@@ -23,8 +23,6 @@ scoreboard objectives add poit_mp_reg dummy poit_mp_reg
 
 scoreboard objectives add move_delay dummy задержка_аним_бездействия
 
-scoreboard objectives add on_hurt_delay dummy on_hurt_delay
-
 scoreboard objectives add weather dummy Погода
 scoreboard objectives add weather_cond dummy Тип_погоды
 scoreboard players set @s weather_cond 0

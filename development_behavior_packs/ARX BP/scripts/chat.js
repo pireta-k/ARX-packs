@@ -64,11 +64,10 @@ export function parceChatCommand(player, trimmedMessage) {
                 const codeToEval = trimmedMessage.slice(5);
                 try {
                     const result = eval(codeToEval);
-                    // Отправьте результат игроку (если нужно)
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§aРезультат: ${result}" } ] }`);
+                    // Send result to player
+                    player.sendMessage(`§aResult§f: ${result}`)
                 } catch (error) {
-                    console.error("Ошибка при eval:", error); // Выведите ошибку в консоль
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cОшибка: ${error}" } ] }`);
+                    player.sendMessage(`§cEval error§f: ${error}`)
                 }
             } else {
                 sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')

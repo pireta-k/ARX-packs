@@ -4,8 +4,16 @@ export const enLocalization = {
     'lobby.verify.new_player_entered_arx': "Player $0$ §ajust entered Arx for the first time§f! Verification required. Use !verify command",
     'lobby.new_player_auto_gamemode_change': "Player $0$ §ajust entered Arx for the first time§f! Their gamemode was Creative, and it was automatically switched to Survival",
 
+    'lobby.registration.cannot_registrate.title': "§cCannot registrate",
+    'lobby.registration.cannot_registrate.already_has_a_character': "You already have your character, $0$.",
+
     'lobby.registration.lang.title': "Language",
     'lobby.registration.lang.body': "Pick your language",
+
+    'lobby.registration.gender.title': "Character's gender",
+    'lobby.registration.gender.body': "Choose your character's gernder.\nIt doesn't affect any stats or mechanics.",
+    'lobby.registration.gender.m': "Male",
+    'lobby.registration.gender.f': "Female",
 
     'lobby.registration.notStableRelease.title': "§cWARNING",
     'lobby.registration.notStableRelease.alpha': `This is an §cALPHA§f Arx Ultima version.\nIt's still highly undeveloped and unstable, and is not recommended for playing.`,

@@ -1,7 +1,12 @@
 import { world } from "@minecraft/server"
 import { getScore } from "./scoresOperations"
 
-// Return true if the player is admin
+/**
+ * Return true if the playes is admin. 
+ * Admin means that the player has admin permission level
+ * @param {Player} player 
+ * @returns 
+ */
 export function isAdmin(player) {
     return player.playerPermissionLevel == 2
 }

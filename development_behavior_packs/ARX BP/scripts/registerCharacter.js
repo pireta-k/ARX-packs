@@ -13,14 +13,14 @@ export async function registerCharacter(player) {
     // Player already has a character
     if (player.getDynamicProperty('hasRegisteredCharacter') === true) {
         const formNo = new ActionFormData()
-            .title("Регистрация невозможна")
-            .body(`Вы уже имеете загрегитрованного персонажа ${player.getDynamicProperty('name')}`)
+            .title(fl(player, 'lobby.registration.cannot_registrate.title'))
+            .body(fl(player, 'lobby.registration.cannot_registrate.already_has_a_character', [player.getDynamicProperty('name')]))
             .show(player)
     }
     // Player isn't verified
     else if (world.getDynamicProperty('requireUserVerification') && player.getDynamicProperty('verify') === false) {
         const form = new ActionFormData()
-            .title("Создание персонажа")
+            .title(fl(player, 'lobby.registration.cannot_registrate.title'))
             .body(`Добро пожаловать в Аркс, §a${player.name}§f!\n\nДождитесь, пока вас верифицируют! Верификация означает, что вы можете играть здесь.\n\nВам сразу же выдадут верификацию, как удостоверяется, что вы §aзнаете правила§f и §aимеете подходящий скин§f.\n\n\n\n\n\n\n\nВы получите сообщение, когда вас верифицируют.`)
             .show(player)
     }
@@ -56,10 +56,10 @@ export async function registerCharacter(player) {
 
             case 10: // Выбор пола 10
                 const form1 = new ActionFormData()
-                    .title("Пол персонажа")
-                    .body('§lВыберите пол вашего персонажа.\nПол §aне влияет§f на механики.')
-                    .button("Мужской", 'textures/ui/registration/gender_man')
-                    .button("Женский", 'textures/ui/registration/gender_woman')
+                    .title(fl(player, 'lobby.registration.gender.title'))
+                    .body(fl(player, 'lobby.registration.gender.body'))
+                    .button(fl(player, 'lobby.registration.gender.m'), 'textures/ui/registration/gender_man')
+                    .button(fl(player, 'lobby.registration.gender.f'), 'textures/ui/registration/gender_woman')
 
                     .show(player)
                     .then((response) => {
