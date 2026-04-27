@@ -12,7 +12,7 @@ import { clearTraits, acquireTrait } from '../traits/traitsOperations'
 import { iDP, ssDP, gDP } from "../DPOperations";
 import { sl } from "../lang/fetchLocalization";
 import { onUseSBHammer } from "../structureBuilder";
-import { prospect } from '../prospect'
+import { prospect, runProspection } from '../prospect'
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
@@ -23,8 +23,14 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Тест
         case "arx:mod_sword":
             if (manageCD(player)) {
-                const b = await prospect(player.dimension, player.location.x, player.location.z)
-                console.warn(b.typeId)
+                player.sendMessage('Prsp started')
+                const data = await runProspection(
+                    player.dimension,
+                    player.location,
+                    (data) => { return ['minecraft:forest', 'minecraft:plains'].includes(data.biome) && !data.hasLiquidAbove }
+                )
+                console.warn(JSON.stringify(data))
+                player.sendMessage('Prsp finished')
             }
             break
 

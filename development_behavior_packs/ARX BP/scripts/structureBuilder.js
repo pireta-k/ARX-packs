@@ -3,6 +3,7 @@ import { checkForItem } from "./checkForItem"
 import { gDP, ssDP } from "./DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { obj2str, str2obj } from "./converters"
+import { delay, validateTickingAreaLoading } from "./prospect"
 
 let ACSSStorage = {}
 
@@ -23,8 +24,6 @@ world.afterEvents.playerSwingStart.subscribe((event) => {
 })
 
 const defaultCoords = { x: 0, y: 0, z: 0 }
-
-const delay = (ticks) => new Promise(resolve => system.runTimeout(resolve, ticks))
 
 class BlocksMegaArray {
     constructor(dimension, pos1, pos2) {
@@ -80,7 +79,7 @@ class BlocksMegaArray {
 
             // Iterate and yield blocks
             for (let x = activeArea.min.x; x <= activeArea.max.x; x++) {
-                for (let y = activeArea.min.y; y <= activeArea.max.y; y++) {
+                for (let y = activeArea.max.y; y >= activeArea.min.y; y--) {
                     for (let z = activeArea.min.z; z <= activeArea.max.z; z++) {
                         yield this.dimension.getBlock({ x: x, y: y, z: z })
                     }
@@ -102,10 +101,7 @@ class BlocksMegaArray {
         // Start ticking
         async startTick() {
             this.delTick() // Remove old tickingArea, if there was a bug and it wasn't unloaded
-            const command = `tickingarea add ${this.absPos.x} ${this.height.min} ${this.absPos.z} ${this.absPos.x + 31} ${this.height.max} ${this.absPos.z + 31} sb true`
-            const result = this.parent.dimension.runCommand(command)
-            // console.warn('Tickingarea: ', result.successCount)
-            await delay(1)
+            await validateTickingAreaLoading(this.parent.dimension, {x: this.absPos.x, z: this.absPos.z}, {x: this.absPos.x + 31, z: this.absPos.z + 31}, 'sb')
         }
 
         // Delete ticking
@@ -165,6 +161,7 @@ export async function onUseSBHammer(p) {
         form.show(p).then(async r => {
             switch (r.selection) {
                 case 0: // Delete blocks
+                    p.sendMessage(`§bDeleting... (${volume} blocks)`)
                     for await (const b of new BlocksMegaArray(d, point1, point2)) {
                         try {
                             b.setType('minecraft:air')
@@ -173,6 +170,7 @@ export async function onUseSBHammer(p) {
 
                         }
                     }
+                    p.sendMessage('§bCompleted')
                     break
 
                 case 1: // Fill blocks
@@ -185,6 +183,7 @@ export async function onUseSBHammer(p) {
 
                             if (r.formValues) {
 
+                                p.sendMessage(`§bFilling... (${volume} blocks)`)
                                 const blockId = r.formValues[0].trim()
 
                                 for await (const b of new BlocksMegaArray(d, point1, point2)) {
@@ -196,11 +195,13 @@ export async function onUseSBHammer(p) {
                                         break
                                     }
                                 }
+                                p.sendMessage('§bCompleted')
                             }
                         })
                     break
 
                 case 2: // Save ACSS
+                    p.sendMessage(`§bSaving... (${volume} blocks)`)
                     const acss = await saveACSS(d, point1, point2)
                     const ACSSSaveForm = new ActionFormData()
                         .title("Save ACSS")
@@ -275,7 +276,9 @@ export async function onUseSBHammer(p) {
                         p.sendMessage('§cCannot get ACSS this way. Aborted.')
                         return null
                     }
-                    await loadACSS(p, acssJSON, d, point1)
+                    p.sendMessage(`§bLoading ACSS...`)
+                    await loadACSS(acssJSON, d, point1)
+                    p.sendMessage('§bACSS loaded')
                     break
             }
         })
@@ -343,7 +346,7 @@ async function saveACSS(d, p1, p2) {
     return resultJSON
 }
 
-async function loadACSS(p, acssJSON, d, p1) {
+async function loadACSS(acssJSON, d, p1) {
 
     // === ACSS validation ===
     // Validate ACSS JSON
@@ -352,50 +355,57 @@ async function loadACSS(p, acssJSON, d, p1) {
         acss = str2obj(acssJSON)
     }
     catch (error) {
-        p.sendMessage(`§cACSS fatal error: ${error}.\nACSS loading aborted`)
+        console.warn(`§cACSS fatal error: ${error}.\nACSS loading aborted`)
         return null
     }
     // ACSS basic check
     if (!acss) {
-        p.sendMessage('§cACSS error: No ACSS')
+        console.warn('§cACSS error: No ACSS')
         return null
     }
     // Validate headers
     const version = acss.head?.v
     if (!version || typeof version !== "number") {
-        p.sendMessage('§cACSS error: No version data in provided ACSS')
+        console.warn('§cACSS error: No version data in provided ACSS')
         return null
     }
     const size = acss.head?.s
     if (!size || typeof size !== 'object' || size.length !== 3 || size.some(n => n <= 0)) {
-        p.sendMessage('§cACSS error: Incorrect 3Darray size in provided ACSS')
+        console.warn('§cACSS error: Incorrect 3Darray size in provided ACSS')
         return null
     }
     const symPerBlock = acss.head?.spb
     if (!symPerBlock || typeof symPerBlock !== 'number' || symPerBlock < 1) {
-        p.sendMessage('§cACSS error: Incorrect SymbolsPerBlock in provided ACSS')
+        console.warn('§cACSS error: Incorrect SymbolsPerBlock in provided ACSS')
         return null
     }
 
     // Validate palette
     const palette = acss.palette
     if (!palette || typeof palette !== 'object') {
-        p.sendMessage('§cACSS error: Incorrect palette in provided ACSS')
+        console.warn('§cACSS error: Incorrect palette in provided ACSS')
         return null
     }
 
     // Validate b3d
     const blocks3D = acss.b3d
     if (!blocks3D || typeof blocks3D !== 'string') {
-        p.sendMessage('§cACSS error: Incorrect blocks3D in provided ACSS')
+        console.warn('§cACSS error: Incorrect blocks3D in provided ACSS')
         return null
     }
 
-    // Get the 2nd point
+    // Get the 2nd point (max at every axis)
     const p2 = {
         x: p1.x + size[0] - 1,
         y: p1.y + size[1] - 1,
         z: p1.z + size[2] - 1
+    }
+
+    // Validate world borders fitting
+    const worldBorders = d.heightRange
+    if (worldBorders.min > p1.y || worldBorders.max < p2.y) {
+        console.warn('§cACSS error: Trying to place a ACSS beyond the world borders')
+        return null
     }
 
     // Unwind b3d RLE
@@ -406,7 +416,7 @@ async function loadACSS(p, acssJSON, d, p1) {
     const expectedVolume = size[0] * size[1] * size[2]
 
     if (defactoVolume !== expectedVolume) {
-        p.sendMessage(`§cACSS error: expected b3d volume (${expectedVolume}) doesn't match with its defacto volume (${defactoVolume})`)
+        console.warn(`§cACSS error: expected b3d volume (${expectedVolume}) doesn't match with its defacto volume (${defactoVolume})`)
         return null
     }
 
@@ -428,8 +438,6 @@ async function loadACSS(p, acssJSON, d, p1) {
         }
         blockIndex++
     }
-
-    p.sendMessage('§bACSS loaded')
 }
 
 // Compress block id. Mode: compress / decompress

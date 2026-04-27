@@ -3,6 +3,7 @@
 // Imports
 import { system, world } from "@minecraft/server"
 import { ssDP } from "../DPOperations"
+import { checkForItem } from "../checkForItem"
 
 const musicOptions = { fade: 2, loop: true }
 
@@ -212,6 +213,12 @@ const musicLocations = {
         priority: 0,
         condition: (player) => player.getDynamicProperty('respawnDelay') > 0,
         music: 'Clean_Soul'
+    },
+    // Special conditions
+    "building": {
+        priority: 1,
+        condition: (player) => checkForItem(player, 'mainhand', 'arx:structurebuilder_hammer'),
+        music: 'Bad_Piggies_Building_Contraptions'
     },
 }
 
