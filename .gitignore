@@ -1,6 +1,7 @@
 *
 !.gitignore
 !README.md
+!LICENSE.md
 
 # Allow dev mods folders
 !development_behavior_packs/

@@ -41,8 +41,8 @@ import { showLanguageForm } from "./lang/form"
 // Type of release. 
 // Available: alpha, beta, special, stable
 export const RELEASE = 'alpha'
-export const VERSION = [0, 1, 16]
-export const REPOSITORY = 'https://github.com/Ellisy1/ARX-packs'
+export const VERSION = [0, 1, 19]
+export const REPOSITORY = 'https://github.com/pireta-k/ARX-packs'
 
 world.afterEvents.playerButtonInput.subscribe((event) => {
     const button = event.button
