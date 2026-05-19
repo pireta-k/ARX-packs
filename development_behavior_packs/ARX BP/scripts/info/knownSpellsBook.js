@@ -1,5 +1,5 @@
 import { ActionFormData } from "@minecraft/server-ui"
-import { spellRegistry } from '../magic/spells/spellRegistry'
+import { spellRegistry } from '../magic/spells/_spellRegistry'
 
 // Выводим экранчик с известными заклинаниями
 export function knownSpellsBook(player) {

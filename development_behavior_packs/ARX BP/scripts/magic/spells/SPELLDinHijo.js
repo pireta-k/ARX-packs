@@ -1,7 +1,7 @@
 import { ssDP } from '../../DPOperations';
 import { findSpell } from '../findSpell';
 import { checkForItem } from '../../checkForItem';
-import { spellRegistry } from './spellRegistry';
+import { spellRegistry } from './_spellRegistry';
 
 export function dinHijo(targetPlayer, channels, spellData) {
 

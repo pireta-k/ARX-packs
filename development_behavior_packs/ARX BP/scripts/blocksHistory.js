@@ -1,4 +1,4 @@
-import { getMoscowTime } from "./date"
+import { getTime } from "./time"
 import { checkForItem } from "./checkForItem"
 import { world } from "@minecraft/server"
 import { ssDP } from "./DPOperations"
@@ -20,7 +20,7 @@ world.afterEvents.playerPlaceBlock.subscribe((placeEvent) => {
 
 // Функция записи истории блока
 function recordBlockHistory(block, player) {
-    const now = getMoscowTime()
+    const now = getTime()
     const y = now.getFullYear()
     const m = (now.getMonth() + 1).toString().padStart(2, '0')
     const d = now.getDate().toString().padStart(2, '0')

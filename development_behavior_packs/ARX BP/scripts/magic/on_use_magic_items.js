@@ -3,7 +3,7 @@ import { world, EntityComponentTypes, EquipmentSlot } from "@minecraft/server";
 
 import { runeCiphers } from './rune_cipher_list'
 
-import { castJSSpell } from './spells/castJSSpell'
+import { castJSSpell } from './castJSSpell'
 import { findSpell } from "./findSpell"
 import { getActiveStaffChannel } from './getActiveStaffChannel'
 
@@ -13,7 +13,7 @@ import { increaseSkillProgress } from "../skillsOperations";
 import { manageCD } from "../manageCD";
 import { queueCommand } from "../commandQueue";
 import { iDP, ssDP } from "../DPOperations";
-import { spellRegistry } from "./spells/spellRegistry";
+import { spellRegistry } from "./spells/_spellRegistry";
 import { getItem } from '../items/getItem'
 import { channelRomanNums } from "./channelRomanNums";
 import { fl, sl } from "../lang/fetchLocalization";

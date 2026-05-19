@@ -1,3 +1,5 @@
+// SPOILERS WARNING!!! If you play Arx, I highly don't recommend you to read this file
+
 // IMPORTS
 
 // Spells

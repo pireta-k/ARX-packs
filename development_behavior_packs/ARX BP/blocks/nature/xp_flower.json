@@ -4,7 +4,7 @@
         "components": {
             "minecraft:collision_box": 0,
             "minecraft:destructible_by_mining": {
-                "seconds_to_destroy": 0.2
+                "seconds_to_destroy": 0
             },
             "minecraft:geometry": "geometry.basic_plant",
             "minecraft:loot": "loot_tables/blocks/ores/xp_ore.json",

@@ -1,5 +1,6 @@
 import { system } from "@minecraft/server"
 import { obj2str } from "./converters"
+import { sleep } from "./time"
 
 const PROSPECTIONSTEP = 16
 let cache = {}
@@ -17,7 +18,7 @@ export async function prospect(d, x, z) {
         const b = d.getTopmostBlock({ x: x, z: z })
         const data = extractUsefulData(b)
         d.runCommand(`tickingarea remove prosp`)
-        await delay(1)
+        await sleep(1)
         // Save in cache
         cache[getCacheKey(d, x, z)] = data
         // Return
@@ -25,10 +26,8 @@ export async function prospect(d, x, z) {
     }
     catch (error) {
         console.error(error)
-    }
-    finally {
         d.runCommand(`tickingarea remove prosp`)
-        await delay(1)
+        await sleep(1)
     }
 }
 
@@ -56,8 +55,6 @@ function extractUsefulData(b) {
     }
 }
 
-export const delay = (ticks) => new Promise(resolve => system.runTimeout(resolve, ticks))
-
 
 
 /** Run prospection
@@ -68,7 +65,7 @@ export const delay = (ticks) => new Promise(resolve => system.runTimeout(resolve
  * @param {number} [maxIterations=0] Iterations limit. 0 = no limit
  * @param {object} [avoid={}] Locations to avoid prospecting in.
  * @param {Array} [altitude=undefined] [min altitude, max altitude]
- * @returns {VectorXZ}
+ * @returns {Vector3}
  */
 export async function runProspection(d, initialPos, target, minDistance = undefined, maxIterations = undefined, avoid = undefined, altitude = undefined, forceStep = false) {
     let iteration = minDistance ? Math.round(minDistance / PROSPECTIONSTEP) : 1
@@ -88,7 +85,7 @@ export async function runProspection(d, initialPos, target, minDistance = undefi
                 initialPos.z + direction.z * posMultiplier
             )
             const found = target(data)
-            if (found) return data // CYCLE EXIT
+            if (found) return data.location // CYCLE EXIT
         }
         iteration++
     }
@@ -100,7 +97,7 @@ export async function validateTickingAreaLoading(d, pos1, pos2, name, timeout = 
     d.runCommand(`tickingarea add ${pos1.x} 0 ${pos1.z} ${pos2.x} 0 ${pos2.z} ${name} true`)
     let iteration = 0
     while (true) {
-        await delay(1)
+        await sleep(1)
         const isLoaded = d.isChunkLoaded({ x: pos1.x, y: 0, z: pos1.z }) && d.isChunkLoaded({ x: pos2.x, y: 0, z: pos2.z })
         if (isLoaded) return true
         iteration++

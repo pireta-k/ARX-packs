@@ -3,7 +3,8 @@ import { checkForItem } from "./checkForItem"
 import { gDP, ssDP } from "./DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { obj2str, str2obj } from "./converters"
-import { delay, validateTickingAreaLoading } from "./prospect"
+import { validateTickingAreaLoading } from "./prospect"
+import { sleep } from "./time"
 
 let ACSSStorage = {}
 
@@ -78,10 +79,11 @@ class BlocksMegaArray {
             await chunk.startTick()
 
             // Iterate and yield blocks
-            for (let x = activeArea.min.x; x <= activeArea.max.x; x++) {
-                for (let y = activeArea.max.y; y >= activeArea.min.y; y--) {
+            for (let y = activeArea.max.y; y >= activeArea.min.y; y--) {
+                for (let x = activeArea.min.x; x <= activeArea.max.x; x++) {
                     for (let z = activeArea.min.z; z <= activeArea.max.z; z++) {
                         yield this.dimension.getBlock({ x: x, y: y, z: z })
+                        // await sleep(1)
                     }
                 }
             }
@@ -101,13 +103,13 @@ class BlocksMegaArray {
         // Start ticking
         async startTick() {
             this.delTick() // Remove old tickingArea, if there was a bug and it wasn't unloaded
-            await validateTickingAreaLoading(this.parent.dimension, {x: this.absPos.x, z: this.absPos.z}, {x: this.absPos.x + 31, z: this.absPos.z + 31}, 'sb')
+            await validateTickingAreaLoading(this.parent.dimension, { x: this.absPos.x, z: this.absPos.z }, { x: this.absPos.x + 31, z: this.absPos.z + 31 }, 'sb')
         }
 
         // Delete ticking
         async delTick() {
             this.parent.dimension.runCommand(`tickingarea remove sb`)
-            await delay(1)
+            await sleep(1)
         }
     }
 }
@@ -154,6 +156,7 @@ export async function onUseSBHammer(p) {
         if (hasAllPoints) {
             form.button('Delete blocks')
             form.button('Fill with block')
+            form.button('Replace blocks')
             form.button('Save ACSS') // ACSS is Arx Compressed Structure String
             form.button('Load ACSS')
         }
@@ -174,7 +177,7 @@ export async function onUseSBHammer(p) {
                     break
 
                 case 1: // Fill blocks
-                    const form3 = new ModalFormData()
+                    const formFill = new ModalFormData()
                         .title("Fill with block")
                         .textField(`Enter a block ID`, "namespace:id")
                         .submitButton('Fill')
@@ -200,7 +203,40 @@ export async function onUseSBHammer(p) {
                         })
                     break
 
-                case 2: // Save ACSS
+                case 2: // Replace blocks
+                    const formReplace = new ModalFormData()
+                        .title("Replace blocks")
+                        .textField(`Block to replace ID`, "namespace:id")
+                        .textField(`New block ID`, "namespace:id")
+                        .submitButton('Replace')
+
+                        .show(p).then(async r => {
+
+                            if (r.formValues) {
+
+                                p.sendMessage(`§bReplacing... (${volume} blocks)`)
+                                const block2ReplaceId = r.formValues[0].trim()
+                                const block2SetId = r.formValues[1].trim()
+                                let replaced = 0
+
+                                for await (const b of new BlocksMegaArray(d, point1, point2)) {
+                                    try {
+                                        if (b.typeId === block2ReplaceId) {
+                                            b.setType(block2SetId)
+                                            replaced++
+                                        }
+                                    }
+                                    catch (error) {
+                                        p.sendMessage(`§cError. Probably "${blockId}" isn't an id of an actual block`)
+                                        break
+                                    }
+                                }
+                                p.sendMessage(`§bCompleted, (replaced ${replaced} blocks)`)
+                            }
+                        })
+                    break
+
+                case 3: // Save ACSS
                     p.sendMessage(`§bSaving... (${volume} blocks)`)
                     const acss = await saveACSS(d, point1, point2)
                     const ACSSSaveForm = new ActionFormData()
@@ -241,7 +277,7 @@ export async function onUseSBHammer(p) {
                     })
                     break
 
-                case 3: // Load ACSS
+                case 4: // Load ACSS
                     let acssJSON = ''
 
                     const ACSSLoadForm = new ActionFormData()

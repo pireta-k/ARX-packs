@@ -89,6 +89,7 @@ const coreFramework = {
     },
     // Grass generator
     grassGenerator: {
+        condition: () => gDP(world, 'generateGrass'),
         tickSpeed: 100,
         operations: () => {
             for (const player of world.getPlayers()) {
@@ -253,6 +254,7 @@ const coreFramework = {
     // Autoclicker tracker
     autoclickerTracker: {
         tickSpeed: 2,
+        condition: () => gDP(world, 'anticheat'),
         operations: () => {
             for (const player of world.getPlayers()) {
                 const clicks = player.getDynamicProperty('anticheat:autoclick_tracker')
@@ -280,49 +282,50 @@ const coreFramework = {
         }
     },
     // World border
-    // worldBorder: {
-    //     tickSpeed: 4,
-    //     operations: () => {
-    //         for (const player of world.getPlayers()) {
-    //             // Контроль расстояния от места спавна
-    //             if (player.getDynamicProperty('hasRegisteredCharacter') && player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator' && player.dimension.id === 'minecraft:overworld') {
-    //                 // Задаем двумерные векторы
-    //                 const worldCenter = [-2066, 1733]
-    //                 const playerLocation = [player.location.x, player.location.z];
+    worldBorder: {
+        tickSpeed: 4,
+        condition: () => gDP(world, 'worldBorder'),
+        operations: () => {
+            for (const player of world.getPlayers()) {
+                // Контроль расстояния от места спавна
+                if (player.getDynamicProperty('hasRegisteredCharacter') && player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator' && player.dimension.id === 'minecraft:overworld') {
+                    // Задаем двумерные векторы
+                    const worldCenter = [-2066, 1733]
+                    const playerLocation = [player.location.x, player.location.z];
 
-    //                 // Рассчитываем дистанцию
-    //                 const distance = Math.sqrt(Math.pow(playerLocation[0] - worldCenter[0], 2) + Math.pow(playerLocation[1] - worldCenter[1], 2));
+                    // Рассчитываем дистанцию
+                    const distance = Math.sqrt(Math.pow(playerLocation[0] - worldCenter[0], 2) + Math.pow(playerLocation[1] - worldCenter[1], 2));
 
-    //                 // Обрабатываем максимальную дистанцию
-    //                 const maxDistance = 2000
-    //                 const warnDistance = maxDistance - 6
+                    // Обрабатываем максимальную дистанцию
+                    const maxDistance = 2000
+                    const warnDistance = maxDistance - 6
 
-    //                 if (distance > maxDistance) {
-    //                     // Вычисляем вектор от центра к игроку
-    //                     const dx = playerLocation[0] - worldCenter[0];
-    //                     const dz = playerLocation[1] - worldCenter[1];
+                    if (distance > maxDistance) {
+                        // Вычисляем вектор от центра к игроку
+                        const dx = playerLocation[0] - worldCenter[0];
+                        const dz = playerLocation[1] - worldCenter[1];
 
-    //                     // Нормализуем вектор (приводим к единичной длине)
-    //                     const normalizedDx = dx / distance;
-    //                     const normalizedDz = dz / distance;
+                        // Нормализуем вектор (приводим к единичной длине)
+                        const normalizedDx = dx / distance;
+                        const normalizedDz = dz / distance;
 
-    //                     // Вычисляем координаты на границе цилиндра
-    //                     const teleportX = worldCenter[0] + normalizedDx * maxDistance;
-    //                     const teleportZ = worldCenter[1] + normalizedDz * maxDistance;
+                        // Вычисляем координаты на границе цилиндра
+                        const teleportX = worldCenter[0] + normalizedDx * maxDistance;
+                        const teleportZ = worldCenter[1] + normalizedDz * maxDistance;
 
-    //                     // Телепортируем игрока на границу цилиндра
-    //                     //  Замена знач1 и знач2 переменными телепорта
-    //                     player.runCommand(`tp @s ${teleportX} ~ ${teleportZ} facing ${worldCenter[0]} ~ ${worldCenter[1]}`);
-    //                     player.runCommand('damage @s 0 magic')
-    //                 }
-    //                 if (distance > warnDistance) {
-    //                     player.runCommand(`tellraw @s { "rawtext": [ { "text": "§cВы дошли до границы мира. Пожалуйста, продолжайте своё путешествие в другом направлении." } ] }`)
-    //                     player.runCommand('effect @s blindness 2 0 true')
-    //                 }
-    //             }
-    //         }
-    //     }
-    // },
+                        // Телепортируем игрока на границу цилиндра
+                        //  Замена знач1 и знач2 переменными телепорта
+                        player.runCommand(`tp @s ${teleportX} ~ ${teleportZ} facing ${worldCenter[0]} ~ ${worldCenter[1]}`);
+                        player.runCommand('damage @s 0 magic')
+                    }
+                    if (distance > warnDistance) {
+                        player.runCommand(`tellraw @s { "rawtext": [ { "text": "§cВы дошли до границы мира. Пожалуйста, продолжайте своё путешествие в другом направлении." } ] }`)
+                        player.runCommand('effect @s blindness 2 0 true')
+                    }
+                }
+            }
+        }
+    },
     // Distance travelled
     distanceTravelled: {
         tickSpeed: 5,
@@ -850,79 +853,6 @@ const coreFramework = {
                 if (player.getTags().includes('very_low_hp')) {
                     player.dimension.spawnParticle('arx:blood_drop_bright', particleLoc, molang)
                 }
-            }
-        }
-    },
-    // Fiolix (drugs)
-    fiolix: {
-        tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
-                // СЪЕДАНИЕ
-                let FiolixNarcoticPower = player.getDynamicProperty('FiolixNarcoticPower')
-                let FiolixNarcoticPowerLastPass = player.getDynamicProperty('FiolixNarcoticPowerLastPass')
-                let statsBonusByFiolix = 0
-
-                // Мы скушали фиоликс. Выдаем бонусы
-                if (FiolixNarcoticPower > FiolixNarcoticPowerLastPass) {
-                    // Определяем, насколько наркотическое то что мы съели только что
-                    const bonusByEatenFiolix = FiolixNarcoticPower - FiolixNarcoticPowerLastPass
-                    // Рассчитываем силу бонусов
-                    let happinessMultiplier = 1
-                    // Если мы не зависимы на момент съедания
-                    if (FiolixNarcoticPowerLastPass == 0) {
-                        happinessMultiplier += 3
-                    }
-                    // Мы слишком нажрались наркотой
-                    if (FiolixNarcoticPower > 2400) {
-                        happinessMultiplier = 0.5
-                        player.runCommand(`tellraw @s { "rawtext": [ { "text": "§cВы перенасыщены фиоликсом. Чтобы получить прежнее удовольствие, надо немного отдохнуть от него." } ] }`)
-
-                        // Доводим значение до нормы, если мы съели ОЧЕНЬ много
-                        if (FiolixNarcoticPower > 3000) { FiolixNarcoticPower = 3000 }
-                    }
-                    else {
-                        statsBonusByFiolix = 30
-                        player.runCommand(`tellraw @s { "rawtext": [ { "text": "§aОчень приятное послевкусие!" } ] }`)
-                    }
-
-                    // Выдаем бонусы
-                    iDP(player, 'stress', bonusByEatenFiolix * happinessMultiplier * -1)
-                }
-
-                // Мы скушали фиоликс, и мы не зависимы на момент съедания
-                if (FiolixNarcoticPowerLastPass == 0 && FiolixNarcoticPower > 0) {
-                    statsBonusByFiolix = 120
-                    if (Math.random() > 0.15) {
-                        FiolixNarcoticPower = 0
-                    }
-                    else {
-                        FiolixNarcoticPower = 2350
-                    }
-                }
-
-                if (FiolixNarcoticPower > 0) FiolixNarcoticPower--
-
-                // Переменная для начисления сюда наркотиков
-                ssDP(player, 'FiolixNarcoticPower', FiolixNarcoticPower)
-                // Внутренняя переменная для отслеживания динамики
-                ssDP(player, 'FiolixNarcoticPowerLastPass', FiolixNarcoticPower)
-                // Бонусы от съедания наркотиков
-                if (statsBonusByFiolix > 0) ssDP(player, 'statsBonusByFiolix', statsBonusByFiolix)
-
-                // ПАССИВНЫЕ БОНУСЫ / ДЕБАФФЫ
-                // 0 - 600 неприятная фаза
-                if (FiolixNarcoticPower == 600) { player.runCommand(`tellraw @s { "rawtext": [ { "text": "§7§oУ вас в подсознании всплывает фиоликс..." } ] }`) }
-
-                if (FiolixNarcoticPower == 400) { player.runCommand(`tellraw @s { "rawtext": [ { "text": "§eХотелось бы фиоликса..." } ] }`) }
-
-                if (FiolixNarcoticPower == 250) { player.runCommand(`tellraw @s { "rawtext": [ { "text": "§cХочу фиоликс!" } ] }`) }
-
-                if (FiolixNarcoticPower == 150) { player.runCommand(`tellraw @s { "rawtext": [ { "text": "§a§lХочу фиоликс!" } ] }`) }
-                if (FiolixNarcoticPower > 0 && FiolixNarcoticPower < 150) { player.runCommand(`title @s title §4Достать фиоликс`) }
-                if (FiolixNarcoticPower > 0 && FiolixNarcoticPower < 150) { player.runCommand(`damage @s 2 suicide`) }
-                if (FiolixNarcoticPower > 0 && FiolixNarcoticPower < 150) { player.runCommand(`effect @s darkness 10 0 true`) }
-                if (FiolixNarcoticPower > 0 && FiolixNarcoticPower < 150) { player.runCommand(`effect @s fatal_poison 10 0 true`) }
             }
         }
     },
@@ -1614,16 +1544,64 @@ const coreFramework = {
     },
 }
 
-// Core Launcher
-for (const coreBlock of Object.values(coreFramework)) {
-    system.runInterval(async () => {
-        const result = coreBlock.operations();
-        // Если operations вернул Promise — ждём его, иначе игнорируем
-        if (result instanceof Promise) {
-            await result.catch(err => console.error(`[CoreError] ${err}`));
-        }
-    }, coreBlock['tickSpeed']);
+
+
+// =====================
+// === Core Launcher === 
+// =====================
+world.afterEvents.worldLoad.subscribe(() => {
+    try {
+        let errors = {}
+        const errorName = `[§dCoreError§r]`
+
+        system.runInterval(async () => { // Every tick
+            // Launch core parts
+            for (const key in coreFramework) {
+                const coreBlock = coreFramework[key] // Get CoreFramework value
+                // Tick check
+                const tick = system.currentTick
+                if (tick % coreBlock['tickSpeed'] === 0) {
+
+                    // Condition check
+                    let canExecute = true
+                    if ('condition' in coreBlock) {
+                        try {
+                            canExecute = coreBlock.condition()
+                        }
+                        catch (e) {
+                            console.error(`${errorName}: Condition check internal error: ${e}`)
+                            canExecute = false
+                        }
+                    }
+
+                    if (canExecute) {
+                        try {
+                            coreBlock.operations()
+                        }
+                        catch (err) {
+                            console.error(`${errorName}, block [${key}]: ${err}`)
+                            // Increase errors conter
+                            if (errors[key]) {
+                                errors[key] += 1
+                            } else {
+                                errors[key] = 1
+                            }
+                        }
+                    }
+                }
+            }
+        }, 1)
+    }
+    catch (error) {
+        console.error(`${errorName}: CRITICAL - Cannot launch core system: ${error}`)
+    }
 }
+)
+// =====================
+// =====================
+// =====================
+
+
 
 // DP, которые мы уменьшаем вплоть до 0 (inclusive)
 // 'dp': 'Сообщение при снижении до 0'

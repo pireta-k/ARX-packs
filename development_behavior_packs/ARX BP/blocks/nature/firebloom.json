@@ -4,7 +4,7 @@
         "components": {
             "minecraft:collision_box": 0,
             "minecraft:destructible_by_mining": {
-                "seconds_to_destroy": 0.2
+                "seconds_to_destroy": 0
             },
             "minecraft:geometry": "geometry.basic_plant",
             "minecraft:light_emission": 10,

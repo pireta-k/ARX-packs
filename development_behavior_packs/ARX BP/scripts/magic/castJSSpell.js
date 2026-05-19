@@ -1,10 +1,10 @@
 // Imports
-import { getNearestPlayer } from '../../getNearestPlayer';
-import { getEntityFamilies } from '../../_main';
+import { getNearestPlayer } from '../getNearestPlayer';
+import { getEntityFamilies } from '../_main';
 import { system, MolangVariableMap } from "@minecraft/server"
-import { spellRegistry } from './spellRegistry';
-import { checkForItem } from '../../checkForItem';
-import { ssDP } from '../../DPOperations';
+import { spellRegistry } from './spells/_spellRegistry';
+import { checkForItem } from '../checkForItem';
+import { ssDP } from '../DPOperations';
 
 // Создает и возвращает объект spellData, хранящий в себе всё, что может пригодиться в обработке заклинания
 function defineSpellData(player, runeSequence, currentTargetRaw) {

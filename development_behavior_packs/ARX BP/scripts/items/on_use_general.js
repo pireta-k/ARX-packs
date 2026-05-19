@@ -13,6 +13,7 @@ import { iDP, ssDP, gDP } from "../DPOperations";
 import { sl } from "../lang/fetchLocalization";
 import { onUseSBHammer } from "../structureBuilder";
 import { prospect, runProspection } from '../prospect'
+import { sleep } from "../time";
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
@@ -23,14 +24,9 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Тест
         case "arx:mod_sword":
             if (manageCD(player)) {
-                player.sendMessage('Prsp started')
-                const data = await runProspection(
-                    player.dimension,
-                    player.location,
-                    (data) => { return ['minecraft:forest', 'minecraft:plains'].includes(data.biome) && !data.hasLiquidAbove }
-                )
-                console.warn(JSON.stringify(data))
-                player.sendMessage('Prsp finished')
+                player.sendMessage('abc')
+                await system.waitTicks(20)
+                player.sendMessage('def')
             }
             break
 
@@ -49,7 +45,6 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         case "arx:cigarette_fiolix":
             if (manageCD(player)) {
                 player.runCommand("function alchemy/cigarettes/cigarette_fiolix")
-                iDP(player, 'FiolixNarcoticPower', 600)
             }
             break
 

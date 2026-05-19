@@ -56,9 +56,6 @@ export function registerPlayerVars(player) {
     if (gDP(player, "MPPermanentBonus") === undefined) {
         ssDP(player, "MPPermanentBonus", 0)
     }
-    if (gDP(player, "FiolixNarcoticPower") === undefined) {
-        ssDP(player, "FiolixNarcoticPower", 0)
-    }
     if (gDP(player, "magicTarget") === undefined) {
         ssDP(player, "magicTarget", 1)
     }

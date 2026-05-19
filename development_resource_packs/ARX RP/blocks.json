@@ -423,6 +423,9 @@
 	"arx:tea_corp": {
 		"sound": "grass"
 	},
+	"arx:cotton_plant": {
+		"sound": "grass"
+	},
 
 
 	"arx:grim_stonebricks": {
@@ -586,5 +589,9 @@
 	"arx:caryite_bricks": {
 		"textures": "caryite_bricks",
 		"sound": "netherite"
+	},
+
+	"arx:guide_wall_block": {
+		"textures": "guide_wall_block"
 	}
 }

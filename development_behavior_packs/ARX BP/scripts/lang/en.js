@@ -6,6 +6,7 @@ export const enLocalization = {
 
     'lobby.registration.cannot_registrate.title': "§cCannot registrate",
     'lobby.registration.cannot_registrate.already_has_a_character': "You already have your character, $0$.",
+    'lobby.registration.cannot_registrate.arx_is_setting_up': "Arx is still setting up. Please wait for it to finish.",
 
     'lobby.registration.lang.title': "Language",
     'lobby.registration.lang.body': "Pick your language",
@@ -71,5 +72,30 @@ export const enLocalization = {
     'info.devs.lead': 'Arx Lead Developer',
     'info.devs.music': 'In-game music',
     'info.devs.thanks': 'Special thanks',
+
+    'info.title': 'Arx menu',
+    'info.option.character': 'Character',
+    'info.option.skills': 'Skills',
+    'info.option.spells': 'Known spells',
+    'info.option.stats': 'Stats',
+    'info.option.traits': 'Traits',
+    'info.option.tastes': 'Tastes',
+    'info.option.achievements': 'Achievements',
+    'info.option.settings': 'Arx settings',
+    'info.option.globalSettings': 'Global Arx settings\n§o§dVisible only to admins',
+    'info.option.statistics': 'Statistics',
+    'info.option.authors': 'Authors',
+    'info.option.quests': 'Quests',
+    'info.option.devOptions': 'Developer options\n§o§dVisible only to admins',
+
+    'info.stability.result': 'Server performance',
+    'info.stability.no_result': 'Server performance is still calculating',
+
+    'info.global_settings.title': 'Global Arx settings',
+    'info.global_settings.generate_grass': 'Global Arx settings',
+    'info.global_settings.anticheat': 'Global Arx settings',
+    'info.global_settings.world_border': 'Global Arx settings',
+    'info.global_settings.submit': 'Global Arx settings',
+    'info.global_settings.title': 'Global Arx settings',
 
 }

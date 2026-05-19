@@ -37,9 +37,13 @@ export function ssDP(object, DPName, value) {
     }
 }
 
-// Increase Dyncamic Property
-// If you will try to increase non-existent DP, it will be set to the value that you are trying to add to this DP.
-// Returns the new value after increasing
+/** Increase Dyncamic Property
+ * If you will try to increase non-existent DP, it will be set to the value that you are trying to add to this DP.
+ * @param {Object} object 
+ * @param {String} DPName 
+ * @param {String | Number} valueToIncrease 
+ * @returns Result value of DP
+ */
 export function iDP(object, DPName, valueToIncrease = 1) {
     if (!object || !DPName) {
         console.warn(`Called iDP() without necessary vars`)

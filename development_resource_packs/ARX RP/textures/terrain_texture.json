@@ -880,6 +880,11 @@
 		},
 
 
+		"guide_wall_block": {
+			"textures": "textures/blocks/guide/guide_wall_block"
+		},
+
+
 		"mechanic_core": {
 			"textures": "textures/blocks/mechanic_core"
 		}

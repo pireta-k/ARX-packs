@@ -265,7 +265,9 @@ system.runInterval(() => {
 
 // Is the player in specified biome?
 function isInBiome(player, biome) {
-    return player.dimension.getBiome(player.location).id === biome
+    const d = player.dimension
+    if (d.isChunkLoaded(player.location)) return d.getBiome(player.location).id === biome
+    else return false
 }
 
 

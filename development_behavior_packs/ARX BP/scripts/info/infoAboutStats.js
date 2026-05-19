@@ -1,7 +1,7 @@
 import { ActionFormData } from "@minecraft/server-ui"
 import { getScore } from "../scoresOperations"
 import { calculateXPMultiplier } from "../skillsOperations"
-import { defineCastDistance } from "../magic/spells/castJSSpell"
+import { defineCastDistance } from "../magic/castJSSpell"
 import { gDP } from "../DPOperations"
 
 // UI

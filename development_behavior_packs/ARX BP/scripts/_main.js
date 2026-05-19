@@ -37,6 +37,8 @@ import { md5, obj2str } from "./converters"
 import { isAdmin, getAdmins, getHoster } from './admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { showLanguageForm } from "./lang/form"
+import { runProspection } from "./prospect"
+import { sleep } from "./time"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -122,7 +124,7 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
         let arxEverLoaded = world.getDynamicProperty('arxEverLoaded')
         // It's the first time
         if (!arxEverLoaded) {
-            console.warn('Start')
+            console.log('Initializing Arx...')
             player.runCommand("function world_reg/_world_reg") // Register scores 
             setScore(player, 'verify', 2) // Register the player as a hoster
             ssDP(player, 'isHoster', true)
@@ -141,20 +143,21 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
             world.gameRules.recipesUnlock = false
 
             // Arx default settings
-            ssDP(world, 'localChatEnabled', true)
+            ssDP(world, 'generateGrass', true)
+            ssDP(world, 'anticheat', true)
+            ssDP(world, 'worldBorder', false)
 
             const d = world.getDimension('minecraft:overworld')
 
             // Create tickarea
             d.runCommand('tickingarea add -9980 0 -9980 -10020 0 -10020 lobbyReg true')
-            const delay = (ticks) => new Promise(resolve => system.runTimeout(resolve, ticks));
-            await delay(1)
+            await sleep(1)
 
             // Wait till the hoster is loaded
             await waitUntilHosterIsLoaded(player)
             console.warn('Hoster is loaded')
             player.runCommand('camera @s fade time 0 2 0 color 10 10 10')
-            ssDP(world, 'worldSpawnPoint', player.location) // The location where a player spawn after registration
+            const initialSpawnPoint = player.location
 
             // Creates lobby and verifies it
             await createLobby(d, player)
@@ -163,6 +166,15 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
             player.runCommand('camera @s fade time 0 2 0 color 10 10 10')
             player.runCommand('title @s title §gArx Ultima')
 
+            // Prospect spawnpoint
+            const spawnLocation = await runProspection(
+                world.getDimension('minecraft:overworld'),
+                initialSpawnPoint,
+                (data) => { return ['minecraft:forest', 'minecraft:plains', 'minecraft:birch_forest'].includes(data.biome) && !data.hasLiquidAbove }
+            )
+            ssDP(world, 'worldSpawnPoint', { x: spawnLocation.x, y: spawnLocation.y + 1, z: spawnLocation.z })
+
+            // Finalize
             ssDP(world, 'arxEverLoaded', true)
 
             // Functions 
@@ -769,7 +781,6 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
             player.runCommand('inputpermission set @s movement enabled')
             player.runCommand('inputpermission set @s camera enabled')
 
-            ssDP(player, 'FiolixNarcoticPower', 0)
             ssDP(player, 'freezing', 0)
             ssDP(player, 'respawnDelay', 0)
 

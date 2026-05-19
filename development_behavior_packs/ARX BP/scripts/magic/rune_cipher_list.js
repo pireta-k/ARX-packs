@@ -1,11 +1,13 @@
+// SPOILERS WARNING!!! If you play Arx, I highly don't recommend you to read this file
+
 // Это список рун и их шифровок, с помощью которых определяется заклинание
 export const runeCiphers = {
 
     // Main runes 
-    "maledictio": "AA", // Проклятие
-    "invocatio": "BA", // Призыв
-    "dispersio": "AQ", // Рассевание
-    "scire": "AH", // Запрос
+    "maledictio": "AA", // Curse
+    "invocatio": "BA", // Summon
+    "dispersio": "AQ", // Dispersion
+    "scire": "AH", // Query
     "arcus": "AB", // Лук / стрела
     "illusio": "AE", // Иллюзия / Ментальное искажение
     "venenatio": "AF", // Отравление

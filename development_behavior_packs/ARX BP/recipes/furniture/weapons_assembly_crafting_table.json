@@ -8,16 +8,11 @@
     
     "tags": [ "crafting_table" ],
     "pattern": [
-      " F ",
-      "FRF",
       "NFN"
     ],
     "key": {
       "F": {
         "item": "minecraft:iron_ingot"
-      },
-      "R": {
-        "item": "arx:cast_iron_ingot"
       },
       "N": {
         "item": "minecraft:planks"

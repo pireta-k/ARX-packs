@@ -57,7 +57,10 @@
         "arx:onRandomTick",
         "arx:blockInteration"
       ],
-      "minecraft:loot": "loot_tables/blocks/nature/grape_immature.json"
+      "minecraft:loot": "loot_tables/blocks/nature/grape_immature.json",
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0
+      }
     },
     "permutations": [
       {

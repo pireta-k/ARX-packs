@@ -1,14 +1,14 @@
 import { system, world } from "@minecraft/server"
 
 // Этот код отвечает за проведение тестов стабильности Аркса
-import { getMoscowTime } from './date'
+import { getTime } from './time'
 
 
 // Интервал между тестами в секундах
 const testIntervalSec = 5
 
-// Время МСК при последнем тесте стабильности. При инициализации системы устанавливается время при инициал. системы
-let moscowTimeLastTest = getMoscowTime()
+// Время при последнем тесте стабильности. При инициализации системы устанавливается время при инициал. системы
+let timeLastTest = getTime()
 
 let stabilityTestResult = undefined
 
@@ -27,8 +27,8 @@ export function getStabilityTestResult() {
 
 // Выполняем тест стабильности
 function performStabilityTest() {
-    const now = getMoscowTime() // Получаем московское время
-    const delta = now.getTime() - moscowTimeLastTest.getTime() // Получаем разницу во времени между тестом стабильности, который сейчас в процессе завершения, и предыдущим в миллисекундах
+    const now = getTime() // Получаем московское время
+    const delta = now.getTime() - timeLastTest.getTime() // Получаем разницу во времени между тестом стабильности, который сейчас в процессе завершения, и предыдущим в миллисекундах
 
     // Если мы получили неожиданное delta, скипаем тест стабильности
     if (delta <= 0) {
@@ -38,8 +38,8 @@ function performStabilityTest() {
     // Получаем стабильность в виде float, где идеальная стабильность 1.0
     stabilityTestResult = testIntervalSec * 1000 / delta // Значения в миллисек.
 
-    // Выставляем moscowTimeLastTest
-    moscowTimeLastTest = now
+    // Выставляем timeLastTest
+    timeLastTest = now
 }
 
 // Интервальный запуск

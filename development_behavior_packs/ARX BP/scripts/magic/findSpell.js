@@ -1,6 +1,13 @@
-import { spellRegistry } from './spells/spellRegistry';
+import { spellRegistry } from './spells/_spellRegistry';
 
-// Эта функция находит заклинание. На вход получает игрока и канал, и на выходе выдает заклинание в нужном виде, если оно там есть, или undefined, если нет.
+/** Функция получает игрока и канал, и возвращает записанное в него заклинание
+ * returnType может быть 'sequence' или 'cipher'
+ * @param {Player} player 
+ * @param {Number} activeChannel 
+ * @param {String} returnType
+ * @returns 
+ */
+
 export function findSpell(player, activeChannel, returnType = 'cipher') {
 
     // Проверка корректности аргумента returnType
@@ -31,8 +38,8 @@ export function findSpell(player, activeChannel, returnType = 'cipher') {
     // Find longest ready spell
     const ready_spell = found_spells.reduce((longest, current) =>
         spellRegistry[current].cipher.length > spellRegistry[longest].cipher.length
-        ? current
-        : longest
+            ? current
+            : longest
     )
 
     // console.warn(`found: ${found_spells}, result: ${ready_spell}`)

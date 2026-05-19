@@ -10,8 +10,15 @@ const thirstRegStep = 10
 
 // Register character
 export async function registerCharacter(player) {
+    // World is not loaded
+    if (!gDP(world, 'arxEverLoaded')) {
+        const formNo = new ActionFormData()
+            .title(fl(player, 'lobby.registration.cannot_registrate.title'))
+            .body(fl(player, 'lobby.registration.cannot_registrate.arx_is_setting_up'))
+            .show(player)
+    }
     // Player already has a character
-    if (player.getDynamicProperty('hasRegisteredCharacter') === true) {
+    else if (player.getDynamicProperty('hasRegisteredCharacter') === true) {
         const formNo = new ActionFormData()
             .title(fl(player, 'lobby.registration.cannot_registrate.title'))
             .body(fl(player, 'lobby.registration.cannot_registrate.already_has_a_character', [player.getDynamicProperty('name')]))
@@ -270,7 +277,7 @@ export async function registerCharacter(player) {
 
                 const form8 = new ActionFormData()
                     .title("Позиция глаз")
-                    .body('§aВыберите позицию глаз§f вашего персонажа. Это нужно для более точного отображения некоторых аксессуаров.\n\n§7Если у вас возникнут сложности, обратитесь к модератору.')
+                    .body('§aВыберите позицию глаз§f вашего персонажа. Это нужно для более точного отображения некоторых аксессуаров.')
                     .button("Отступ от низа головы в 4 пикселя", 'textures/ui/registration/eyes_position_man_high')
                     .button("Отступ от низа головы в 3 пикселя", 'textures/ui/registration/eyes_position_man_default')
                     .button("Отступ от низа головы в 2 пикселя", 'textures/ui/registration/eyes_position_woman_high')
