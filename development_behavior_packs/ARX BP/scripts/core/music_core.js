@@ -3,7 +3,7 @@
 // Imports
 import { system, world } from "@minecraft/server"
 import { ssDP } from "../DPOperations"
-import { checkForItem } from "../checkForItem"
+import { checkForItem } from "../items/checkForItem"
 
 const musicOptions = { fade: 2, loop: true }
 

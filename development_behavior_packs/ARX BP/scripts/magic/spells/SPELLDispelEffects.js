@@ -1,5 +1,6 @@
 import { ssDP } from "../../DPOperations"
 import { getScore, setScore } from '../../scoresOperations'
+import { sl } from "../../lang/fetchLocalization"
 
 // Рассеивание заклинаний
 export function dispelEffects(entity, targetData) {
@@ -12,6 +13,6 @@ export function dispelEffects(entity, targetData) {
         entity.dimension.spawnParticle('arx:dispell_effects', entity.getHeadLocation())
         entity.runCommand('effect @s clear')
     } else if (targetData.initiator?.name === entity?.name) {
-        targetData.initiator.sendMessage('§6На мне нет эффектов, которые можно рассеять')
+        sl(targetData.initiator, 'magic.dispel_effects.no_effects_on_self')
     }
 }

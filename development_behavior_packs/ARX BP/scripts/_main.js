@@ -27,7 +27,7 @@ import './structureBuilder'
 import './blocksHistory'
 
 import { registerPlayerVars } from "./registerPlayerVars"
-import { checkForItem } from "./checkForItem"
+import { checkForItem } from "./items/checkForItem"
 import { gDP, iDP, ssDP } from "./DPOperations"
 import { checkForTrait } from "./traits/traitsOperations"
 import { getPlayersInRadius } from "./getPlayersInRadius"
@@ -79,25 +79,32 @@ world.afterEvents.playerButtonInput.subscribe((event) => {
     }
 })
 
-// Изменились предметы в инвентаре
+// Item change
 world.afterEvents.playerInventoryItemChange.subscribe((event) => {
-    const player = event.player
+    const p = event.player
     const item = event.itemStack
     if (item) {
-
         // Анализ поднимаемного игроком веса
-        weighAnalysis(player)
+        weighAnalysis(p)
 
-        // Swords registry
+        // Swords abilities regsitration
         if (item.getTags().includes('is_weapon')) {
             if (!gDP(item, 'everHolded')) {
                 item.setLore([
-                    'Made by '
+                    'Made by ' + gDP(p, 'name'),
                 ]);
                 ssDP(item, 'everHolded', true)
                 ssDP(item, 'xp', 0)
                 ssDP(item, 'level', 0)
                 ssDP(item, 'abilities', [])
+
+                console.warn('Item registered')
+
+                // Set an item back to the slot
+                const inv = p.getComponent('minecraft:inventory')?.container;
+                if (inv && event.slot !== undefined) {
+                    inv.setItem(event.slot, item);
+                }
             }
         }
     }
@@ -145,7 +152,9 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
             // Arx default settings
             ssDP(world, 'generateGrass', true)
             ssDP(world, 'anticheat', true)
-            ssDP(world, 'worldBorder', false)
+            ssDP(world, 'allowArxCameras', true)
+            ssDP(world, 'enableWorldBorder', false)
+            ssDP(world, 'worldBorderRange', 5000)
 
             const d = world.getDimension('minecraft:overworld')
 
@@ -713,8 +722,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         origin => {
             const player = origin.initiator ?? origin.sourceEntity
             const item = getItem(player, 'mainhand')
-            item.setLore('Abc')
-            player.sendMessage('abc')
+            console.warn(gDP(item, 'level'))
         }
     )
 })

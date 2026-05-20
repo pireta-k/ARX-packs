@@ -3,23 +3,23 @@ import { getNearestPlayer } from '../getNearestPlayer';
 import { getEntityFamilies } from '../_main';
 import { system, MolangVariableMap } from "@minecraft/server"
 import { spellRegistry } from './spells/_spellRegistry';
-import { checkForItem } from '../checkForItem';
+import { checkForItem } from '../items/checkForItem';
 import { ssDP } from '../DPOperations';
+import { rayCast } from './rayCast';
 
 // Создает и возвращает объект spellData, хранящий в себе всё, что может пригодиться в обработке заклинания
-function defineSpellData(player, runeSequence, currentTargetRaw) {
+export function prepareSpellData(player, runeSequence) {
     let spellData = {}
-
-    // 1 - на себя, 2 - по направлению взгляда
-    if (![1, 2].includes(currentTargetRaw)) {
-        console.log(`Получена неожиданная цель ${currentTargetRaw} в обработчике заклинаний для ${player.name}`)
-    }
 
     // Определяем дальность действия заклинания
     let spellDistance = defineCastDistance(player)
 
     // Определяем, по площади ли заклинание? Если оно содержит руну area, то по площади
     const isAreaSpell = runeSequence.includes("area")
+    const rayCastResult = isAreaSpell ? undefined : rayCast(player, spellDistance)
+    const rayTarget = rayCastResult?.target
+    const castingOnSelf = rayTarget?.typeId === 'minecraft:player' && rayTarget?.name === player.name
+    const targetRaw = isAreaSpell ? 2 : (castingOnSelf ? 1 : 2)
 
     // Определяем инициатора
     spellData['initiator'] = player
@@ -28,57 +28,28 @@ function defineSpellData(player, runeSequence, currentTargetRaw) {
     spellData['nearestPlayer'] = getNearestPlayer(player, spellDistance)
 
     // Определяем, используем ли мы закл на себя? (для быстрых запросов)
-    spellData['castingOnSelf'] = currentTargetRaw == 1
+    spellData['castingOnSelf'] = castingOnSelf
 
     // Определяем цель
-    spellData['targetRaw'] = currentTargetRaw
+    spellData['targetRaw'] = targetRaw
 
     // По площади ли заклинание?
     spellData['isAreaSpell'] = isAreaSpell
+    spellData['rayCast'] = rayCastResult
+    spellData['areaRayPaths'] = []
 
     // Определяем объекты целей
     let targets = []
     // Default spell
     if (!isAreaSpell) {
-        // Cast on self
-        if (currentTargetRaw === 1) {
-            targets = [player]
-        }
-        // Cast forward
-        else if (currentTargetRaw === 2) {
-            const rayHits = player.getEntitiesFromViewDirection({ maxDistance: spellDistance, includeLiquidBlocks: false, includePassableBlocks: false })
-                .filter(hit => hit.entity.name !== player.name) // Remove the caster, if he got to the raycast somehow
-                .filter(hit => !getEntityFamilies(hit.entity).includes('untargetable'))
-
-            // If we got no entites, try to find them via blockRayCast
-            if (rayHits.length === 0) {
-
-            }
-
-            if (rayHits.length > 0) {
-                // Находим hit с минимальной дистанцией
-                const nearestHit = rayHits.reduce((closest, current) =>
-                    current.distance < closest.distance ? current : closest
-                )
-                targets = [nearestHit.entity];
-            }
-        }
+        if (rayTarget) targets = [rayTarget]
     }
     // Area spell
     else {
-        // Get ALL entities is spell range
-        if (currentTargetRaw === 1) {
-            targets = player.dimension.getEntities({ location: player.location, maxDistance: spellDistance })
-                .filter(entity => !getEntityFamilies(entity).includes('furniture'))
-                .filter(entity => !getEntityFamilies(entity).includes('untargetable'))
-        }
-        // Get all entities, excluding the caster
-        else {
-            targets = player.dimension.getEntities({ location: player.location, maxDistance: spellDistance })
-                .filter(entity => !getEntityFamilies(entity).includes('furniture'))
-                .filter(entity => !getEntityFamilies(entity).includes('untargetable'))
-                .filter(hit => hit.entity.name !== player.name)
-        }
+        const areaTargetData = getAreaTargets(player, spellDistance)
+        targets = areaTargetData.targets
+        spellData['areaRayPaths'] = areaTargetData.paths
+        spellData['castingOnSelf'] = targets.some(entity => entity.typeId === 'minecraft:player' && entity.name === player.name)
     }
     // Записываем в массив
     spellData['targets'] = targets
@@ -119,13 +90,17 @@ export function defineCastDistance(p) {
  * @param {Player} player
  * @param {string} runeSequence
  */
-export function castJSSpell(player, runeSequence, target) {
+export function castJSSpell(player, runeSequence, spellData = undefined) {
     // Получаем нужное нам заклинание из реестра
     const spell = spellRegistry[runeSequence];
     if (!spell) return 'noSpell'
 
     // Получем spellData
-    const spellData = defineSpellData(player, runeSequence, target)
+    spellData = spellData ?? prepareSpellData(player, runeSequence)
+
+    spawnRayTrail(spellData, spell.color)
+
+    if (spellData.targets.length === 0) return 'noValidEntity'
 
     // Проверка: поддерживает ли заклинание выбранную цель?
     if (spell.validTargets !== undefined && !spell.validTargets.includes(spellData.targetRaw)) {
@@ -133,65 +108,89 @@ export function castJSSpell(player, runeSequence, target) {
     }
 
     // Вызов обработчика конкретного заклинания с нужными данными для каждой сущности
-    if (spellData.targets.length > 0) {
-        let successfulCastsCounter = 0
-        let wasWrongEntityType = false
+    let successfulCastsCounter = 0
+    let wasWrongEntityType = false
 
-        for (const entity of spellData.targets) {
-            // Проверка onlyOnPlayers: true
-            if (spell.onlyOnPlayers === true && entity.typeId !== 'minecraft:player') {
-                wasWrongEntityType = true
-                continue
-            }
-            // Spell trail
-            spawnParticleTrail(spellData.initiator, entity, spell.color)
-
-            // Активируем заклинание
-            spell.handler(entity, spellData)
-            successfulCastsCounter++
+    for (const entity of spellData.targets) {
+        // Проверка onlyOnPlayers: true
+        if (spell.onlyOnPlayers === true && entity.typeId !== 'minecraft:player') {
+            wasWrongEntityType = true
+            continue
         }
-        if (successfulCastsCounter === 0 && wasWrongEntityType) return 'wrongEntityType'
-        return 'ok'
+
+        // Активируем заклинание
+        spell.handler(entity, spellData)
+        successfulCastsCounter++
     }
-    else {
-        return ('noValidEntity')
-    }
+    if (successfulCastsCounter === 0 && wasWrongEntityType) return 'wrongEntityType'
+    return 'ok'
 }
 
 // Create spell trace
-function spawnParticleTrail(initiator, entity, colorFromSpell, delayTicks = 0.25) {
-    let p0, p1;
-
-    try {
-        p0 = initiator.getHeadLocation();
-        p1 = entity.getHeadLocation();
-    } catch (e) {
-        return;
+function spawnRayTrail(spellData, colorFromSpell) {
+    if (spellData.isAreaSpell) {
+        for (const rayPath of spellData.areaRayPaths ?? []) {
+            spawnParticleTrail(spellData.initiator, colorFromSpell, 0.25, rayPath)
+        }
+        return
     }
 
-    // Setting up a particle color
-    const molang = new MolangVariableMap()
-    const color = hexToParticleRgb(colorFromSpell) ?? { red: 1, green: 1, blue: 1 }
-    molang.setColorRGB('variable.color', color)
+    const rayPath = spellData.rayCast?.path
+    if (rayPath?.length) {
+        spawnParticleTrail(spellData.initiator, colorFromSpell, 0.25, rayPath)
+    }
+}
 
-    // Finding the points where we have to draw the particles
+function spawnParticleTrail(initiator, colorFromSpell, delayTicks = 0.25, rayPath = undefined) {
+    // Setting up a particle color
+    const color = hexToParticleRgb(colorFromSpell) ?? { red: 1, green: 1, blue: 1 }
+    const universalMolang = new MolangVariableMap()
+    const smallMolang = new MolangVariableMap()
+    universalMolang.setColorRGB('variable.color', color)
+    smallMolang.setColorRGB('variable.color', softenColor(color, 0.45))
+
+    if (rayPath?.length) {
+        let delayOffset = 0
+        for (const segment of rayPath) {
+            delayOffset += spawnParticleTrailSegment(initiator, segment.from, segment.to, universalMolang, smallMolang, delayTicks, delayOffset)
+        }
+    }
+}
+
+function spawnParticleTrailSegment(initiator, p0, p1, universalMolang, smallMolang, delayTicks, delayOffset = 0) {
     const dx = p1.x - p0.x;
     const dy = p1.y - p0.y;
     const dz = p1.z - p0.z;
 
     const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    const steps = Math.max(2, Math.round(distance * 1)); // минимум 2 точки
+    const universalSteps = Math.max(2, Math.round(distance * 1))
+    const smallSteps = Math.max(2, Math.round(distance * 2))
 
-    for (let i = 1; i <= steps; i++) {
-        const t = i / steps;
+    // Big particles
+    for (let i = 1; i <= universalSteps; i++) {
+        const t = i / universalSteps;
         const x = p0.x + dx * t;
         const y = p0.y + dy * t;
         const z = p0.z + dz * t;
 
         system.runTimeout(() => {
-            initiator.dimension.spawnParticle('arx:magic_trace_universal', { x, y, z }, molang);
-        }, (i - 1) * delayTicks);
+            initiator.dimension.spawnParticle('arx:magic_trace_universal', { x, y, z }, universalMolang);
+        }, delayOffset + (i - 1) * delayTicks);
     }
+
+    // Small particles
+    for (let i = 1; i <= smallSteps; i++) {
+        const t = i / smallSteps;
+        const x = p0.x + dx * t;
+        const y = p0.y + dy * t;
+        const z = p0.z + dz * t;
+
+        system.runTimeout(() => {
+            initiator.dimension.spawnParticle('arx:magic_trace_small', { x, y, z }, smallMolang);
+        }, delayOffset + (i - 1) * delayTicks / 2);
+    }
+
+    return universalSteps * delayTicks
 }
 
 function hexToParticleRgb(hex) {
@@ -200,5 +199,104 @@ function hexToParticleRgb(hex) {
         const g = parseInt(hex.slice(3, 5), 16) / 255;
         const b = parseInt(hex.slice(5, 7), 16) / 255;
         return { red: r, green: g, blue: b };
+    }
+}
+
+function softenColor(color, strength = 0.5) {
+    return {
+        red: color.red * strength + (1 - strength),
+        green: color.green * strength + (1 - strength),
+        blue: color.blue * strength + (1 - strength)
+    }
+}
+
+function getAreaTargets(player, spellDistance) {
+    const targets = []
+    const paths = []
+    const from = player.getHeadLocation()
+    const candidates = player.dimension.getEntities({ location: player.location, maxDistance: spellDistance })
+        .filter(entity => !getEntityFamilies(entity).includes('furniture'))
+        .filter(entity => !getEntityFamilies(entity).includes('untargetable'))
+
+    for (const entity of candidates) {
+        const visiblePoint = getVisibleEntityPoint(player, entity, from, spellDistance)
+        if (!visiblePoint) continue
+
+        targets.push(entity)
+        if (!isSamePlayer(entity, player)) {
+            paths.push([{ from, to: visiblePoint, type: 'entity' }])
+        }
+    }
+
+    return { targets, paths }
+}
+
+function getVisibleEntityPoint(player, entity, from, spellDistance) {
+    if (isSamePlayer(entity, player)) return from
+
+    for (const point of getEntityTargetPoints(entity)) {
+        const directionRaw = subtract(point, from)
+        const distance = length(directionRaw)
+        if (distance > spellDistance || distance === 0) continue
+
+        const direction = normalize(directionRaw)
+        let blockHit
+        try {
+            blockHit = player.dimension.getBlockFromRay(from, direction, {
+                maxDistance: Math.max(0, distance - 0.2),
+                includeLiquidBlocks: false,
+                includePassableBlocks: false
+            })
+        } catch {
+            blockHit = undefined
+        }
+
+        if (!blockHit?.block) return point
+    }
+
+    return undefined
+}
+
+function getEntityTargetPoints(entity) {
+    const points = []
+    try {
+        points.push(entity.getHeadLocation())
+    } catch { }
+
+    if (entity.location) {
+        points.push({
+            x: entity.location.x,
+            y: entity.location.y + 1,
+            z: entity.location.z
+        })
+        points.push(entity.location)
+    }
+
+    return points
+}
+
+function isSamePlayer(entity, player) {
+    return entity?.typeId === 'minecraft:player' && entity?.name === player?.name
+}
+
+function normalize(vector) {
+    const vectorLength = length(vector)
+    if (vectorLength === 0) return { x: 0, y: 0, z: 0 }
+    return {
+        x: vector.x / vectorLength,
+        y: vector.y / vectorLength,
+        z: vector.z / vectorLength
+    }
+}
+
+function length(vector) {
+    return Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z)
+}
+
+function subtract(a, b) {
+    return {
+        x: a.x - b.x,
+        y: a.y - b.y,
+        z: a.z - b.z
     }
 }

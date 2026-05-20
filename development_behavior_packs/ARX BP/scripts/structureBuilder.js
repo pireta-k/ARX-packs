@@ -1,5 +1,5 @@
 import { world, system } from "@minecraft/server"
-import { checkForItem } from "./checkForItem"
+import { checkForItem } from "./items/checkForItem"
 import { gDP, ssDP } from "./DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { obj2str, str2obj } from "./converters"

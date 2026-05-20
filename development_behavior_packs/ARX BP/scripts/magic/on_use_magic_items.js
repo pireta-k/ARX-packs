@@ -3,7 +3,7 @@ import { world, EntityComponentTypes, EquipmentSlot } from "@minecraft/server";
 
 import { runeCiphers } from './rune_cipher_list'
 
-import { castJSSpell } from './castJSSpell'
+import { castJSSpell, prepareSpellData } from './castJSSpell'
 import { findSpell } from "./findSpell"
 import { getActiveStaffChannel } from './getActiveStaffChannel'
 
@@ -12,12 +12,12 @@ import { increaseSkillProgress } from "../skillsOperations";
 
 import { manageCD } from "../manageCD";
 import { queueCommand } from "../commandQueue";
-import { iDP, ssDP } from "../DPOperations";
+import { gDP, iDP, ssDP } from "../DPOperations";
 import { spellRegistry } from "./spells/_spellRegistry";
 import { getItem } from '../items/getItem'
 import { channelRomanNums } from "./channelRomanNums";
-import { fl, sl } from "../lang/fetchLocalization";
-import { checkForItem } from "../checkForItem";
+import { sl } from "../lang/fetchLocalization";
+import { checkForItem } from "../items/checkForItem";
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe((event) => { // Обнаружаем юзание предмета на ПКМ
@@ -55,24 +55,8 @@ world.afterEvents.itemUse.subscribe((event) => { // Обнаружаем юза�
     // Палочка
     else if (item?.getTags().includes("is_wand")) {
         if (manageCD(player)) {
-            // Определяем каналы
-            let channels
-            for (const tag of item?.getTags()) {
-                if (tag.includes('wand_channels_')) {
-                    channels = parseInt(tag.slice(14))
-                }
-            }
-            const channel = getActiveStaffChannel(player, channels, false)
-            const targetDP = `channel_${channel}_target`
-
-            // Логика
-            if (player.getDynamicProperty(targetDP) == 1) ssDP(player, targetDP, 2)
-            else ssDP(player, targetDP, 1)
-
-            // Отчёт
-            const magicTarget = player.getDynamicProperty(targetDP)
-            const targetRu = magicTarget === 1 ? '§aна себя' : '§6на другого'
-            player.sendMessage(`Установлена цель для §d${channelRomanNums[channel - 1]}§f канала: ${targetRu}`)
+            // TO-DO
+            // Wand works as a staff, but has only one channel and forces a spell to cast, e.g. Protection wand will always cast defence spell
 
             // Анимируем
             const animVar = Math.floor(Math.random() * 4)
@@ -116,11 +100,11 @@ export function cipherRuneSequence(player, runeName, runeTags) {
 
     // Устанавливаем напрямую данные о рунах в DynamicProperty
 
-    ssDP(player, dynamicPropertyName, runeCiphers[runeName] + player.getDynamicProperty(dynamicPropertyName))
+    ssDP(player, dynamicPropertyName, runeCiphers[runeName] + gDP(player, dynamicPropertyName))
 
     // Срезаем длину строки, если она более 100 символов
-    if (player.getDynamicProperty(dynamicPropertyName).length > 100) {
-        ssDP(player, dynamicPropertyName, player.getDynamicProperty(dynamicPropertyName).substring(0, 100))
+    if (gDP(player, dynamicPropertyName).length > 100) {
+        ssDP(player, dynamicPropertyName, gDP(player, dynamicPropertyName).substring(0, 100))
     }
 
     // Сообщаем игроку о введенной руне
@@ -159,14 +143,14 @@ export function useStaff(player, forceChannel = undefined) {
     const spell = findSpell(player, activeChannel, 'sequence')
     const spellArray = spell?.split(' ')
 
-    // Отчитываемся, какая используется цель и канал
-    const magicTarget = player.getDynamicProperty(`channel_${activeChannel}_target`)
-    const targetRu = magicTarget === 1 ? '§aна себя' : '§6на другого'
-    player.sendMessage(`§b${channelRomanNums[activeChannel - 1]} §fканал ${targetRu}`)
-    if (![1, 2].includes(magicTarget)) console.warn(`Использовано заклинание ${spell} с недопустимой целью ${magicTarget} игроком ${player.name}`)
+    // Отчитываемся, какой используется канал
+    sl(player, 'magic.staff.channel', [channelRomanNums[activeChannel - 1]])
 
     // Если есть закл
     if (spell) {
+        const spellData = prepareSpellData(player, spell)
+        const magicTarget = spellData.targetRaw
+
         // Spell mp cost multiplier
         let spellCostMult = 1
 
@@ -196,14 +180,16 @@ export function useStaff(player, forceChannel = undefined) {
 
         // Если можем использовать
         if (canCast) {
+            player.runCommand("playanimation @s animation.arx.staff_a")
+
             // Активируем заклинание, и получаем от него ответ, что оно сделало или не сделало
-            const spellResponce = castJSSpell(player, spell, magicTarget)
+            const spellResponce = castJSSpell(player, spell, spellData)
 
             // Ставим это заклинание, как известное
             const knownDpellDP = `ksb:${spellRegistry[spell].cipher}`
             const isAlreadyKnown = player.getDynamicProperty(knownDpellDP)
             if (!isAlreadyKnown) {
-                player.sendMessage(`Открыто §dновое заклинание§f ${spell}!`)
+                sl(player, 'magic.spell.discovered', [spell])
                 player.runCommand('playsound random.orb @s ~ ~ ~')
                 ssDP(player, knownDpellDP, true)
             }
@@ -212,34 +198,33 @@ export function useStaff(player, forceChannel = undefined) {
             switch (spellResponce) {
                 case 'ok':
                     withdrawMP(player, spellCostReq, spellCostMult)
-                    player.runCommand("playanimation @s animation.arx.staff_a")
                     break
 
                 case 'noValidEntity':
-                    player.sendMessage('§vНе на кого сотворять заклинание')
-                    player.runCommand("playanimation @s animation.arx.no")
+                    sl(player, 'magic.spell.no_valid_entity')
                     break
 
                 case 'wrongEntityType':
-                    player.sendMessage('§vЭто заклинание невозможно применить на это существо')
-                    player.runCommand("playanimation @s animation.arx.no")
+                    sl(player, 'magic.spell.wrong_entity_type')
                     break
 
                 case 'noValidTarget':
-                    player.sendMessage('§vЗаклинание не поддерживает выбранную цель')
-                    player.runCommand("playanimation @s animation.arx.no")
+                    if (spellRegistry[spell].validTargets.includes(1)) {
+                        sl(player, 'magic.spell.only_self')
+                    } else sl(player, 'magic.spell.cannot_self')
+
                     break
             }
         }
         else {
             player.runCommand("playanimation @s animation.arx.no")
-            player.sendMessage(`§vТребуется §b${spellCostReq}§v маны §o§7(не хватает ${smartRound(spellCostReq - player.getDynamicProperty('mp'))})`)
+            sl(player, 'magic.spell.insufficient_mp', [spellCostReq, smartRound(spellCostReq - player.getDynamicProperty('mp'))])
         }
     }
     // Если заклинания нет
     else {
         player.runCommand("playanimation @s animation.arx.no")
-        player.sendMessage(`§cЗаклинание не заготовлено в ${channelRomanNums[activeChannel - 1]} канале`)
+        sl(player, 'magic.spell.not_prepared', [channelRomanNums[activeChannel - 1]])
     }
 }
 
@@ -260,6 +245,6 @@ function withdrawMP(player, spellCostReq, spellCostMult) {
     increaseSkillProgress(player, "mp_regen", mpRegenSkillIncreaseValue)
     increaseSkillProgress(player, "mana", manaSkillIncreaseValue)
 
-    if (spellCostMult === 1) player.sendMessage(`Потрачено §b${spellCostReq}§f маны`)
-    else player.sendMessage(`Потрачено §b${spellCostReq}§f маны §a§o(скидка ${Math.round((1 - spellCostMult) * 100)}Ũ)`)
+    if (spellCostMult === 1) sl(player, 'magic.spell.spent_mp', [spellCostReq])
+    else sl(player, 'magic.spell.spent_mp_discount', [spellCostReq, Math.round((1 - spellCostMult) * 100)])
 }

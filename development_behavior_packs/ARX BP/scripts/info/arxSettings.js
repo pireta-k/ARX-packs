@@ -2,18 +2,19 @@ import { ModalFormData } from "@minecraft/server-ui"
 import { gDP, ssDP } from "../DPOperations"
 import { fl } from "../lang/fetchLocalization"
 import { isAdmin } from "../admin"
+import { world } from "@minecraft/server"
 
 // User's options
-export function arxSettings(player) {
+export function arxSettings(p) {
     // Default slider values
     let manaDisplayModeDefaultDropdownPos
-    const manaDisplayMode = gDP(player, 'myRule:manaDisplayMode')
+    const manaDisplayMode = gDP(p, 'myRule:manaDisplayMode')
     if (manaDisplayMode === 'integers') manaDisplayModeDefaultDropdownPos = 0
     else if (manaDisplayMode === 'decimals') manaDisplayModeDefaultDropdownPos = 1
     else if (manaDisplayMode === 'none') manaDisplayModeDefaultDropdownPos = 2
 
     let showAttackCDModeDefaultDropdownPos
-    const showAttackCDMode = gDP(player, 'myRule:showAttackCDMode')
+    const showAttackCDMode = gDP(p, 'myRule:showAttackCDMode')
     if (showAttackCDMode === 'seconds') showAttackCDModeDefaultDropdownPos = 0
     else if (showAttackCDMode === 'secondsFloat') showAttackCDModeDefaultDropdownPos = 1
     else if (showAttackCDMode === 'ticks') showAttackCDModeDefaultDropdownPos = 2
@@ -21,13 +22,13 @@ export function arxSettings(player) {
     else if (showAttackCDMode === 'none') showAttackCDModeDefaultDropdownPos = 4
 
     let chatPrefixesDefaultDropdownPos
-    const chatPrefixes = gDP(player, 'myRule:chatPrefixes')
+    const chatPrefixes = gDP(p, 'myRule:chatPrefixes')
     if (chatPrefixes === 'fullEN') chatPrefixesDefaultDropdownPos = 0
     if (chatPrefixes === 'shortEN') chatPrefixesDefaultDropdownPos = 1
 
-    const canSeeServerSpeedInInfoBookDefaultTogglePos = player.getDynamicProperty('myRule:canSeeServerSpeedInInfoBook')
-    const cinematographicModeDefaultTogglePos = player.getDynamicProperty('myRule:cinematographicMode')
-    const devModeDefaultTogglePos = player.getDynamicProperty('myRule:devMode')
+    const canSeeServerSpeedInInfoBookDefaultTogglePos = p.getDynamicProperty('myRule:canSeeServerSpeedInInfoBook')
+    const cinematographicModeDefaultTogglePos = p.getDynamicProperty('myRule:cinematographicMode')
+    const devModeDefaultTogglePos = p.getDynamicProperty('myRule:devMode')
 
     const form = new ModalFormData()
     form.title("Настройки Аркса")
@@ -44,42 +45,58 @@ export function arxSettings(player) {
 
     form.submitButton('Сохранить')
 
-    form.show(player).then(response => {
+    form.show(p).then(response => {
 
         if (response.formValues) {
             // myRule:manaDisplayMode
-            if (response.formValues[0] === 0) ssDP(player, 'myRule:manaDisplayMode', 'integers')
-            else if (response.formValues[0] === 1) ssDP(player, 'myRule:manaDisplayMode', 'decimals')
-            else if (response.formValues[0] === 2) ssDP(player, 'myRule:manaDisplayMode', 'none')
+            if (response.formValues[0] === 0) ssDP(p, 'myRule:manaDisplayMode', 'integers')
+            else if (response.formValues[0] === 1) ssDP(p, 'myRule:manaDisplayMode', 'decimals')
+            else if (response.formValues[0] === 2) ssDP(p, 'myRule:manaDisplayMode', 'none')
 
-            if (response.formValues[1] === 0) ssDP(player, 'myRule:showAttackCDMode', 'seconds')
-            else if (response.formValues[1] === 1) ssDP(player, 'myRule:showAttackCDMode', 'secondsFloat')
-            else if (response.formValues[1] === 2) ssDP(player, 'myRule:showAttackCDMode', 'ticks')
-            else if (response.formValues[1] === 3) ssDP(player, 'myRule:showAttackCDMode', 'line')
-            else if (response.formValues[1] === 4) ssDP(player, 'myRule:showAttackCDMode', 'none')
+            if (response.formValues[1] === 0) ssDP(p, 'myRule:showAttackCDMode', 'seconds')
+            else if (response.formValues[1] === 1) ssDP(p, 'myRule:showAttackCDMode', 'secondsFloat')
+            else if (response.formValues[1] === 2) ssDP(p, 'myRule:showAttackCDMode', 'ticks')
+            else if (response.formValues[1] === 3) ssDP(p, 'myRule:showAttackCDMode', 'line')
+            else if (response.formValues[1] === 4) ssDP(p, 'myRule:showAttackCDMode', 'none')
 
-            if (response.formValues[2] === 0) ssDP(player, 'myRule:chatPrefixes', 'fullEN')
-            else if (response.formValues[2] === 1) ssDP(player, 'myRule:chatPrefixes', 'shortEN')
+            if (response.formValues[2] === 0) ssDP(p, 'myRule:chatPrefixes', 'fullEN')
+            else if (response.formValues[2] === 1) ssDP(p, 'myRule:chatPrefixes', 'shortEN')
 
-            ssDP(player, 'myRule:canSeeServerSpeedInInfoBook', response.formValues[3])
+            ssDP(p, 'myRule:canSeeServerSpeedInInfoBook', response.formValues[3])
 
-            ssDP(player, 'myRule:cinematographicMode', response.formValues[4])
-            ssDP(player, 'myRule:devMode', response.formValues[5])
+            ssDP(p, 'myRule:cinematographicMode', response.formValues[4])
+            ssDP(p, 'myRule:devMode', response.formValues[5])
         }
     })
 }
 
-export function arxGlobalSettings(player) {
+export function arxGlobalSettings(p) {
+
+    const currentGenerateGrass = gDP(world, 'generateGrass') ?? false
+    const currentAnticheat = gDP(world, 'anticheat') ?? false
+    const currentCameras = gDP(world, 'allowArxCameras') ?? false
+    const currentWorldBorder = gDP(world, 'enableWorldBorder') ?? false
+    const currentWorldBorderRange = gDP(world, 'worldBorderRange') ?? 1000
+
     const form = new ModalFormData()
-        .title(fl(player, 'info.global_settings.title'))
-        .toggle(fl(player, 'info.global_settings.generate_grass'))
-        .toggle(fl(player, 'info.global_settings.anticheat'))
-        .toggle(fl(player, 'info.global_settings.allow_arx_cameras'))
-        .textField(fl(player, 'info.global_settings.world_border'))
+        .title(fl(p, 'info.global_settings.title'))
 
-        .submitButton(fl(player, 'info.global_settings.submit'))
+        .toggle(fl(p, 'info.global_settings.generate_grass'), { defaultValue: currentGenerateGrass, tooltip: fl(p, 'info.global_settings.generate_grass.tooltip') })
+        .toggle(fl(p, 'info.global_settings.anticheat'), { defaultValue: currentAnticheat, tooltip: fl(p, 'info.global_settings.anticheat.tooltip') })
+        .toggle(fl(p, 'info.global_settings.allow_arx_cameras'), { defaultValue: currentCameras })
+        .toggle(fl(p, 'info.global_settings.enable_world_border'), { defaultValue: currentWorldBorder })
+        .slider(fl(p, 'info.global_settings.world_border_range'), 1000, 10000, { defaultValue: currentWorldBorderRange })
 
-    form.show(player).then(response => { 
-        
+        .submitButton(fl(p, 'info.global_settings.submit'))
+
+    form.show(p).then(response => {
+        const fv = response.formValues
+        if (response.formValues) {
+            ssDP(world, 'generateGrass', fv[0])
+            ssDP(world, 'anticheat', fv[1])
+            ssDP(world, 'allowArxCameras', fv[2])
+            ssDP(world, 'enableWorldBorder', fv[3])
+            ssDP(world, 'worldBorderRange', fv[4])
+        }
     })
 }

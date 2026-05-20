@@ -5,7 +5,7 @@ import { system, world, EntityComponentTypes, EquipmentSlot, MolangVariableMap }
 
 import { getScore, setScore } from '../scoresOperations'
 import { increaseSkillLevel, increaseSkillProgress, wipeSkills } from '../skillsOperations'
-import { checkForItem } from "../checkForItem"
+import { checkForItem } from "../items/checkForItem"
 import { ModalFormData, MessageFormData, MessageFormResponse } from "@minecraft/server-ui"
 import { getPlayersInRadius } from '../getPlayersInRadius'
 import { getActiveStaffChannel } from '../magic/getActiveStaffChannel'
@@ -284,7 +284,7 @@ const coreFramework = {
     // World border
     worldBorder: {
         tickSpeed: 4,
-        condition: () => gDP(world, 'worldBorder'),
+        condition: () => gDP(world, 'enableWorldBorder'),
         operations: () => {
             for (const player of world.getPlayers()) {
                 // Контроль расстояния от места спавна
@@ -1238,7 +1238,7 @@ const coreFramework = {
                 if (checkForItem(player, "Offhand", "arx:ring_lamenite_chrysolite")) speedPower += 50
 
                 // От экипировки
-                if (checkForItem(player, "Feet", "arx:leg_bag_dual")) speedPower -= 8 || 0
+                if (checkForItem(player, "Feet", "arx:leg_bag_dual")) speedPower -= 8
 
                 // Бонус для призака алой ночью
                 if (player.getDynamicProperty('ghostBoostByScarletMoon')) speedPower += 30 || 0
@@ -1528,7 +1528,7 @@ const coreFramework = {
         }
     },
     // Paranoid masochist 
-    schizophrenia: {
+    paranoidMasochist: {
         tickSpeed: 20,
         operations: () => {
             for (const player of world.getPlayers()) {
@@ -1672,13 +1672,10 @@ export function displayMPAndAdjacent(player) {
             msgFromGuide(player, 'Вы держите §aмногоканальный посох§f! Чтобы выбрать канал магии, присядьте и поворачивайте камерой вверх-вниз. Чтобы зафиксировать выбранный канал, встанье.')
         }
 
-        const targets = ['§aНа себя', '§6На другого']
-
         const activeChannel = getActiveStaffChannel(player, staffChannelNum)
         const activeTarget = player.getDynamicProperty(`channel_${activeChannel}_target`)
 
         sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]} канал`, 2)
-        sendToActionBar(player, 'magicTarget', `§d${targets[activeTarget - 1]}`, 2)
         sendToActionBar(player, 'MP', `${manaStr} `, 2)
     }
     // Мы держим руну

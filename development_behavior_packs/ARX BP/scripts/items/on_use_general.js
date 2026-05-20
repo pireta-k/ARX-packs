@@ -4,16 +4,16 @@ import { ActionFormData } from "@minecraft/server-ui";
 
 import { setScore } from "../scoresOperations";
 import { getNearestPlayer } from "../getNearestPlayer"
-import { checkForItem } from "../checkForItem"
+import { checkForItem } from "./checkForItem"
 import { infoScreen } from '../info/_infoScreen'
 import { manageCD } from "../manageCD";
-import { launchCameraUI } from '../camera/launchCameraUI'
 import { clearTraits, acquireTrait } from '../traits/traitsOperations'
 import { iDP, ssDP, gDP } from "../DPOperations";
 import { sl } from "../lang/fetchLocalization";
 import { onUseSBHammer } from "../structureBuilder";
 import { prospect, runProspection } from '../prospect'
 import { sleep } from "../time";
+import { Quest } from '../quests'
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
@@ -24,9 +24,8 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Тест
         case "arx:mod_sword":
             if (manageCD(player)) {
-                player.sendMessage('abc')
-                await system.waitTicks(20)
-                player.sendMessage('def')
+                const q = new Quest(player, 'test')
+                q.acquire()
             }
             break
 
@@ -520,11 +519,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
 
         // Info book
         case "arx:united_player_data":
-            if (player.getDynamicProperty('myRule:cinematographicMode') === true && player.hasTag('is_sneaking') && player.getDynamicProperty('respawnDelay') === 0) {
-                launchCameraUI(player)
-            } else {
-                infoScreen(player)
-            }
+            infoScreen(player)
             break
 
         // Хай-тек

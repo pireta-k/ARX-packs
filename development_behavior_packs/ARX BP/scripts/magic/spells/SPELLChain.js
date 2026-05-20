@@ -2,6 +2,7 @@ import { iDP, ssDP } from '../../DPOperations'
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { useStaff } from '../on_use_magic_items'
 import { system } from "@minecraft/server"
+import { fl, sl } from '../../lang/fetchLocalization'
 
 /*
 Цепь хранится в виде
@@ -18,9 +19,9 @@ export function chain(player) {
     } else {
         // Отложим выполнение до следующего тика
         system.runTimeout(() => {
-            player.sendMessage('§a>>> Цепь начата')
+            sl(player, 'magic.chain.started')
             executeChain(player);
-            player.sendMessage('§v<<< Цепь окончена')
+            sl(player, 'magic.chain.ended')
         }, 0);
     }
 }
@@ -28,12 +29,12 @@ export function chain(player) {
 // Редактирование цепи
 function editChain(player) {
     const form = new ActionFormData()
-        .title("Цепь заклинаний")
+        .title(fl(player, 'magic.chain.title'))
 
         .body(createBodyText(player))
 
-    form.button(`Добавить канал в цепь`, 'textures/ui/camera/edit_timeline')
-    form.button("Очистить цепь", 'textures/ui/camera/clear_timeline')
+    form.button(fl(player, 'magic.chain.add_channel'), 'textures/ui/camera/edit_timeline')
+    form.button(fl(player, 'magic.chain.clear'), 'textures/ui/camera/clear_timeline')
 
     form.show(player).then(response => {
 
@@ -50,9 +51,9 @@ function editChain(player) {
 // Добавление канала в цепь
 function addChannelToChain(player) {
     const form3 = new ModalFormData()
-        .title("Добавление канала")
-        .textField("Номер канала, который будет записан в цепь", "1 - 10 включительно")
-        .submitButton('Добавить в цепь')
+        .title(fl(player, 'magic.chain.add.title'))
+        .textField(fl(player, 'magic.chain.add.field'), fl(player, 'magic.chain.add.placeholder'))
+        .submitButton(fl(player, 'magic.chain.add.submit'))
 
         .show(player).then(response => {
 
@@ -88,7 +89,7 @@ function createBodyText(player) {
 
     // Если нет цепи
     if (chainDP === undefined) {
-        return 'Текущая цепь пуста'
+        return fl(player, 'magic.chain.current_empty')
     }
 
     chainDP = String(chainDP)
@@ -102,14 +103,14 @@ function createBodyText(player) {
         cnannelsArray = [chainDP]
     }
 
-    return `Текущие каналы в цепи:\n${cnannelsArray.join('\n§a↓§f\n')}`
+    return fl(player, 'magic.chain.current_channels', [cnannelsArray.join('\n§a↓§f\n')])
 }
 
 // Исполнить цепь
 function executeChain(player) {
     let chainDP = player.getDynamicProperty('chainSpell')
     if (chainDP === undefined) {
-        player.sendMessage('§6Цепь пустая. Запишите в неё хоть что-то, использовав заклинание цепи на присяде.')
+        sl(player, 'magic.chain.empty_execute')
         return
     } else {
         chainDP = String(chainDP)

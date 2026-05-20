@@ -25,6 +25,7 @@ import { setScore, getScore } from '../../scoresOperations';
 import { getEntityFamilies } from '../../_main';
 import { system } from "@minecraft/server"
 import { runeCiphers } from '../rune_cipher_list'
+import { sl } from '../../lang/fetchLocalization'
 
 /**
  * Реестр заклинаний
@@ -35,7 +36,6 @@ import { runeCiphers } from '../rune_cipher_list'
  * - onlyOnPlayers: заклинане можно использовать только на игроков
  * - handler: функция, принимающая player, spellData (с информацией о заклинании)
  */
-
 export let spellRegistry = {
     // Get ready spells (old Din Hijo)
     'scire': {
@@ -121,7 +121,7 @@ export let spellRegistry = {
     "mobilitas durata": {
         mpCost: 60,
         color: '#59cf59',
-        description: 'сверхдлительное заклинание слабого ускорения',
+        description: 'длительное заклинание слабого ускорения',
         handler: (entity, spellData) => { speedBoost(entity, spellData, 180, 0) }
     },
     "mobilitas magna": {
@@ -165,19 +165,19 @@ export let spellRegistry = {
     "cura durata": {
         mpCost: 25,
         color: '#fa68ae',
-        description: 'слабое заклинание регенерации по площади',
+        description: 'слабое длительное заклинание регенерации',
         handler: (entity, spellData) => { classicHeal(entity, spellData, 60, 0) }
     },
     "cura area": {
         mpCost: 15,
         color: '#fa68ae',
-        description: 'слабое сверхдлительное заклинание регенерации',
+        description: 'слабое заклинание регенерации по площади',
         handler: (entity, spellData) => { classicHeal(entity, spellData, 10, 0) }
     },
     "cura durata area": {
         mpCost: 75,
         color: '#fa68ae',
-        description: 'слабое сверхдлительное заклинание регенерации по площади',
+        description: 'слабое длительное заклинание регенерации по площади',
         handler: (entity, spellData) => { classicHeal(entity, spellData, 60, 0) }
     },
 
@@ -196,13 +196,13 @@ export let spellRegistry = {
     "cura magna area": {
         mpCost: 45,
         color: '#fa68ae',
-        description: 'хорошее сверхдлительное заклинание регенерации',
+        description: 'хорошее длительное заклинание регенерации',
         handler: (entity, spellData) => { classicHeal(entity, spellData, 10, 1) }
     },
     "cura magna durata area": {
         mpCost: 225,
         color: '#fa68ae',
-        description: 'хорошее сверхдлительное заклинание регенерации по площади',
+        description: 'хорошее длительное заклинание регенерации по площади',
         handler: (entity, spellData) => { classicHeal(entity, spellData, 60, 1) }
     },
 
@@ -221,13 +221,13 @@ export let spellRegistry = {
     "cura magna magna magna area": {
         mpCost: 135,
         color: '#fa68ae',
-        description: 'мощное сверхдлительное заклинание регенерации',
+        description: 'мощное длительное заклинание регенерации',
         handler: (entity, spellData) => { classicHeal(entity, spellData, 10, 2) }
     },
     "cura magna magna magna durata area": {
         mpCost: 675,
         color: '#fa68ae',
-        description: 'мощное сверхдлительное заклинание регенерации по площади',
+        description: 'мощное длительное заклинание регенерации по площади',
         handler: (entity, spellData) => { classicHeal(entity, spellData, 60, 2) }
     },
 
@@ -252,7 +252,7 @@ export let spellRegistry = {
         description: 'заклинание маяка с задержкой 10 секунд',
         validTargets: [1],
         handler: (player) => {
-            player.sendMessage('§dМаяк установлен')
+            sl(player, 'magic.spell.beacon_set')
             player.runCommand('summon arx:magic_beacon ~ ~ ~')
             ssDP(player, 'magicBeacon', 10)
             player.runCommand(`tag @e[type=arx:magic_beacon, r=0.1] add ${player.name}`)
@@ -264,7 +264,7 @@ export let spellRegistry = {
         description: 'заклинание маяка с задержкой 30 секунд',
         validTargets: [1],
         handler: (player) => {
-            player.sendMessage('§dМаяк установлен')
+            sl(player, 'magic.spell.beacon_set')
             player.runCommand('summon arx:magic_beacon ~ ~ ~')
             ssDP(player, 'magicBeacon', 30)
             player.runCommand(`tag @e[type=arx:magic_beacon, r=0.1] add ${player.name}`)
@@ -856,11 +856,12 @@ export let spellRegistry = {
 };
 
 
-// Проверка каждого заклинания
+// SPELL REGISTRY VALIDATION
 Object.keys(spellRegistry).forEach(spell => {
+    const currentSpell = spellRegistry[spell]
+
     // Проверяем корректность реестра заклинаний
-    if (!spellRegistry[spell].mpCost) console.warn(`Некорректно указана требуемая мана для заклинания ${spell}`)
-    if (!spellRegistry[spell].mpCost) console.warn(`Отсутствует описание для заклинания ${spell}`)
+    if (!currentSpell.mpCost || !(typeof currentSpell.mpCost === 'number')) console.warn(`Некорректно указана требуемая мана для заклинания ${spell}`)
     const runeArray = spell.split(' ')
     runeArray.forEach((rune, index) => {
         if (!Object.keys(runeCiphers).includes(rune)) console.warn(`Non-existent rune ${rune} in spell ${spell}`)

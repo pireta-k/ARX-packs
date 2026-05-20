@@ -1,7 +1,7 @@
 // Операции с навыками
 
 import { queueCommand } from './commandQueue'
-import { checkForItem } from './checkForItem'
+import { checkForItem } from './items/checkForItem'
 import { checkForTrait } from './traits/traitsOperations'
 import { iDP, ssDP } from './DPOperations'
 

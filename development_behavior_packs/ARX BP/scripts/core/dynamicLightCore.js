@@ -1,5 +1,5 @@
 import { system, world } from "@minecraft/server"
-import { checkForItem } from '../checkForItem'
+import { checkForItem } from '../items/checkForItem'
 import { ssDP } from "../DPOperations"
 
 // Dynamic Light

@@ -1,5 +1,5 @@
 import { getTime } from "./time"
-import { checkForItem } from "./checkForItem"
+import { checkForItem } from "./items/checkForItem"
 import { world } from "@minecraft/server"
 import { ssDP } from "./DPOperations"
 

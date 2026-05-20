@@ -4,7 +4,7 @@ import { emote } from './emote'
 import { getScore } from './scoresOperations'
 import { getSkillsData } from './skillsOperations'
 import { queueCommand } from './commandQueue'
-import { checkForItem } from "./checkForItem"
+import { checkForItem } from "./items/checkForItem"
 import { sl, fl } from "./lang/fetchLocalization"
 
 import { runeCiphers } from './magic/rune_cipher_list'

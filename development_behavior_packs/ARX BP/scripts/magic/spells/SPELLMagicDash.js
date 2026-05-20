@@ -1,17 +1,18 @@
 import { iDP, ssDP } from '../../DPOperations'
 import { setScore } from '../../scoresOperations'
 import { system } from "@minecraft/server"
+import { sl } from '../../lang/fetchLocalization'
 
 // Магический рывок
 export function magicDash(player, ticks, ghostDash = false) {
-    if (player.getDynamicProperty('weighLoading') <= 7) { // Допуск по весу
+    if (gDP(player, 'weighLoading') <= 7) { // Допуск по весу
         player.runCommand('particle arx:magic_dash ~ ~1.3 ~ ')
         ssDP(player, 'dash', ticks)
         dash(player)
 
     } else { // Недопуск по весу
         player.addTag('block_mp_withdraw')
-        player.sendMessage('§cЭто заклинание невозможно использовать, если ваша загруженность превышает 7 единиц.')
+        sl(player, 'magic.dash.too_heavy')
     }
 }
 

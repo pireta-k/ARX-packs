@@ -1,4 +1,4 @@
-import { checkForItem } from "./checkForItem"
+import { checkForItem } from "./items/checkForItem"
 import { getScore } from "./scoresOperations"
 import { checkForTrait } from './traits/traitsOperations'
 import { getNearestPlayer } from './getNearestPlayer'

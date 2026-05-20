@@ -1,5 +1,6 @@
 import { ssDP } from "../../DPOperations"
 import { getScore, setScore } from '../../scoresOperations'
+import { sl } from "../../lang/fetchLocalization"
 
 // Рассеивание заклинаний
 export function dispelMagic(entity, targetData) {
@@ -20,7 +21,7 @@ export function dispelMagic(entity, targetData) {
         entity.dimension.playSound('spell.dispell_magic', entity.location)
         entity.dimension.spawnParticle('arx:dispell_magic', entity.getHeadLocation())
     } else if (targetData.initiator?.name === entity?.name) {
-        targetData.initiator.sendMessage('§6На мне нет магии, которую можно рассеять')
+        sl(targetData.initiator, 'magic.dispel_magic.no_magic_on_self')
     }
 }
 

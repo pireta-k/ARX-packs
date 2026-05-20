@@ -1,5 +1,6 @@
-import { checkForItem } from "../../checkForItem";
+import { checkForItem } from "../../items/checkForItem";
 import { ssDP } from "../../DPOperations"
+import { fl } from "../../lang/fetchLocalization";
 
 // Защита
 export function giveMagilight(player, spellData, item, time) {
@@ -16,11 +17,11 @@ export function giveMagilight(player, spellData, item, time) {
 
     let message = ''
     if (item === 'arx:magilight') {
-        message = hasActiveCD ? '§aДействие магисвета продлено' : '§aВы получаете магисвет!'
+        message = hasActiveCD ? fl(player, 'magic.magilight.extended') : fl(player, 'magic.magilight.gained')
         ssDP(player, 'allowMagilight', time)
     }
     else if (item === 'arx:archilight') {
-        message = hasActiveCD ? '§aДействие архисвета продлено' : '§aВы получаете архисвет!'
+        message = hasActiveCD ? fl(player, 'magic.archilight.extended') : fl(player, 'magic.archilight.gained')
         ssDP(player, 'allowArchilight', time)
     }
     else {

@@ -1,5 +1,5 @@
 import { system, world } from "@minecraft/server"
-import { checkForItem } from "../checkForItem"
+import { checkForItem } from "../items/checkForItem"
 import { ssDP } from "../DPOperations"
 
 // Аркс сохраняет данные о достижениях в DP, при этом формат записи ach:idДостижения
