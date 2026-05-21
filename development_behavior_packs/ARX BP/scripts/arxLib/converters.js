@@ -8,6 +8,14 @@ export function obj2str(obj) {
     return JSON.stringify(obj)
 }
 
+/** Transforms vector from XYZ to XZ
+ * @param {Vector3} vectorXYZ 
+ * @returns 
+ */
+export function vectorXYZ2XZ(vectorXYZ) {
+    return {x: vectorXYZ.x, z: vectorXYZ.z}
+}
+
 export function md5(str) {
     // Реализация MD5 на чистом JS
     function cmn(q, a, b, x, s, t) { a = add32(add32(a, q), add32(x, t)); return add32((a << s) | (a >>> (32 - s)), b); }

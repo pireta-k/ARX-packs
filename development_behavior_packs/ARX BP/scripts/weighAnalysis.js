@@ -1,8 +1,8 @@
 import { checkForItem } from "./items/checkForItem"
-import { getScore } from "./scoresOperations"
+import { getScore } from "./arxLib/scoresOperations"
 import { checkForTrait } from './traits/traitsOperations'
 import { getNearestPlayer } from './getNearestPlayer'
-import { gDP, ssDP } from "./DPOperations"
+import { gDP, ssDP } from "./arxLib/DPOperations"
 
 export function weighAnalysis(player) {
     // weighLimit - ограничение переносимого веса, при переходе за который накладывается штраф

@@ -2,17 +2,17 @@
 import { world, EntityComponentTypes, ItemComponentTypes, EquipmentSlot, system } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 
-import { setScore } from "../scoresOperations";
+import { setScore } from "../arxLib/scoresOperations";
 import { getNearestPlayer } from "../getNearestPlayer"
 import { checkForItem } from "./checkForItem"
 import { infoScreen } from '../info/_infoScreen'
 import { manageCD } from "../manageCD";
 import { clearTraits, acquireTrait } from '../traits/traitsOperations'
-import { iDP, ssDP, gDP } from "../DPOperations";
+import { iDP, ssDP, gDP } from "../arxLib/DPOperations";
 import { sl } from "../lang/fetchLocalization";
 import { onUseSBHammer } from "../structureBuilder";
 import { prospect, runProspection } from '../prospect'
-import { sleep } from "../time";
+import { sleep } from "../arxLib/time";
 import { Quest } from '../quests'
 
 // Использование предметов

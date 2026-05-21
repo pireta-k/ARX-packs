@@ -7,12 +7,12 @@ import { castJSSpell, prepareSpellData } from './castJSSpell'
 import { findSpell } from "./findSpell"
 import { getActiveStaffChannel } from './getActiveStaffChannel'
 
-import { getScore, setScore } from "../scoresOperations";
+import { getScore, setScore } from "../arxLib/scoresOperations";
 import { increaseSkillProgress } from "../skillsOperations";
 
 import { manageCD } from "../manageCD";
 import { queueCommand } from "../commandQueue";
-import { gDP, iDP, ssDP } from "../DPOperations";
+import { gDP, iDP, ssDP } from "../arxLib/DPOperations";
 import { spellRegistry } from "./spells/_spellRegistry";
 import { getItem } from '../items/getItem'
 import { channelRomanNums } from "./channelRomanNums";
@@ -144,7 +144,7 @@ export function useStaff(player, forceChannel = undefined) {
     const spellArray = spell?.split(' ')
 
     // Отчитываемся, какой используется канал
-    sl(player, 'magic.staff.channel', [channelRomanNums[activeChannel - 1]])
+    // sl(player, 'magic.staff.channel', [channelRomanNums[activeChannel - 1]])
 
     // Если есть закл
     if (spell) {
@@ -197,11 +197,11 @@ export function useStaff(player, forceChannel = undefined) {
             // Если заклинание успешно использовано
             switch (spellResponce) {
                 case 'ok':
-                    withdrawMP(player, spellCostReq, spellCostMult)
+                    withdrawMP(player, spellCostReq, spellCostMult, spellData)
                     break
 
                 case 'noValidEntity':
-                    sl(player, 'magic.spell.no_valid_entity')
+                    // sl(player, 'magic.spell.no_valid_entity')
                     break
 
                 case 'wrongEntityType':
@@ -233,7 +233,7 @@ function smartRound(num) {
     return rounded % 1 === 0 ? Math.trunc(rounded) : rounded;
 }
 
-function withdrawMP(player, spellCostReq, spellCostMult) {
+function withdrawMP(player, spellCostReq, spellCostMult, spellData) {
     // spellCostReq - уже с рассчётом скидки
     iDP(player, 'mp', -spellCostReq)
 
@@ -244,7 +244,35 @@ function withdrawMP(player, spellCostReq, spellCostMult) {
 
     increaseSkillProgress(player, "mp_regen", mpRegenSkillIncreaseValue)
     increaseSkillProgress(player, "mana", manaSkillIncreaseValue)
+    increaseMpRangeSkillProgress(player, spellData)
 
     if (spellCostMult === 1) sl(player, 'magic.spell.spent_mp', [spellCostReq])
     else sl(player, 'magic.spell.spent_mp_discount', [spellCostReq, Math.round((1 - spellCostMult) * 100)])
+}
+
+// Дистанция заклинаний: опыт только за успешный каст на дальнюю цель (не на себя)
+function increaseMpRangeSkillProgress(player, spellData) {
+    const successfulTargets = spellData?.successfulTargets
+    if (!successfulTargets?.length) return
+
+    const spellDistance = spellData.spellDistance ?? 10
+    const farThreshold = spellDistance / 2
+    const from = player.getHeadLocation()
+
+    let maxDistance = 0
+    for (const entity of successfulTargets) {
+        if (entity.typeId === 'minecraft:player' && entity.name === player.name) continue
+
+        const to = entity.location
+        const dx = to.x - from.x
+        const dy = to.y - from.y
+        const dz = to.z - from.z
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        if (distance > maxDistance) maxDistance = distance
+    }
+
+    if (maxDistance < farThreshold) return
+
+    increaseSkillProgress(player, 'mp_range', maxDistance * 6)
 }

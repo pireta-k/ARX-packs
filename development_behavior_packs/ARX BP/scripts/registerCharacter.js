@@ -1,6 +1,6 @@
 import { ModalFormData, MessageFormData, ActionFormData } from "@minecraft/server-ui"
-import { getScore, setScore } from "./scoresOperations"
-import { gDP, ssDP } from "./DPOperations"
+import { getScore, setScore } from "./arxLib/scoresOperations"
+import { gDP, ssDP } from "./arxLib/DPOperations"
 import { world } from "@minecraft/server"
 import { fl, setPlayerLanguage } from "./lang/fetchLocalization"
 import { showLanguageForm } from "./lang/form"

@@ -1,5 +1,5 @@
 import { spellRegistry } from './spells/_spellRegistry';
-import { gDP } from '../DPOperations';
+import { gDP } from '../arxLib/DPOperations';
 
 /** Function receives a player and a channel, and returns the spell recorded in it
 * returnType can be 'sequence' or 'cipher'

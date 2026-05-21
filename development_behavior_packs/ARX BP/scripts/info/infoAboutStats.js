@@ -1,8 +1,8 @@
 import { ActionFormData } from "@minecraft/server-ui"
-import { getScore } from "../scoresOperations"
+import { getScore } from "../arxLib/scoresOperations"
 import { calculateXPMultiplier } from "../skillsOperations"
 import { defineCastDistance } from "../magic/castJSSpell"
-import { gDP } from "../DPOperations"
+import { gDP } from "../arxLib/DPOperations"
 
 // UI
 export function infoAboutStats(p) {

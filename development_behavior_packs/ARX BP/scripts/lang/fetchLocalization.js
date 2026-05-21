@@ -1,11 +1,11 @@
 // Imports
 import { ruLocalization } from './ru'
 import { enLocalization } from './en'
-import { ssDP } from '../DPOperations'
+import { ssDP } from '../arxLib/DPOperations'
 
 // Vars
-const defaultLanguage = 'en'
-const langMap = {
+export const defaultLanguage = 'en'
+export const langMap = {
     'ru': ruLocalization,
     'en': enLocalization
 }

@@ -1,7 +1,7 @@
 import { ActionFormData } from "@minecraft/server-ui"
 import { editTimeline } from './editTimeline'
 import { indicateTimecodes } from './indicateTimecodes'
-import { ssDP } from "../DPOperations"
+import { ssDP } from "../arxLib/DPOperations"
 
 // Переменная, хранящая все таймлайны камеры всех игроков
 export let timeline = {}

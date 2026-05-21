@@ -5,7 +5,7 @@ import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, 
 import { ActionFormData } from "@minecraft/server-ui"
 
 // Imports - Arx functions 
-import { getScore, incScore, setScore } from './scoresOperations'
+import { getScore, incScore, setScore } from './arxLib/scoresOperations'
 import { increaseSkillProgress, wipeSkillsProgress } from './skillsOperations'
 import { onConsume } from './food/onConsume'
 import { registerCharacter } from "./registerCharacter"
@@ -28,17 +28,17 @@ import './blocksHistory'
 
 import { registerPlayerVars } from "./registerPlayerVars"
 import { checkForItem } from "./items/checkForItem"
-import { gDP, iDP, ssDP } from "./DPOperations"
+import { gDP, iDP, ssDP } from "./arxLib/DPOperations"
 import { checkForTrait } from "./traits/traitsOperations"
 import { getPlayersInRadius } from "./getPlayersInRadius"
 import { getItem } from "./items/getItem"
 import { getActiveStaffChannel } from "./magic/getActiveStaffChannel"
-import { md5, obj2str } from "./converters"
-import { isAdmin, getAdmins, getHoster } from './admin'
+import { md5, obj2str } from "./arxLib/converters"
+import { isAdmin, getAdmins, getHoster } from './arxLib/admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { showLanguageForm } from "./lang/form"
 import { runProspection } from "./prospect"
-import { sleep } from "./time"
+import { sleep } from "./arxLib/time"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -155,6 +155,8 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
             ssDP(world, 'allowArxCameras', true)
             ssDP(world, 'enableWorldBorder', false)
             ssDP(world, 'worldBorderRange', 5000)
+            ssDP(world, 'enableAmbienceCore', true)
+            ssDP(world, 'enableFogs', true)
 
             const d = world.getDimension('minecraft:overworld')
 

@@ -1,5 +1,5 @@
 import { world } from "@minecraft/server"
-import { getScore } from "./scoresOperations"
+import { getScore } from "../arxLib/scoresOperations"
 
 /**
  * Return true if the playes is admin. 

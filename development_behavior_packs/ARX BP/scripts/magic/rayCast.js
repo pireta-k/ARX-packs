@@ -1,4 +1,6 @@
 import { getEntityFamilies } from '../_main'
+import { playSound } from '../arxLib/audio'
+import { gDP } from '../arxLib/DPOperations'
 
 const DEFAULT_MAX_BOUNCES = 20
 const RAY_EPSILON = 0.05
@@ -28,12 +30,13 @@ export function rayCast(player, distance, options = {}) {
 
     const path = []
     const bounces = []
+    const casterId = gDP(player, 'id')
 
     while (distanceLeft > RAY_EPSILON) {
         const blockHit = getBlockHit(dimension, from, direction, distanceLeft)
         const segmentDistance = blockHit ? blockHit.distance : distanceLeft
-        const includeCaster = bounces.length > 0
-        const entityHit = getEntityHit(dimension, from, direction, segmentDistance, player, includeCaster)
+        const isFirstSegment = bounces.length === 0
+        const entityHit = getEntityHit(dimension, from, direction, segmentDistance, player, isFirstSegment, casterId)
 
         if (entityHit) {
             path.push({ from, to: entityHit.location, type: 'entity' })
@@ -65,6 +68,7 @@ export function rayCast(player, distance, options = {}) {
             normal: blockHit.normal,
             block: blockHit.block
         })
+        playSound('magic.ray.hit', dimension, blockHit.location)
 
         distanceLeft -= blockHit.distance
         distancePassed += blockHit.distance
@@ -217,7 +221,7 @@ function processAxis(origin, direction, min, max, minNormal, maxNormal) {
     }
 }
 
-function getEntityHit(dimension, from, direction, maxDistance, caster, includeCaster) {
+function getEntityHit(dimension, from, direction, maxDistance, caster, isFirstSegment, casterId) {
     const candidates = dimension.getEntities({
         location: from,
         maxDistance: maxDistance + 2
@@ -225,7 +229,8 @@ function getEntityHit(dimension, from, direction, maxDistance, caster, includeCa
 
     let closestHit
     for (const entity of candidates) {
-        if (!includeCaster && isSameEntity(entity, caster)) continue
+        if (isFirstSegment && isCasterEntity(entity, caster, casterId)) continue
+        if (entity.typeId === 'minecraft:item') continue
 
         const families = getEntityFamilies(entity)
         if (families.includes('untargetable')) continue
@@ -281,8 +286,70 @@ function getEntityTargetPoints(entity) {
     return points
 }
 
-function isSameEntity(entityA, entityB) {
-    return entityA === entityB || (entityA?.typeId === 'minecraft:player' && entityA?.name === entityB?.name)
+/**
+ * Направление удара лучом по жертве (последний сегмент path до entity).
+ * Для area — сегмент из areaRayPaths, ближайший к жертве.
+ * Если путь не найден — направление взгляда кастера.
+ */
+export function getRayImpactDirection(spellData, victim) {
+    const caster = spellData?.initiator
+    const fallback = () => caster?.getViewDirection?.() ?? { x: 0, y: 0, z: 1 }
+
+    let victimPoint
+    try {
+        victimPoint = victim.getHeadLocation()
+    } catch {
+        victimPoint = victim.location
+    }
+
+    if (spellData?.isAreaSpell && spellData.areaRayPaths?.length) {
+        let bestSegment
+        let bestDistance = Infinity
+
+        for (const rayPath of spellData.areaRayPaths) {
+            const segment = rayPath.find(s => s.type === 'entity')
+            if (!segment) continue
+
+            const dist = vectorDistance(segment.to, victimPoint)
+            if (dist < bestDistance) {
+                bestDistance = dist
+                bestSegment = segment
+            }
+        }
+
+        if (bestSegment && bestDistance < 3) {
+            return directionFromSegment(bestSegment)
+        }
+    }
+
+    const path = spellData?.rayCast?.path
+    if (path?.length) {
+        const entitySegment = [...path].reverse().find(s => s.type === 'entity')
+        if (entitySegment) {
+            return directionFromSegment(entitySegment)
+        }
+    }
+
+    return fallback()
+}
+
+function directionFromSegment(segment) {
+    const dir = subtract(segment.to, segment.from)
+    const normalized = normalize(dir)
+    if (length(normalized) === 0) return { x: 0, y: 0, z: 1 }
+    return normalized
+}
+
+function isCasterEntity(entity, caster, casterId) {
+    if (!entity || !caster) return false
+    if (entity === caster) return true
+
+    const entityId = gDP(entity, 'id')
+    if (casterId !== undefined && entityId !== undefined && casterId === entityId) return true
+
+    return entity?.typeId === 'minecraft:player'
+        && caster?.typeId === 'minecraft:player'
+        && entity?.name === caster?.name
 }
 
 function reflect(direction, normal) {

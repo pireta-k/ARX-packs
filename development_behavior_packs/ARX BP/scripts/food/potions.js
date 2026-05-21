@@ -1,5 +1,5 @@
 import { acquireTrait, checkForTrait } from "../traits/traitsOperations"
-import { ssDP, iDP, gDP } from "../DPOperations"
+import { ssDP, iDP, gDP } from "../arxLib/DPOperations"
 import { sl, fl } from '../lang/fetchLocalization'
 
 // Potions, alcohol and consumables with unusual effect

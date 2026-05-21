@@ -1,4 +1,4 @@
-import { ssDP } from '../../DPOperations';
+import { ssDP } from '../../arxLib/DPOperations';
 import { findSpell } from '../findSpell';
 import { checkForItem } from '../../items/checkForItem';
 import { spellRegistry } from './_spellRegistry';

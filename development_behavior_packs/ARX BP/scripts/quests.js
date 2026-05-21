@@ -1,4 +1,4 @@
-import { gDP, ssDP } from "./DPOperations"
+import { gDP, ssDP } from "./arxLib/DPOperations"
 import { fl } from "./lang/fetchLocalization"
 import { ActionFormData } from "@minecraft/server-ui"
 import { world } from "@minecraft/server"

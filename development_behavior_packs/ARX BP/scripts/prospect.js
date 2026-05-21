@@ -1,6 +1,6 @@
 import { system } from "@minecraft/server"
-import { obj2str } from "./converters"
-import { sleep } from "./time"
+import { obj2str } from "./arxLib/converters"
+import { sleep } from "./arxLib/time"
 
 const PROSPECTIONSTEP = 16
 let cache = {}

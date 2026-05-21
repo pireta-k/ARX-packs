@@ -3,7 +3,7 @@
 import { queueCommand } from './commandQueue'
 import { checkForItem } from './items/checkForItem'
 import { checkForTrait } from './traits/traitsOperations'
-import { iDP, ssDP } from './DPOperations'
+import { iDP, ssDP } from './arxLib/DPOperations'
 
 // Увеличиваем прогресс навыка на inputValue, учитывая срезание прогресса от уровня
 export function increaseSkillProgress(player, skill, inputValue) {
@@ -100,8 +100,8 @@ export function increaseSkillLevel(player, skill) {
 export function getSkillsData(player) {
     // Собираем все навыки в массив с их данными
     const skillsArray = Object.keys(registeredSkills).map(skill => {
-        const level = player.getDynamicProperty(`skill:${skill}_level`) ?? 0;
-        const progress = player.getDynamicProperty(`skill:${skill}_progress`) ?? 0;
+        const level = Math.max(0, Number(player.getDynamicProperty(`skill:${skill}_level`)) || 0);
+        const progress = Number(player.getDynamicProperty(`skill:${skill}_progress`)) || 0;
         return { skill, level, progress };
     });
 
@@ -115,15 +115,11 @@ export function getSkillsData(player) {
 
         const symb = 'I';
         const lineLength = 25;
-        const lengthDone = Math.floor(lineLength * progress / 100);
-        const lengthUndone = lineLength - lengthDone;
+        const progressClamped = Math.max(0, Math.min(100, Number(progress) || 0));
+        const lengthDone = Math.max(0, Math.min(lineLength, Math.floor(lineLength * progressClamped / 100)));
+        const lengthUndone = Math.max(0, lineLength - lengthDone);
 
-        if (lengthDone < 0) {
-            console.warn(`getSkillsData: Unsupported lengthDone value: ${lengthDone}`)
-            return
-        }
-
-        let progressString = '[§a' + symb.repeat(lengthDone) + `§r§l${symb}§r§8` + symb.repeat(lengthUndone) + `§f] (§a${Math.floor(progress)}§fŨ)`;
+        let progressString = '[§a' + symb.repeat(lengthDone) + `§r§l${symb}§r§8` + symb.repeat(lengthUndone) + `§f] (§a${Math.floor(progressClamped)}§fŨ)`;
         resultString += progressString;
     }
 
@@ -214,10 +210,16 @@ export const registeredSkills = {
         iconIndex: 5,
     },
     'mp_regen': {
-        nameRU: "§dМагическая мощь",
+        nameRU: "§dРегенерация маны",
         howToIncrease: "повышается, когда вы сотворяете заклинания, требующие большое количество маны.",
         buff: "увеличивает скорость регенерации маны на 0.2.",
         iconIndex: 6,
+    },
+    'mp_range': {
+        nameRU: "§bДистанция заклинаний",
+        howToIncrease: "повышается, когда вы сотворяете заклинания на цель, которая далеко от вас.",
+        buff: "увеличивает дистанцию заклинаний на 1 блок.",
+        iconIndex: 11,
     },
     'hp': {
         nameRU: "§eСтойкость",

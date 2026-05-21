@@ -1,4 +1,4 @@
-import { gDP, ssDP } from "./DPOperations"
+import { gDP, ssDP } from "./arxLib/DPOperations"
 import { registeredSkills } from "./skillsOperations"
 
 // Эта функция устанавливает игроку значения переменных в дефолтные

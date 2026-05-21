@@ -1,7 +1,7 @@
 import { world } from "@minecraft/server";
 import { VERSION } from "./_main"
-import { gDP, ssDP } from "./DPOperations"
-import { getAdmins } from "./admin";
+import { gDP, ssDP } from "./arxLib/DPOperations"
+import { getAdmins } from "./arxLib/admin";
 
 // Detects update of Arx BP pack
 export function detectUpdate() {

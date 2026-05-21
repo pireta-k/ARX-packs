@@ -2,7 +2,7 @@
 
 // Imports
 import { system, world } from "@minecraft/server"
-import { ssDP } from "../DPOperations"
+import { ssDP } from "../arxLib/DPOperations"
 import { checkForItem } from "../items/checkForItem"
 
 const musicOptions = { fade: 2, loop: true }

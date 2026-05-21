@@ -1,8 +1,16 @@
-import { ModalFormData } from "@minecraft/server-ui"
-import { gDP, ssDP } from "../DPOperations"
+import { ModalFormData, ActionFormData } from "@minecraft/server-ui"
+import { gDP, ssDP } from "../arxLib/DPOperations"
 import { fl } from "../lang/fetchLocalization"
-import { isAdmin } from "../admin"
+import { isAdmin } from "../arxLib/admin"
 import { world } from "@minecraft/server"
+import { buildCoreErrorsReport } from "../core/core"
+import {
+    getReviewLanguages,
+    analyzeLocalization,
+    buildLocalizationOverviewBody,
+    buildLocalizationMissingKeysBody,
+    getMissingKeysPageCount,
+} from "../lang/localizationReview"
 
 // User's options
 export function arxSettings(p) {
@@ -98,5 +106,142 @@ export function arxGlobalSettings(p) {
             ssDP(world, 'enableWorldBorder', fv[3])
             ssDP(world, 'worldBorderRange', fv[4])
         }
+    })
+}
+
+/** @param {import("@minecraft/server").Player} p @param {string} langId @param {number} [page] */
+export function devLocalizationReviewLang(p, langId, page = 0) {
+    const stats = analyzeLocalization(langId)
+    const pageCount = getMissingKeysPageCount(langId, stats.missing.length)
+
+    const form = new ActionFormData()
+        .title(fl(p, 'info.dev_options.localization_review.lang_title', [langId.toUpperCase()]))
+        .body(buildLocalizationMissingKeysBody(p, langId, page))
+
+    /** @type {('prev' | 'next' | 'back')[]} */
+    const actions = []
+    if (page > 0) actions.push('prev')
+    if (stats.missing.length > 0 && page < pageCount - 1) actions.push('next')
+    actions.push('back')
+
+    for (const action of actions) {
+        if (action === 'prev') form.button(fl(p, 'info.dev_options.localization_review.prev'))
+        else if (action === 'next') form.button(fl(p, 'info.dev_options.localization_review.next'))
+        else form.button(fl(p, 'info.dev_options.localization_review.back_overview'))
+    }
+
+    form.show(p).then(response => {
+        if (response.canceled) return
+
+        const action = actions[response.selection]
+        if (action === 'prev') devLocalizationReviewLang(p, langId, page - 1)
+        else if (action === 'next') devLocalizationReviewLang(p, langId, page + 1)
+        else devLocalizationReview(p)
+    })
+}
+
+/** @param {import("@minecraft/server").Player} p */
+export function devLocalizationReview(p) {
+    const langs = getReviewLanguages()
+
+    const form = new ActionFormData()
+        .title(fl(p, 'info.dev_options.localization_review.title'))
+        .body(buildLocalizationOverviewBody(p))
+
+    for (const langId of langs) {
+        const stats = analyzeLocalization(langId)
+        const pctFmt = stats.percent === 100 ? `§a${stats.percent}%` : `§c${stats.percent}%`
+        form.button(`${langId.toUpperCase()}: ${pctFmt}\n§d§o${stats.translated}/${stats.total}`)
+    }
+
+    form.button(fl(p, 'info.dev_options.back'))
+
+    form.show(p).then(response => {
+        if (response.canceled) return
+
+        if (response.selection < langs.length) {
+            devLocalizationReviewLang(p, langs[response.selection], 0)
+            return
+        }
+
+        devOptions(p)
+    })
+}
+
+/** @param {import("@minecraft/server").Player} p */
+export function devCoreReview(p) {
+    const form = new ActionFormData()
+        .title(fl(p, 'info.dev_options.core_review.title'))
+        .body(buildCoreErrorsReport(p))
+        .button(fl(p, 'info.dev_options.back'))
+
+    form.show(p).then(response => {
+        if (!response.canceled) devOptions(p)
+    })
+}
+
+/** @param {import("@minecraft/server").Player} p @param {string} [tab] вкладка для будущего расширения */
+export function devOptions(p, tab = 'main') {
+
+    /** @type {{ tab: string, dp: string, label: string, tooltip: string, value: boolean }[]} */
+    const toggles = [
+        {
+            tab: 'main',
+            dp: 'enableAmbienceCore',
+            label: 'info.dev_options.enable_ambience_core',
+            tooltip: 'info.dev_options.enable_ambience_core.tooltip',
+            value: gDP(world, 'enableAmbienceCore') ?? true,
+        },
+        {
+            tab: 'main',
+            dp: 'enableFogs',
+            label: 'info.dev_options.enable_fogs',
+            tooltip: 'info.dev_options.enable_fogs.tooltip',
+            value: gDP(world, 'enableFogs') ?? true,
+        },
+    ].filter(t => t.tab === tab)
+
+    /** @type {{ tab: string, action: string, label: string }[]} */
+    const navButtons = [
+        {
+            tab: 'main',
+            action: 'coreReview',
+            label: 'info.dev_options.core_review',
+        },
+        {
+            tab: 'main',
+            action: 'localizationReview',
+            label: 'info.dev_options.localization_review',
+        },
+    ].filter(b => b.tab === tab)
+
+    const form = new ActionFormData()
+        .title(fl(p, 'info.dev_options.title'))
+
+    for (const t of toggles) {
+        const stateKey = t.value ? 'info.dev_options.on' : 'info.dev_options.off'
+        form.button(`${fl(p, t.label)}: ${fl(p, stateKey)}\n§d§o${fl(p, t.tooltip)}`)
+    }
+
+    for (const b of navButtons) {
+        form.button(fl(p, b.label))
+    }
+
+    form.show(p).then(response => {
+        if (response.canceled) return
+
+        const toggleCount = toggles.length
+
+        if (response.selection < toggleCount) {
+            const selected = toggles[response.selection]
+            if (!selected) return
+            ssDP(world, selected.dp, !selected.value)
+            devOptions(p, tab)
+            return
+        }
+
+        const nav = navButtons[response.selection - toggleCount]
+        if (nav?.action === 'coreReview') devCoreReview(p)
+        else if (nav?.action === 'localizationReview') devLocalizationReview(p)
     })
 }

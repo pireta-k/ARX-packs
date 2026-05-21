@@ -377,6 +377,14 @@
          "sounds/eating/eat_solid_3"
       ]
    },
+   "magic.ray.hit": {
+      "category": "neutral",
+      "sounds": [
+         "sounds/magic/magic_ray_hit_1",
+         "sounds/magic/magic_ray_hit_2",
+         "sounds/magic/magic_ray_hit_3"
+      ]
+   },
    "music.game": {},
    "music.game.creative": {},
    "music.game.credits": {},
@@ -477,8 +485,6 @@
          }
       ]
    },
-
-
    // Music
    "Adding_the_Sun": {
       "category": "music",

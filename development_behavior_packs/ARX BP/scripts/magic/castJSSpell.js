@@ -4,7 +4,7 @@ import { getEntityFamilies } from '../_main';
 import { system, MolangVariableMap } from "@minecraft/server"
 import { spellRegistry } from './spells/_spellRegistry';
 import { checkForItem } from '../items/checkForItem';
-import { ssDP } from '../DPOperations';
+import { gDP, ssDP } from '../arxLib/DPOperations';
 import { rayCast } from './rayCast';
 
 // Создает и возвращает объект spellData, хранящий в себе всё, что может пригодиться в обработке заклинания
@@ -13,6 +13,7 @@ export function prepareSpellData(player, runeSequence) {
 
     // Определяем дальность действия заклинания
     let spellDistance = defineCastDistance(player)
+    spellData['spellDistance'] = spellDistance
 
     // Определяем, по площади ли заклинание? Если оно содержит руну area, то по площади
     const isAreaSpell = runeSequence.includes("area")
@@ -79,6 +80,9 @@ export function defineCastDistance(p) {
     if (checkForItem(p, 'Offhand', 'arx:ring_lamenite_aquamarine')) distance += 6
     if (checkForItem(p, 'Feet', 'arx:ring_lamenite_aquamarine')) distance += 6
 
+    // Навык «Дистанция заклинаний»: +1 блок за уровень
+    distance += gDP(p, 'skill:mp_range_level', 0)
+
     ssDP(p, 'spellDistance', distance)
     return distance
 }
@@ -110,6 +114,7 @@ export function castJSSpell(player, runeSequence, spellData = undefined) {
     // Вызов обработчика конкретного заклинания с нужными данными для каждой сущности
     let successfulCastsCounter = 0
     let wasWrongEntityType = false
+    spellData['successfulTargets'] = []
 
     for (const entity of spellData.targets) {
         // Проверка onlyOnPlayers: true
@@ -120,6 +125,7 @@ export function castJSSpell(player, runeSequence, spellData = undefined) {
 
         // Активируем заклинание
         spell.handler(entity, spellData)
+        spellData.successfulTargets.push(entity)
         successfulCastsCounter++
     }
     if (successfulCastsCounter === 0 && wasWrongEntityType) return 'wrongEntityType'

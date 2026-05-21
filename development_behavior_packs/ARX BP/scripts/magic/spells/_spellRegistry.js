@@ -1,4 +1,5 @@
-// SPOILERS WARNING!!! If you play Arx, I highly don't recommend you to read this file
+// SPOILERS WARNING!!! 
+// If you play Arx, I highly don't recommend you to read this file
 
 // IMPORTS
 
@@ -20,8 +21,8 @@ import { dispelMagic } from './SPELLDispelMagic'
 import { dispelEffects } from './SPELLDispelEffects'
 
 // Other
-import { iDP, ssDP } from '../../DPOperations'
-import { setScore, getScore } from '../../scoresOperations';
+import { iDP, ssDP } from '../../arxLib/DPOperations'
+import { setScore, getScore } from '../../arxLib/scoresOperations';
 import { getEntityFamilies } from '../../_main';
 import { system } from "@minecraft/server"
 import { runeCiphers } from '../rune_cipher_list'

@@ -1,6 +1,6 @@
 import { system, world } from "@minecraft/server"
 import { checkForItem } from "../items/checkForItem"
-import { ssDP } from "../DPOperations"
+import { ssDP } from "../arxLib/DPOperations"
 
 // Аркс сохраняет данные о достижениях в DP, при этом формат записи ach:idДостижения
 // arx:id = false значит, что достижение не выполнено

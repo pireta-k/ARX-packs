@@ -1,5 +1,5 @@
 import { ActionFormData } from "@minecraft/server-ui"
-import { getScore } from "../scoresOperations"
+import { getScore } from "../arxLib/scoresOperations"
 
 // Отображение UI статистики игрока
 export function infoAboutStatistics(player) {

@@ -1,5 +1,5 @@
 import { queueCommand } from './commandQueue'
-import { ssDP } from './DPOperations';
+import { ssDP } from './arxLib/DPOperations';
 
 // Анализ эмоций
 export function emote(player, message) {

@@ -1,6 +1,6 @@
 import { system, world } from "@minecraft/server"
 import { checkForItem } from '../items/checkForItem'
-import { ssDP } from "../DPOperations"
+import { ssDP } from "../arxLib/DPOperations"
 
 // Dynamic Light
 system.runInterval(() => {

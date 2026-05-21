@@ -1,4 +1,5 @@
 import { system, world } from "@minecraft/server";
+import { gDP } from "../arxLib/DPOperations";
 
 // Глобальное хранилище: ключ — "x,y,z", значение — { x, y, z, biome }
 const biomeBlocks = new Map(); // лучше Map, чем обычный объект
@@ -52,6 +53,8 @@ function getBlocksAtMultiplesOf10(player, radius = 30) {
 
 // Основной цикл
 system.runInterval(() => {
+    if (gDP(world, 'enableAmbienceCore') === false) return
+
     // Очищаем карту перед новым проходом? Нет — лучше накапливать, но можно и обновлять.
     // Вариант: оставляем всё, что есть, и обновляем/добавляем заново.
     // Но если игрок ушёл — блоки останутся. Поэтому лучше **пересобирать полностью** каждый раз.

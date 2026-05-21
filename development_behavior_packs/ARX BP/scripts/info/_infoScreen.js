@@ -9,14 +9,14 @@ import { infoAboutStatistics } from "./infoAboutStatistics"
 import { infoAboutAchievements } from "./infoAboutAchievements"
 import { knownSpellsBook } from "./knownSpellsBook"
 import { infoAboutTraits } from "./infoAboutTraits"
-import { arxSettings, arxGlobalSettings } from "./arxSettings"
+import { arxSettings, arxGlobalSettings, devOptions } from "./arxSettings"
 import { infoAboutArxDevs } from "./devs"
 import { questsInfo } from '../quests'
 
 import { getStabilityTestResult } from '../stabilityTesting'
-import { gDP } from "../DPOperations"
+import { gDP } from "../arxLib/DPOperations"
 import { fl } from "../lang/fetchLocalization"
-import { isAdmin } from "../admin"
+import { isAdmin } from "../arxLib/admin"
 import { launchCameraUI } from "../camera/launchCameraUI"
 
 // Show to player the main info screen
@@ -87,7 +87,7 @@ export function infoScreen(player) {
         devOptions: {
             condition: () => isAdmin(player) && gDP(player, 'myRule:devMode'),
             icon: 'textures/ui/info/devOptions',
-            exe: () => infoAboutArxDevs(player)
+            exe: () => devOptions(player)
         },
     }
 

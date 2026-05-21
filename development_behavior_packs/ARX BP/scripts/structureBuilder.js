@@ -1,10 +1,10 @@
 import { world, system } from "@minecraft/server"
 import { checkForItem } from "./items/checkForItem"
-import { gDP, ssDP } from "./DPOperations"
+import { gDP, ssDP } from "./arxLib/DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
-import { obj2str, str2obj } from "./converters"
+import { obj2str, str2obj } from "./arxLib/converters"
 import { validateTickingAreaLoading } from "./prospect"
-import { sleep } from "./time"
+import { sleep } from "./arxLib/time"
 
 let ACSSStorage = {}
 
@@ -465,11 +465,13 @@ async function loadACSS(acssJSON, d, p1) {
         // Get block data
         const blockDataRaw = acss.palette[blockKey]
         const bd = blockData(blockDataRaw, 'decompress')
-        b.setType(bd.id)
-        if (bd.perms) {
-            for (const perm in bd.perms) {
-                const newPermutation = b.permutation.withState(perm, bd.perms[perm])
-                b.setPermutation(newPermutation)
+        if (bd.id !== 'structure_void') {
+            b.setType(bd.id)
+            if (bd.perms) {
+                for (const perm in bd.perms) {
+                    const newPermutation = b.permutation.withState(perm, bd.perms[perm])
+                    b.setPermutation(newPermutation)
+                }
             }
         }
         blockIndex++

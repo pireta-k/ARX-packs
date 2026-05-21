@@ -1,4 +1,4 @@
-import { iDP } from "../../DPOperations"
+import { iDP } from "../../arxLib/DPOperations"
 
 // Защита
 export function waterOps(player, waterBonus) {

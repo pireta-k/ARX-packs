@@ -1,7 +1,7 @@
 // Imports
 import { world, EntityComponentTypes, EquipmentSlot } from "@minecraft/server"
 import { emote } from './emote'
-import { getScore } from './scoresOperations'
+import { getScore } from './arxLib/scoresOperations'
 import { getSkillsData } from './skillsOperations'
 import { queueCommand } from './commandQueue'
 import { checkForItem } from "./items/checkForItem"
@@ -11,8 +11,8 @@ import { runeCiphers } from './magic/rune_cipher_list'
 import { cipherRuneSequence } from './magic/on_use_magic_items'
 
 import { acquireTrait, checkForTrait, clearTraits } from './traits/traitsOperations'
-import { ssDP } from "./DPOperations"
-import { isAdmin, getAdmins } from './admin'
+import { ssDP } from "./arxLib/DPOperations"
+import { isAdmin, getAdmins } from './arxLib/admin'
 
 // Обработка чата before
 world.beforeEvents.chatSend.subscribe((eventData) => {

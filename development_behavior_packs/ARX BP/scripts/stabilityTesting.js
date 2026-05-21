@@ -1,7 +1,7 @@
 import { system, world } from "@minecraft/server"
 
 // Этот код отвечает за проведение тестов стабильности Аркса
-import { getTime } from './time'
+import { getTime } from './arxLib/time'
 
 
 // Интервал между тестами в секундах

@@ -1,5 +1,5 @@
 import { checkForItem } from "../../items/checkForItem";
-import { ssDP } from "../../DPOperations"
+import { ssDP } from "../../arxLib/DPOperations"
 import { fl } from "../../lang/fetchLocalization";
 
 // Защита

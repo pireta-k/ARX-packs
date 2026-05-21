@@ -1,5 +1,5 @@
-import { ssDP } from "../../DPOperations"
-import { getScore, setScore } from '../../scoresOperations'
+import { ssDP } from "../../arxLib/DPOperations"
+import { getScore, setScore } from '../../arxLib/scoresOperations'
 import { sl } from "../../lang/fetchLocalization"
 
 // Рассеивание заклинаний

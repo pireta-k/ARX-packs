@@ -1,4 +1,4 @@
-import { ssDP } from "../../DPOperations"
+import { ssDP } from "../../arxLib/DPOperations"
 
 const allowedPowers = [0, 1, 2, 3]
 

@@ -1,7 +1,7 @@
-import { getTime } from "./time"
+import { getTime } from "./arxLib/time"
 import { checkForItem } from "./items/checkForItem"
 import { world } from "@minecraft/server"
-import { ssDP } from "./DPOperations"
+import { ssDP } from "./arxLib/DPOperations"
 
 // Получаем историю блока (триггер)
 world.afterEvents.entityHitBlock.subscribe((hitEvent) => {

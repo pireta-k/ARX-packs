@@ -1,6 +1,6 @@
 import { traitsList } from './traitsList'
 import { queueCommand } from '../commandQueue'
-import { gDP, ssDP } from '../DPOperations';
+import { gDP, ssDP } from '../arxLib/DPOperations';
 
 // Черты хранятся в dynamicProperty игрока вида trait:traitId = ( 0 === нет черты || 1 === есть черта || 2 === закреп )
 
