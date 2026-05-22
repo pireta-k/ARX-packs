@@ -687,8 +687,8 @@ export let spellRegistry = {
     },
 
     // Живые манекены
-    'invocatio mutatio visus magna area': {
-        mpCost: 120,
+    'invocatio mutatio visus magna': {
+        mpCost: 80,
         color: '#cc7979',
         description: 'заклинание оживления манекенов',
         validTargets: [2],

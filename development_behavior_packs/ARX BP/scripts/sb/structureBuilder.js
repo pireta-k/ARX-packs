@@ -1,10 +1,10 @@
 import { world, system } from "@minecraft/server"
-import { checkForItem } from "./items/checkForItem"
-import { gDP, ssDP } from "./arxLib/DPOperations"
+import { checkForItem } from "../items/checkForItem"
+import { gDP, ssDP } from "../arxLib/DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
-import { obj2str, str2obj } from "./arxLib/converters"
+import { obj2str, str2obj } from "../arxLib/converters"
 import { validateTickingAreaLoading } from "./prospect"
-import { sleep } from "./arxLib/time"
+import { sleep } from "../arxLib/time"
 
 let ACSSStorage = {}
 
@@ -382,7 +382,7 @@ async function saveACSS(d, p1, p2) {
     return resultJSON
 }
 
-async function loadACSS(acssJSON, d, p1) {
+export async function loadACSS(acssJSON, d, p1) {
 
     // === ACSS validation ===
     // Validate ACSS JSON

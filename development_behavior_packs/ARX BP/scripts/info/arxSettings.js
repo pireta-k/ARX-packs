@@ -3,7 +3,7 @@ import { gDP, ssDP } from "../arxLib/DPOperations"
 import { fl } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
 import { world } from "@minecraft/server"
-import { buildCoreErrorsReport } from "../core/core"
+import { coreFramework, coreErrorCounts } from "../core/core"
 import {
     getReviewLanguages,
     analyzeLocalization,
@@ -11,6 +11,55 @@ import {
     buildLocalizationMissingKeysBody,
     getMissingKeysPageCount,
 } from "../lang/localizationReview"
+
+/** @param {string} coreKey */
+function isDevCoreBlockActive(coreKey) {
+    const block = coreFramework[coreKey]
+    if (!block) return false
+    if (!('condition' in block)) return true
+    try {
+        return !!block.condition()
+    } catch {
+        return false
+    }
+}
+
+/** @param {boolean} active */
+function formatDevCoreActiveBadge(active) {
+    return active ? '§f[§aE§f]' : '§f[§cD§f]'
+}
+
+const coreReviewDivider = '§8────────────────§r'
+
+/** @param {import("@minecraft/server").Player} p */
+function buildCoreReviewBody(p) {
+    const lines = []
+    let total = 0
+    const keys = Object.keys(coreFramework)
+
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i]
+        const count = coreErrorCounts[key] ?? 0
+        total += count
+
+        const tick = coreFramework[key].tickSpeed
+        const errFmt = count === 0 ? `§a${count}` : `§c${count}`
+        const badge = formatDevCoreActiveBadge(isDevCoreBlockActive(key))
+
+        if (i > 0) lines.push(coreReviewDivider)
+        lines.push(`${badge} §f${key} §8§o${tick}t`)
+        lines.push(fl(p, 'info.dev_options.core_review.block_errors', [errFmt]))
+    }
+
+    const totalFmt = total === 0 ? `§a${total}` : `§c${total}`
+    const header = [
+        fl(p, 'info.dev_options.core_review.intro'),
+        fl(p, 'info.dev_options.core_review.total', [totalFmt]),
+        coreReviewDivider,
+    ].join('\n')
+
+    return header + '\n' + lines.join('\n')
+}
 
 // User's options
 export function arxSettings(p) {
@@ -172,7 +221,7 @@ export function devLocalizationReview(p) {
 export function devCoreReview(p) {
     const form = new ActionFormData()
         .title(fl(p, 'info.dev_options.core_review.title'))
-        .body(buildCoreErrorsReport(p))
+        .body(buildCoreReviewBody(p))
         .button(fl(p, 'info.dev_options.back'))
 
     form.show(p).then(response => {

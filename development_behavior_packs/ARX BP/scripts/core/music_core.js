@@ -1,7 +1,7 @@
 // ARX music core
 
 // Imports
-import { system, world } from "@minecraft/server"
+import { world } from "@minecraft/server"
 import { ssDP } from "../arxLib/DPOperations"
 import { checkForItem } from "../items/checkForItem"
 
@@ -222,8 +222,7 @@ const musicLocations = {
     },
 }
 
-// Start every 1 sec
-system.runInterval(() => {
+export function musicCoreTick() {
     for (const player of world.getPlayers()) {
 
         // Where the player was last processed time?
@@ -259,9 +258,7 @@ system.runInterval(() => {
         if (musicLocation === 'unknown') player.playMusic('Morgana_Rides', musicOptions)
         else player.playMusic(musicLocations[musicLocation].music, musicOptions)
     }
-}, 20)
-
-
+}
 
 // Is the player in specified biome?
 function isInBiome(player, biome) {

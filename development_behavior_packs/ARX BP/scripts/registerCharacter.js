@@ -5,13 +5,14 @@ import { world } from "@minecraft/server"
 import { fl, setPlayerLanguage } from "./lang/fetchLocalization"
 import { showLanguageForm } from "./lang/form"
 import { RELEASE } from "./_main"
+import { isArxWorldReady } from "./update"
 
 const thirstRegStep = 10
 
 // Register character
 export async function registerCharacter(player) {
-    // World is not loaded
-    if (!gDP(world, 'arxEverLoaded')) {
+    // Migrations still running (e.g. first-time 0.0.0 setup)
+    if (!isArxWorldReady()) {
         const formNo = new ActionFormData()
             .title(fl(player, 'lobby.registration.cannot_registrate.title'))
             .body(fl(player, 'lobby.registration.cannot_registrate.arx_is_setting_up'))

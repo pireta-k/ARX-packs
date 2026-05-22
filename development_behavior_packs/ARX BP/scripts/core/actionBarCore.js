@@ -1,4 +1,4 @@
-import { system, world } from "@minecraft/server"
+import { world } from "@minecraft/server"
 
 let actionBarGlobal = {}
 /* Структура
@@ -26,7 +26,7 @@ export function sendToActionBar(player, iD, message, time) {
 }
 
 // Отображение в actionbar. Если есть несколько актуальных сообщений, отображаются через |, наприм Откат атаки 1 | Мана 10 | Вы промокли
-system.runInterval(() => {
+export function actionBarCoreTick() {
     for (const player of world.getPlayers()) {
         if (player.name in actionBarGlobal) {
             let messagesToDisplay = [] // Те messages, которые нам нужно в этом такте вывести на экран
@@ -43,4 +43,4 @@ system.runInterval(() => {
             }
         }
     }
-}, 1)
+}

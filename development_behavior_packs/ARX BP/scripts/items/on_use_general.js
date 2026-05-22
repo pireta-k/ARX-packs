@@ -10,8 +10,8 @@ import { manageCD } from "../manageCD";
 import { clearTraits, acquireTrait } from '../traits/traitsOperations'
 import { iDP, ssDP, gDP } from "../arxLib/DPOperations";
 import { sl } from "../lang/fetchLocalization";
-import { onUseSBHammer } from "../structureBuilder";
-import { prospect, runProspection } from '../prospect'
+import { onUseSBHammer } from "../sb/structureBuilder";
+import { prospect, runProspection } from '../sb/prospect'
 import { sleep } from "../arxLib/time";
 import { Quest } from '../quests'
 
@@ -24,8 +24,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Тест
         case "arx:mod_sword":
             if (manageCD(player)) {
-                const q = new Quest(player, 'test')
-                q.acquire()
+                ssDP(world, 'latestV', [0, 0, 0])
             }
             break
 

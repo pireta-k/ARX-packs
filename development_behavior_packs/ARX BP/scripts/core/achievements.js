@@ -1,4 +1,4 @@
-import { system, world } from "@minecraft/server"
+import { world } from "@minecraft/server"
 import { checkForItem } from "../items/checkForItem"
 import { ssDP } from "../arxLib/DPOperations"
 
@@ -498,8 +498,7 @@ export function completeAchievement(player, achievementID) { // achievementID Б
 
 }
 
-// Анализ достижений
-system.runInterval(() => {
+export function achievementsCoreTick() {
     for (const player of world.getPlayers()) {
         if (player.getDynamicProperty('hasRegisteredCharacter') === true) {
             for (const achievement in achievementsList) {
@@ -527,4 +526,4 @@ system.runInterval(() => {
             }
         }
     }
-}, 30);
+}

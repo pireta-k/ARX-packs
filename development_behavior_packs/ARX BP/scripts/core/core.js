@@ -10,22 +10,24 @@ import { ModalFormData, MessageFormData, MessageFormResponse } from "@minecraft/
 import { getPlayersInRadius } from '../getPlayersInRadius'
 import { getActiveStaffChannel } from '../magic/getActiveStaffChannel'
 import { channelRomanNums } from '../magic/channelRomanNums'
-import { isEntityInCube } from "./music_core"
 import { weighAnalysis } from '../weighAnalysis'
 import { checkForTrait } from "../traits/traitsOperations"
 import { killingTimeAnimDelay, animate_killing_time } from './animate_killing_time'
 import { ssDP, iDP, gDP } from '../arxLib/DPOperations'
 import { acquireTrait } from "../traits/traitsOperations"
-import { sendToActionBar } from './actionBarCore'
-import { sl, fl } from "../lang/fetchLocalization"
+import { sendToActionBar, actionBarCoreTick } from './actionBarCore'
+import { ambienceCoreTick } from './ambience_core'
+import { dynamicLightCoreTick } from './dynamicLightCore'
+import { musicCoreTick } from './music_core'
+import { achievementsCoreTick } from './achievements'
+import { sl } from "../lang/fetchLocalization"
 import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
+import { sleep } from "../arxLib/time"
 
 // Other core parts
 import { getNearestPlayer } from "../getNearestPlayer"
 import { queueCommand } from "../commandQueue"
 import { msgFromGuide, parceChatCommand } from "../chat"
-import './ambience_core'
-import './dynamicLightCore'
 import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
 
@@ -1543,48 +1545,47 @@ export const coreFramework = {
             }
         }
     },
+
+    // Mini-core modules (tick logic only; launched here)
+    ambience: {
+        condition: () => gDP(world, 'enableAmbienceCore') !== false,
+        tickSpeed: 40,
+        operations: ambienceCoreTick,
+    },
+    dynamicLight: {
+        tickSpeed: 1,
+        operations: dynamicLightCoreTick,
+    },
+    music: {
+        tickSpeed: 20,
+        operations: musicCoreTick,
+    },
+    actionBar: {
+        tickSpeed: 1,
+        operations: actionBarCoreTick,
+    },
+    achievements: {
+        tickSpeed: 30,
+        operations: achievementsCoreTick,
+    },
 }
 
 /** Счётчик ошибок operations() по ключам coreFramework (для dev UI) */
 export const coreErrorCounts = {}
 
-const coreReviewDivider = '§8────────────────§r'
-
-/** Текст отчёта core review для ActionFormData.body */
-export function buildCoreErrorsReport(p) {
-    const lines = []
-    let total = 0
-    const keys = Object.keys(coreFramework)
-
-    for (let i = 0; i < keys.length; i++) {
-        const key = keys[i]
-        const count = coreErrorCounts[key] ?? 0
-        total += count
-
-        const tick = coreFramework[key].tickSpeed
-        const errFmt = count === 0 ? `§a${count}` : `§c${count}`
-
-        if (i > 0) lines.push(coreReviewDivider)
-        lines.push(`§f${key} §8§o${tick}t`)
-        lines.push(fl(p, 'info.dev_options.core_review.block_errors', [errFmt]))
-    }
-
-    const totalFmt = total === 0 ? `§a${total}` : `§c${total}`
-    const header = [
-        fl(p, 'info.dev_options.core_review.intro'),
-        fl(p, 'info.dev_options.core_review.total', [totalFmt]),
-        coreReviewDivider,
-    ].join('\n')
-
-    return header + '\n' + lines.join('\n')
-}
-
 // =====================
 // === Core Launcher === 
 // =====================
-world.afterEvents.worldLoad.subscribe(() => {
+world.afterEvents.worldLoad.subscribe(async () => {
+    const errorName = `[§dCoreError§r]`
     try {
-        const errorName = `[§dCoreError§r]`
+
+        // Wait for world to be ready
+        let worldIsLoaded = false
+        while (!worldIsLoaded) {
+            if (world.getPlayers().length > 0) worldIsLoaded = true
+            await sleep(1)
+        }
 
         system.runInterval(async () => { // Every tick
             // Launch core parts

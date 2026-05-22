@@ -1,9 +1,8 @@
-import { system, world } from "@minecraft/server"
+import { world } from "@minecraft/server"
 import { checkForItem } from '../items/checkForItem'
 import { ssDP } from "../arxLib/DPOperations"
 
-// Dynamic Light
-system.runInterval(() => {
+export function dynamicLightCoreTick() {
     for (const player of world.getPlayers()) {
 
         let dynamicLightPower = 0
@@ -39,7 +38,7 @@ system.runInterval(() => {
             launchLight(entity, entity.location, currentPower)
         }
     }
-}, 1)
+}
 
 // Set light blocks
 function launchLight(entity, position, power) {

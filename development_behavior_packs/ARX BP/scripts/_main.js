@@ -23,8 +23,9 @@ import './items/on_use_general'
 import './magic/on_use_magic_items'
 import './stabilityTesting'
 import './camera/processCamera'
-import './structureBuilder'
+import './sb/structureBuilder'
 import './blocksHistory'
+import './update'
 
 import { registerPlayerVars } from "./registerPlayerVars"
 import { checkForItem } from "./items/checkForItem"
@@ -37,9 +38,6 @@ import { md5, obj2str } from "./arxLib/converters"
 import { isAdmin, getAdmins, getHoster } from './arxLib/admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { showLanguageForm } from "./lang/form"
-import { runProspection } from "./prospect"
-import { sleep } from "./arxLib/time"
-
 // Type of release. 
 // Available: alpha, beta, special, stable
 export const RELEASE = 'alpha'
@@ -124,121 +122,6 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
     ssDP(player, 'camera:numOfProcessedTimecodes', 0)
 
     registerPlayerVars(player)
-
-    if (world.getPlayers().length === 1) { // Если только один игрок в мире, т.е. только хостер
-
-        // Check, is this the first time the hoster entered the world with Arx
-        let arxEverLoaded = world.getDynamicProperty('arxEverLoaded')
-        // It's the first time
-        if (!arxEverLoaded) {
-            console.log('Initializing Arx...')
-            player.runCommand("function world_reg/_world_reg") // Register scores 
-            setScore(player, 'verify', 2) // Register the player as a hoster
-            ssDP(player, 'isHoster', true)
-            world.setDefaultSpawnLocation({ x: -10000, y: 4, z: -10000 })
-
-            // Gamerules default settings
-            world.gameRules.sendCommandFeedback = false
-            world.gameRules.doInsomnia = false
-            world.gameRules.doWeatherCycle = false
-            world.gameRules.showDeathMessages = false
-            world.gameRules.doImmediateRespawn = true
-            world.gameRules.locatorBar = false
-            world.gameRules.spawnRadius = 0
-            world.gameRules.showTags = false
-            world.gameRules.naturalRegeneration = true
-            world.gameRules.recipesUnlock = false
-
-            // Arx default settings
-            ssDP(world, 'generateGrass', true)
-            ssDP(world, 'anticheat', true)
-            ssDP(world, 'allowArxCameras', true)
-            ssDP(world, 'enableWorldBorder', false)
-            ssDP(world, 'worldBorderRange', 5000)
-            ssDP(world, 'enableAmbienceCore', true)
-            ssDP(world, 'enableFogs', true)
-
-            const d = world.getDimension('minecraft:overworld')
-
-            // Create tickarea
-            d.runCommand('tickingarea add -9980 0 -9980 -10020 0 -10020 lobbyReg true')
-            await sleep(1)
-
-            // Wait till the hoster is loaded
-            await waitUntilHosterIsLoaded(player)
-            console.warn('Hoster is loaded')
-            player.runCommand('camera @s fade time 0 2 0 color 10 10 10')
-            const initialSpawnPoint = player.location
-
-            // Creates lobby and verifies it
-            await createLobby(d, player)
-
-            // Loading screen for hoster
-            player.runCommand('camera @s fade time 0 2 0 color 10 10 10')
-            player.runCommand('title @s title §gArx Ultima')
-
-            // Prospect spawnpoint
-            const spawnLocation = await runProspection(
-                world.getDimension('minecraft:overworld'),
-                initialSpawnPoint,
-                (data) => { return ['minecraft:forest', 'minecraft:plains', 'minecraft:birch_forest'].includes(data.biome) && !data.hasLiquidAbove }
-            )
-            ssDP(world, 'worldSpawnPoint', { x: spawnLocation.x, y: spawnLocation.y + 1, z: spawnLocation.z })
-
-            // Finalize
-            ssDP(world, 'arxEverLoaded', true)
-
-            // Functions 
-            async function createLobby(d, hoster) {
-                // Is the world completely loaded?
-                try {
-                    console.log('Trying to create lobby...')
-                    hoster.teleport({ x: -9999.5, y: 4, z: -9999.5 }, { checkForBlocks: true, dimension: d, facingLocation: { x: -9999.5, y: 4, z: -9993 }, keepVelocity: false })
-                    hoster.runCommand('fill ~-10 ~-10 ~-10 10 10 10 air')
-                    // Verify lobby loading
-                    // Blocks above broken portal
-                    const b1 = d.getBlock({ x: -10001, y: 5, z: -10001 })
-                    const b2 = d.getBlock({ x: -10001, y: 5, z: -9999 })
-                    const b3 = d.getBlock({ x: -9999, y: 5, z: -10001 })
-                    const b4 = d.getBlock({ x: -9999, y: 5, z: -9999 })
-                    if (!b1 || !b2 || !b3 || !b4) throw new Error('Lobby is still loading')
-
-                    d.placeFeature('arx:lobby_feature', { x: -9991, y: 0, z: -9989 }, true)
-
-                    // Are the upper blocks really air?
-                    const air = 'minecraft:air'
-                    if (b1.typeId != air || b2.typeId != air || b3.typeId != air || b4.typeId != air) throw new Error('Wrong lobby placement')
-
-                    // Are the bottom blocks correct?
-                    const b5 = d.getBlock({ x: -10001, y: 3, z: -10001 }) // mossy_stone_bricks
-                    const b6 = d.getBlock({ x: -10001, y: 3, z: -9999 }) // stone_bricks
-                    const b7 = d.getBlock({ x: -9999, y: 3, z: -10001 }) // stone_bricks
-                    const b8 = d.getBlock({ x: -9999, y: 3, z: -9999 }) // cracked_stone_bricks
-
-                    if (b5.typeId != 'minecraft:mossy_stone_bricks' || b6.typeId != 'minecraft:stone_bricks' || b7.typeId != 'minecraft:stone_bricks' || b8.typeId != 'minecraft:cracked_stone_bricks') throw new Error('Wrong lobby placement')
-                }
-                catch {
-                    system.runTimeout(() => {
-                        createLobby(d, hoster)
-                    }, 2)
-                }
-                // Other thing we have to do
-                d.spawnEntity('arx:lobby_character_creation', { x: -9999.5, y: 4, z: -9993 }, { initialRotation: 180 })
-                d.spawnEntity('arx:carved_bench', { x: -9994.5, y: 4, z: -10003.5 }, { initialRotation: 90 })
-                d.spawnEntity('arx:statue_of_sinriada', { x: -9991.5, y: 8, z: -9997.0 }, { initialRotation: 90 })
-                d.runCommand('tickingarea remove lobbyReg')
-            }
-
-            async function waitUntilHosterIsLoaded(hoster) {
-                hoster.addEffect('instant_health', 60, { amplifier: 255, showParticles: false })
-                const hosterLoaded = await isPlayerCompletelyLoaded(hoster)
-                // Loading screen for hoster
-                if (!hosterLoaded) {
-                    await waitUntilHosterIsLoaded(hoster)
-                }
-            }
-        }
-    }
 
     // Is this the thirst time the player entered Arx?
     const playedBefore = player.getDynamicProperty('hasEverPlayedArx')
