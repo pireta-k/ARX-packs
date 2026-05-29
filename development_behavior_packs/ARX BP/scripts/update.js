@@ -5,7 +5,7 @@ import { VERSION } from "./_main"
 import { gDP, ssDP } from "./arxLib/DPOperations"
 import { getAdmins } from "./arxLib/admin";
 import { setScore } from "./arxLib/scoresOperations"
-import { runProspection, validateTickingAreaLoading } from "./sb/prospect"
+import { createProspectionTarget, runProspection, validateTickingAreaLoading } from "./sb/prospect"
 import { loadACSS } from "./sb/structureBuilder"
 import { acssStorage } from "./sb/acssStorage"
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
@@ -151,7 +151,13 @@ async function runArxFirstLoad() {
     const spawnLocation = await runProspection(
         d,
         initialSpawnPoint,
-        (data) => ['minecraft:forest', 'minecraft:plains', 'minecraft:birch_forest'].includes(data.biome) && !data.hasLiquidAbove
+        (data) => ['minecraft:forest', 'minecraft:plains', 'minecraft:birch_forest'].includes(data.biome) && !data.hasLiquidAbove,
+        0,
+        0,
+        {},
+        undefined,
+        false,
+        'octagonal'
     )
     const spawn = spawnLocation ?? initialSpawnPoint
     if (!spawnLocation) console.warn('Arx first load: prospection fallback to initial spawn')
@@ -161,7 +167,10 @@ async function runArxFirstLoad() {
     const smallTestHomeLocation = await runProspection(
         d,
         spawn,
-        (data) => ['minecraft:meadow', 'minecraft:plains'].includes(data.biome) && !data.hasLiquidAbove,
+        createProspectionTarget(
+            (data) => ['minecraft:meadow', 'minecraft:plains'].includes(data.biome) && !data.hasLiquidAbove,
+            { radius: 8, step: 4, min: 0, max: 0.3 }
+        ),
         80,
         400,
         { regions: [{ x1: -10020, z1: -10020, x2: -9980, z2: -9980 }] },
@@ -175,20 +184,20 @@ async function runArxFirstLoad() {
         return
     }
 
-    ssDP(world, 'smallTestHomeLocation', {
-        x: smallTestHomeLocation.x,
-        y: smallTestHomeLocation.y,
-        z: smallTestHomeLocation.z,
-    })
+    ssDP(world, 'smallTestHomeLocation', smallTestHomeLocation)
 
     const buildAnchor = {
         x: Math.floor(smallTestHomeLocation.x),
-        y: Math.floor(smallTestHomeLocation.y) - 3,
+        y: Math.floor(smallTestHomeLocation.y),
         z: Math.floor(smallTestHomeLocation.z),
     }
 
     console.log('Building smallTestHome at', buildAnchor)
-    const placed = await loadACSS(acssStorage.smallTestHome, d, buildAnchor)
+    const placed = await loadACSS(acssStorage.smallTestHome, d, buildAnchor, {
+        marginBelow: 0,
+        marginXZ: 8,
+        allowAbove: false,
+    })
     if (placed === null) console.warn('Arx first load: smallTestHome placement failed')
 }
 

@@ -593,5 +593,9 @@
 
 	"arx:guide_wall_block": {
 		"textures": "guide_wall_block"
+	},
+
+	"arx:acss_anchor": {
+		"textures": "acss_anchor"
 	}
 }

@@ -887,6 +887,10 @@
 
 		"mechanic_core": {
 			"textures": "textures/blocks/mechanic_core"
+		},
+
+		"acss_anchor": {
+			"textures": "textures/blocks/acss/acss_anchor"
 		}
 	}
 } 
