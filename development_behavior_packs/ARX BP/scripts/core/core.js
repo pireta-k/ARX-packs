@@ -16,6 +16,7 @@ import { killingTimeAnimDelay, animate_killing_time } from './animate_killing_ti
 import { ssDP, iDP, gDP } from '../arxLib/DPOperations'
 import { acquireTrait } from "../traits/traitsOperations"
 import { sendToActionBar, actionBarCoreTick } from './actionBarCore'
+import { syncHud, updateStressHud, clearHud } from './hud'
 import { ambienceCoreTick } from './ambience_core'
 import { dynamicLightCoreTick } from './dynamicLightCore'
 import { musicCoreTick } from './music_core'
@@ -557,6 +558,10 @@ export const coreFramework = {
                     ssDP(player, 'stress', stress) // Стресс
                     ssDP(player, 'stressLevel', stressLevel) // Уровень стресса
                     ssDP(player, 'stressDynamic', stressDynamic) // Корректирующая динамика
+
+                    updateStressHud(player, stressLevel)
+                } else {
+                    clearHud(player)
                 }
             }
         }
@@ -1211,6 +1216,8 @@ export const coreFramework = {
                         displayMPAndAdjacent(player)
                     }
                 }
+
+                syncHud(player)
             }
         }
     },
@@ -1665,18 +1672,8 @@ const dynamicPropertiesToDecrease = {
     'weighLimitBonusByPotionImproved': '§6Бонус к весу (+6) от зелья закончился',
 };
 
-// Отображение маны
+// Канал магии в action bar (мана — на HUD)
 export function displayMPAndAdjacent(player) {
-
-    // Определяем, как нам показать ману
-    let manaStr = ''
-
-    if (player.getDynamicProperty("myRule:manaDisplayMode") === 'integers') {
-        manaStr = Math.floor(player.getDynamicProperty("mp"))
-    }
-    else {
-        manaStr = player.getDynamicProperty("mp").toFixed(1)
-    }
 
     // Определяем, что у нас за предмет
     const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Mainhand)
@@ -1704,7 +1701,6 @@ export function displayMPAndAdjacent(player) {
         const activeTarget = player.getDynamicProperty(`channel_${activeChannel}_target`)
 
         sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]} канал`, 2)
-        sendToActionBar(player, 'MP', `${manaStr} `, 2)
     }
     // Мы держим руну
     else if (itemTags?.includes('is_rune')) {
@@ -1726,7 +1722,6 @@ export function displayMPAndAdjacent(player) {
         const activeChannel = getActiveStaffChannel(player, channels, false)
 
         sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]} канал`, 2)
-        sendToActionBar(player, 'MP', `${manaStr} `, 2)
     }
     // Мы держим волшебную палочку
     else if (itemTags?.includes('is_wand')) {
@@ -1751,7 +1746,6 @@ export function displayMPAndAdjacent(player) {
         const targetRuOpposite = player.getDynamicProperty(currentChannel) === 1 ? '§6на другого' : '§aна себя'
 
         sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]}§f канал ${targetRuCurrent}§f -> §o${targetRuOpposite}`, 2)
-        sendToActionBar(player, 'MP', `${manaStr}`, 2)
     }
     // У нас амулет гиперсинергии
     else if (checkForItem(player, "Legs", 'arx:amul_hypersynergy') || checkForItem(player, "Legs", 'arx:amul_hypersynergy_improved') || checkForItem(player, "Legs", 'arx:amul_hypersynergy_superior')) {
@@ -1765,9 +1759,5 @@ export function displayMPAndAdjacent(player) {
         const activeChannel = getActiveStaffChannel(player, channels, false)
 
         sendToActionBar(player, 'magicChannel', `§7${channelRomanNums[activeChannel - 1]} канал`, 2)
-        sendToActionBar(player, 'MP', `${manaStr}`, 2)
     }
-
-    // Выводим ману в любом случае
-    sendToActionBar(player, 'MP', `${manaStr}`, 2)
 }
