@@ -186,4 +186,63 @@ export const enLocalization = {
     'quest.test.descr': 'Just a test quest to test Arx quest system', // Description
     'quest.test.0': 'Take a diamond', // Task for stage 0
     'quest.test.1': 'Jump', // Task for stage 1
+
+    // Weapon skills
+    'weapon_skill.damage.name': 'Damage',
+    'weapon_skill.damage.description': '+1 basic damage',
+
+    'weapon_skill.handy.name': 'Handy',
+    'weapon_skill.handy.description': '-1 Weight',
+
+    'weapon_skill.balanced.name': 'Balanced',
+    'weapon_skill.balanced.description': '+10% speed while holding it',
+
+    'weapon_skill.painful.name': 'Painful',
+    'weapon_skill.painful.description': 'Melee attack applies blindness to the opponent for 5 sec. CD 1 min',
+
+    'weapon_skill.massive.name': 'Massive',
+    'weapon_skill.massive.description': 'Slows opponent for 3 sec on hit. CD 30 sec',
+
+    'weapon_skill.repair.name': 'Repair',
+    'weapon_skill.repair.description': 'Instantly repairs the weapon',
+
+    'weapon_skill.rat_slayer.name': 'Rat Slayer',
+    'weapon_skill.rat_slayer.description': 'Deals additional damage to rats',
+
+    'weapon_skill.soul_stealer.name': 'Soul Stealer',
+    'weapon_skill.soul_stealer.description': 'Slightly heals you when dealing damage',
+
+    'weapon_skill.training.name': 'Training',
+    'weapon_skill.training.description': 'You upgrade battle and magic skills faster when using it',
+
+    'weapon_skill.explosive.name': 'Explosive',
+    'weapon_skill.explosive.description': 'Creates an explosion on attack with 10% chance.',
+
+    'weapon_skill.destructive.name': 'Destructive',
+    'weapon_skill.destructive.description': 'Replaces blocking with ability to dash at enemy',
+
+    'weapon_skill.obsessive.name': 'Obsessive',
+    'weapon_skill.obsessive.description': 'On attack: blinds you, but grants +6 basic strength for 10 sec. CD 5 min',
+
+    'weapon_skill.poisoned.name': 'Poisoned',
+    'weapon_skill.poisoned.description': '10% chance to apply poison for 5 sec',
+
+    // Weapon skills UI
+    'weapon_skill.rarity.legendary': 'Legendary',
+
+    'weapon_skill.ui.level': 'Level $0$',
+    'weapon_skill.ui.upgrade_available': 'Upgrade available (/$0$)',
+    'weapon_skill.ui.made_by': 'Made by $0$',
+
+    'weapon_skill.ui.form_title': 'Weapon skill',
+    'weapon_skill.ui.form_header': 'WEAPON UPGRADE',
+    'weapon_skill.ui.form_choose_one': 'Choose 1 skill from the options:',
+    'weapon_skill.ui.form_stored_upgrades': 'Stored upgrades: $0$',
+
+    'weapon_skill.ui.skill_selected': '§aWeapon skill selected.',
+    'weapon_skill.ui.upgrade_available_one': '§e§lWeapon upgrade!§r §fSkill choice is available. Menu: §e/$0$',
+    'weapon_skill.ui.upgrade_available_many': '§e§lWeapon upgrade!§r §fAvailable upgrades: §a$0$§f. Menu: §e/$1$',
+    'weapon_skill.ui.hold_weapon_mainhand': '§cHold the required weapon in mainhand.',
+    'weapon_skill.ui.no_pending_upgrade': '§cNo pending weapon upgrade.',
+    'weapon_skill.ui.all_skills_learned': '§eAll weapon skills are already learned.',
 }

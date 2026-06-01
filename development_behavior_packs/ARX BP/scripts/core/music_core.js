@@ -75,34 +75,34 @@ const musicLocations = {
 
     "desertDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_desert") && isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:desert') && isDay(),
         music: 'Adding_the_Sun'
     },
     "desertNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_desert") && !isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:desert') && !isDay(),
         music: 'Comfortable_Mystery'
     },
 
     "taigaDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_taiga") && isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:taiga') && isDay(),
         music: 'Ossuary_5_Rest'
     },
     "taigaNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_taiga") && !isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:taiga') && !isDay(),
         music: 'Ossuary_1_A_Beginning'
     },
 
     "jungleDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_jungle") && isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:jungle') && isDay(),
         music: 'Energizing'
     },
     "jungleNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_jungle") && !isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:jungle') && !isDay(),
         music: 'Ancient_Rite'
     },
 
@@ -119,12 +119,12 @@ const musicLocations = {
 
     "mesaDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_mesa") && isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:mesa') && isDay(),
         music: 'Ether_Vox'
     },
     "mesaNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_mesa") && !isDay(),
+        condition: (player) => isInBiome(player, 'minecraft:mesa') && !isDay(),
         music: 'Immersed'
     },
 

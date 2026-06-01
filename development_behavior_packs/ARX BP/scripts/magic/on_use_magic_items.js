@@ -18,6 +18,7 @@ import { getItem } from '../items/getItem'
 import { channelRomanNums } from "./channelRomanNums";
 import { sl } from "../lang/fetchLocalization";
 import { checkForItem } from "../items/checkForItem";
+import { grantWeaponXpFromMana } from "../items/weaponSkills";
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe((event) => { // Обнаружаем юзание предмета на ПКМ
@@ -236,6 +237,7 @@ function smartRound(num) {
 function withdrawMP(player, spellCostReq, spellCostMult, spellData) {
     // spellCostReq - уже с рассчётом скидки
     iDP(player, 'mp', -spellCostReq)
+    grantWeaponXpFromMana(player, spellCostReq)
 
     // РЕГЕН mpRegenSkillIncreaseValue: Низкое значение до 30, резкий рост после.
     const mpRegenSkillIncreaseValue = spellCostReq <= 30 ? spellCostReq / 6 : spellCostReq;

@@ -1,8 +1,7 @@
-import { world, system } from "@minecraft/server"
+import { world, system, BlockPermutation } from "@minecraft/server"
 import { checkForItem } from "../items/checkForItem"
 import { gDP, ssDP } from "../arxLib/DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
-import { obj2str, str2obj } from "../arxLib/converters"
 import { validateTickingAreaLoading } from "./prospect"
 import { sleep } from "../arxLib/time"
 
@@ -34,6 +33,8 @@ const UNDO_MAX_VOLUME = 120000
 
 /** @type {Map<string, { dimensionId: string, blocks: { x: number, y: number, z: number, id: string, perms?: object }[] }>} */
 const sbUndoByPlayer = new Map()
+/** Players who completed at least one undo-eligible SB operation (delete / fill / replace / recursive delete) */
+const sbUndoHadOperationByPlayer = new Set()
 const FACE_NEIGHBOR_OFFSETS = [
     { x: 1, y: 0, z: 0 },
     { x: -1, y: 0, z: 0 },
@@ -73,19 +74,60 @@ function captureBlockForUndo(b) {
 
 function setSbUndo(p, dimension, blocks) {
     if (!blocks.length) return
+    sbUndoHadOperationByPlayer.add(getSbUndoPlayerKey(p))
     sbUndoByPlayer.set(getSbUndoPlayerKey(p), {
         dimensionId: dimension.id,
         blocks,
     })
 }
 
-function restoreUndoBlock(d, entry) {
-    const block = d.getBlock({ x: entry.x, y: entry.y, z: entry.z })
-    block.setType(entry.id)
-    if (entry.perms) {
-        for (const perm in entry.perms) {
-            block.setPermutation(block.permutation.withState(perm, entry.perms[perm]))
-        }
+function markSbUndoOperation(p) {
+    sbUndoHadOperationByPlayer.add(getSbUndoPlayerKey(p))
+}
+
+function getUndoButtonLabel(p) {
+    const key = getSbUndoPlayerKey(p)
+    if (sbUndoByPlayer.has(key)) return 'Undo\n§o§aAvailable'
+    if (!sbUndoHadOperationByPlayer.has(key)) return 'Undo\n§o§vNothing to undo'
+    return 'Undo\n§o§cUnavailable'
+}
+
+function getUndoBounds(blocks) {
+    let minX = Infinity
+    let minY = Infinity
+    let minZ = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    let maxZ = -Infinity
+
+    for (const entry of blocks) {
+        minX = Math.min(minX, entry.x)
+        minY = Math.min(minY, entry.y)
+        minZ = Math.min(minZ, entry.z)
+        maxX = Math.max(maxX, entry.x)
+        maxY = Math.max(maxY, entry.y)
+        maxZ = Math.max(maxZ, entry.z)
+    }
+
+    return {
+        p1: { x: minX, y: minY, z: minZ },
+        p2: { x: maxX, y: maxY, z: maxZ },
+    }
+}
+
+function buildUndoBlockMap(blocks) {
+    const map = new Map()
+    for (const entry of blocks) {
+        map.set(blockLocKey(entry.x, entry.y, entry.z), entry)
+    }
+    return map
+}
+
+function restoreUndoBlock(b, entry) {
+    if (entry.perms && Object.keys(entry.perms).length > 0) {
+        b.setPermutation(BlockPermutation.resolve(entry.id, entry.perms))
+    } else {
+        b.setType(entry.id)
     }
 }
 
@@ -103,18 +145,29 @@ async function applySbUndo(p) {
         return false
     }
 
+    if (!snap.blocks.length) {
+        sbUndoByPlayer.delete(getSbUndoPlayerKey(p))
+        p.sendMessage('§cNothing to undo')
+        return false
+    }
+
     p.sendMessage(`§bUndo... (${snap.blocks.length} blocks)`)
+    const undoMap = buildUndoBlockMap(snap.blocks)
+    const { p1, p2 } = getUndoBounds(snap.blocks)
     let restored = 0
-    for (const entry of snap.blocks) {
+
+    for await (const b of new BlocksMegaArray(d, p1, p2)) {
+        const entry = undoMap.get(blockLocKey(b.location.x, b.location.y, b.location.z))
+        if (!entry) continue
         try {
-            restoreUndoBlock(d, entry)
+            restoreUndoBlock(b, entry)
             restored++
         } catch { }
     }
 
     sbUndoByPlayer.delete(getSbUndoPlayerKey(p))
     p.sendMessage(`§bUndo done`)
-    return true
+    return restored > 0
     } catch (error) {
         console.error(`[StructureBuilder] applySbUndo: ${error}`)
         return false
@@ -192,13 +245,116 @@ function recursiveDeleteSameBlocks(d, start, limit = RECURSIVE_DELETE_LIMIT) {
     return { deleted, limitHit, targetId, undoBlocks }
 }
 
+const BMA_DEFAULT_AXIS_ORDER = 'yxz'
+const BMA_ALL_AXIS_ORDERS = ['xyz', 'xzy', 'yxz', 'yzx', 'zxy', 'zyx']
+
+/** @param {{ forceAxisOrder?: string }} [options] */
+function resolveBlocksMegaArrayAxisOrder(options = {}) {
+    const raw = String(options.forceAxisOrder ?? BMA_DEFAULT_AXIS_ORDER).toLowerCase().replace(/\s/g, '')
+    if (!/^[xyz]{3}$/.test(raw) || new Set(raw).size !== 3) {
+        console.warn(`BlocksMegaArray: invalid forceAxisOrder "${options.forceAxisOrder}", using ${BMA_DEFAULT_AXIS_ORDER}`)
+        return BMA_DEFAULT_AXIS_ORDER
+    }
+    return raw
+}
+
+const BMA_AXIS_ITER = {
+    x: { minKey: 'min', maxKey: 'max', coord: 'x', dir: 'asc' },
+    y: { minKey: 'min', maxKey: 'max', coord: 'y', dir: 'desc' },
+    z: { minKey: 'min', maxKey: 'max', coord: 'z', dir: 'asc' },
+}
+
+function* iterateActiveAreaByAxisOrder(activeArea, axisOrder) {
+    const order = axisOrder.split('')
+
+    function* walk(depth, coord) {
+        if (depth >= 3) {
+            yield { x: coord.x, y: coord.y, z: coord.z }
+            return
+        }
+
+        const axis = order[depth]
+        const spec = BMA_AXIS_ITER[axis]
+        const min = activeArea[spec.minKey][spec.coord]
+        const max = activeArea[spec.maxKey][spec.coord]
+
+        if (spec.dir === 'desc') {
+            for (let v = max; v >= min; v--) {
+                coord[spec.coord] = v
+                yield* walk(depth + 1, coord)
+            }
+        } else {
+            for (let v = min; v <= max; v++) {
+                coord[spec.coord] = v
+                yield* walk(depth + 1, coord)
+            }
+        }
+    }
+
+    yield* walk(0, { x: 0, y: 0, z: 0 })
+}
+
+function buildActiveAreaFromSize(size) {
+    return {
+        min: { x: 0, y: 0, z: 0 },
+        max: { x: size[0] - 1, y: size[1] - 1, z: size[2] - 1 },
+    }
+}
+
+function buildB3dFromBlockMap(blockMap, size, axisOrder, symPerBlock) {
+    const activeArea = buildActiveAreaFromSize(size)
+    let blocks3DArray = ''
+    for (const coord of iterateActiveAreaByAxisOrder(activeArea, axisOrder)) {
+        const idx = blockMap.get(`${coord.x},${coord.y},${coord.z}`)
+        if (idx === undefined) continue
+        blocks3DArray += indexToSymbol(idx, PALETTE_ALPHABET, symPerBlock)
+    }
+    return RLE(blocks3DArray, 'compress', symPerBlock)
+}
+
+function pickBestAcssAxisOrder(blockMap, size, symPerBlock, ultraCompact) {
+    if (!ultraCompact) {
+        return {
+            axisOrder: BMA_DEFAULT_AXIS_ORDER,
+            b3d: buildB3dFromBlockMap(blockMap, size, BMA_DEFAULT_AXIS_ORDER, symPerBlock),
+        }
+    }
+
+    let bestOrder = BMA_DEFAULT_AXIS_ORDER
+    let bestB3d = buildB3dFromBlockMap(blockMap, size, BMA_DEFAULT_AXIS_ORDER, symPerBlock)
+    let bestLen = bestB3d.length
+
+    for (const order of BMA_ALL_AXIS_ORDERS) {
+        if (order === BMA_DEFAULT_AXIS_ORDER) continue
+        const b3d = buildB3dFromBlockMap(blockMap, size, order, symPerBlock)
+        if (b3d.length < bestLen) {
+            bestLen = b3d.length
+            bestOrder = order
+            bestB3d = b3d
+        }
+    }
+
+    return { axisOrder: bestOrder, b3d: bestB3d }
+}
+
+function resolveAcssAxisOrder(head) {
+    return resolveBlocksMegaArrayAxisOrder({ forceAxisOrder: head?.a })
+}
+
 class BlocksMegaArray {
-    constructor(dimension, pos1, pos2) {
+    /**
+     * @param {import("@minecraft/server").Dimension} dimension
+     * @param {{x:number,y:number,z:number}} pos1
+     * @param {{x:number,y:number,z:number}} pos2
+     * @param {{ forceAxisOrder?: string }} [options] forceAxisOrder — permutation of x,y,z (default 'yxz')
+     */
+    constructor(dimension, pos1, pos2, options = {}) {
         if (!dimension || typeof pos1 !== "object" || typeof pos2 !== "object") {
             console.warn('Trying to create BlocksMegaArray with irrelevant positions')
         }
 
         this.dimension = dimension
+        this.axisOrder = resolveBlocksMegaArrayAxisOrder(options)
 
         // Anchor is a Vector3 vertex of MegaArray with smallest values
         this.anchor = {
@@ -244,13 +400,9 @@ class BlocksMegaArray {
 
             await chunk.startTick()
 
-            // Iterate and yield blocks
-            for (let y = activeArea.max.y; y >= activeArea.min.y; y--) {
-                for (let x = activeArea.min.x; x <= activeArea.max.x; x++) {
-                    for (let z = activeArea.min.z; z <= activeArea.max.z; z++) {
-                        yield this.dimension.getBlock({ x, y, z })
-                    }
-                }
+            // Iterate and yield blocks (default axis order: y desc → x asc → z asc)
+            for (const coord of iterateActiveAreaByAxisOrder(activeArea, this.axisOrder)) {
+                yield this.dimension.getBlock(coord)
             }
             await chunk.delTick()
         }
@@ -314,9 +466,6 @@ export async function onUseSBHammer(p) {
         const volume = dx * dy * dz
 
         body += "\n§bVolume§f: " + volume + ' blocks'
-        if (sbUndoByPlayer.has(getSbUndoPlayerKey(p))) {
-            body += '\n§dUndo: ready (last operation)'
-        }
 
         form.body(body)
 
@@ -328,7 +477,7 @@ export async function onUseSBHammer(p) {
             form.button('Replace blocks', `${SB_UI_ICON}replace`)
             form.button('Save ACSS', `${SB_UI_ICON}save_acss`)
             form.button('Load ACSS', `${SB_UI_ICON}load_acss`)
-            form.button('Undo')
+            form.button(getUndoButtonLabel(p))
         }
 
         form.show(p).then(async r => {
@@ -346,7 +495,10 @@ export async function onUseSBHammer(p) {
                             catch { }
                         }
                         if (undoBlocks?.length) setSbUndo(p, d, undoBlocks)
-                        else if (!canUndo) p.sendMessage(`§eUndo not saved (volume > ${UNDO_MAX_VOLUME})`)
+                        else {
+                            markSbUndoOperation(p)
+                            if (!canUndo) p.sendMessage(`§eUndo not saved (volume > ${UNDO_MAX_VOLUME})`)
+                        }
                         p.sendMessage('§bCompleted')
                     }
                     break
@@ -359,6 +511,7 @@ export async function onUseSBHammer(p) {
                             break
                         }
                         if (undoBlocks.length) setSbUndo(p, d, undoBlocks)
+                        else markSbUndoOperation(p)
                         let msg = `§bRecursive delete: ${deleted} × ${targetId}`
                         if (limitHit) msg += ` §e(limit ${RECURSIVE_DELETE_LIMIT})`
                         p.sendMessage(msg)
@@ -393,7 +546,10 @@ export async function onUseSBHammer(p) {
                                     }
                                 }
                                 if (fillOk && undoBlocks?.length) setSbUndo(p, d, undoBlocks)
-                                else if (fillOk && !canUndo) p.sendMessage(`§eUndo not saved (volume > ${UNDO_MAX_VOLUME})`)
+                                else if (fillOk) {
+                                    markSbUndoOperation(p)
+                                    if (!canUndo) p.sendMessage(`§eUndo not saved (volume > ${UNDO_MAX_VOLUME})`)
+                                }
                                 if (fillOk) p.sendMessage('§bCompleted')
                             }
                         })
@@ -432,6 +588,7 @@ export async function onUseSBHammer(p) {
                                     }
                                 }
                                 if (replaceOk && undoBlocks.length) setSbUndo(p, d, undoBlocks)
+                                else if (replaceOk) markSbUndoOperation(p)
                                 if (replaceOk) p.sendMessage(`§bCompleted, (replaced ${replaced} blocks)`)
                             }
                         })
@@ -441,8 +598,12 @@ export async function onUseSBHammer(p) {
                     const saveAcssOptions = await showSaveACSSOptionsForm(p)
                     if (!saveAcssOptions) break
 
-                    p.sendMessage(`§bSaving... (${volume} blocks)`)
-                    const acss = await saveACSS(d, point1, point2, saveAcssOptions)
+                    p.sendMessage(
+                        saveAcssOptions.ultraCompact
+                            ? `§bSaving §eultra compact§b... (${volume} blocks)`
+                            : `§bSaving... (${volume} blocks)`
+                    )
+                    const acss = await saveACSS(d, point1, point2, { ...saveAcssOptions, player: p })
                     const ACSSSaveForm = new ActionFormData()
                         .title("Save ACSS")
                         .button('Save in log')
@@ -535,6 +696,22 @@ export async function onUseSBHammer(p) {
 const ACSS_VERSION = 2
 const PALETTE_ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 const ACSS_FORCE_ANCHOR_BLOCK = 'arx:acss_anchor'
+/** ACSS string codec: JSON " → #, block-state ' → @ (quote-free for embedding) */
+const ACSS_STR_QUOTE = '#'
+const ACSS_PERM_QUOTE = '@'
+
+function acss2str(obj) {
+    return JSON.stringify(obj).replace(/"/g, ACSS_STR_QUOTE)
+}
+
+function str2acss(str) {
+    if (str.includes('"')) return JSON.parse(str)
+    // Previous codec version (JSON used @)
+    if (str.startsWith('@{') || str.startsWith('{@')) {
+        return JSON.parse(str.replace(/@/g, '"'))
+    }
+    return JSON.parse(str.replace(/#/g, '"'))
+}
 
 // Chest slot 0: renamed paper → loot table path (matches /loot insert … loot "path")
 // Example nameTag: chests/test
@@ -720,6 +897,11 @@ function permValueKey(v) {
     return JSON.stringify(v)
 }
 
+/** Must match buildSymbolPalette reverse-map keys (strings use raw value, not JSON.stringify). */
+function permValueRevKey(v) {
+    return typeof v === 'string' ? v : permValueKey(v)
+}
+
 /** Drops undefined state values (Bedrock getAllStates() may include them) */
 function normalizePerms(perms) {
     if (!perms) return undefined
@@ -750,8 +932,7 @@ function buildSymbolPalette(uniqueValues) {
     sorted.forEach((val, i) => {
         const sym = indexToSymbol(i, PALETTE_ALPHABET, spb)
         palette[sym] = val
-        const revKey = typeof val === 'string' ? val : permValueKey(val)
-        reverse.set(revKey, sym)
+        reverse.set(permValueRevKey(val), sym)
     })
 
     return { palette, reverse, spb }
@@ -773,9 +954,9 @@ function encodeBlockEntry(id, perms, pkReverse, pvReverse) {
         const val = perms[key]
         if (val === undefined) continue
         const sk = pkReverse.get(key)
-        const sv = pvReverse.get(permValueKey(val))
+        const sv = pvReverse.get(permValueRevKey(val))
         if (!sk || !sv) continue
-        pairs.push(`'${sk}':'${sv}'`)
+        pairs.push(`${ACSS_PERM_QUOTE}${sk}${ACSS_PERM_QUOTE}:${ACSS_PERM_QUOTE}${sv}${ACSS_PERM_QUOTE}`)
     }
     if (!pairs.length) return idShort
     return `${idShort}<{${pairs.join(',')}}`
@@ -796,7 +977,15 @@ function decodeBlockEntry(raw, pk, pv) {
         return { id, perms: undefined }
     }
 
-    const symPerms = JSON.parse(permPart.replace(/'/g, '"'))
+    let permJson
+    if (permPart.includes(ACSS_PERM_QUOTE)) {
+        permJson = permPart.replace(/@/g, '"')
+    } else if (permPart.includes('#')) {
+        permJson = permPart.replace(/#/g, '"')
+    } else {
+        permJson = permPart.replace(/'/g, '"')
+    }
+    const symPerms = JSON.parse(permJson)
     const perms = {}
 
     for (const sk in symPerms) {
@@ -805,6 +994,21 @@ function decodeBlockEntry(raw, pk, pv) {
     }
 
     return { id, perms: Object.keys(perms).length ? perms : undefined }
+}
+
+function resolveBlockTypeId(id) {
+    return id.includes(':') ? id : `minecraft:${id}`
+}
+
+function applyBlockFromACSS(b, bd) {
+    const typeId = resolveBlockTypeId(bd.id)
+    if (bd.id === 'structure_void') return
+
+    if (bd.perms && Object.keys(bd.perms).length > 0) {
+        b.setPermutation(BlockPermutation.resolve(typeId, bd.perms))
+    } else {
+        b.setType(typeId)
+    }
 }
 
 function isLootContainerBlock(typeId) {
@@ -905,7 +1109,7 @@ function collectBlockByData(id, perms, pkSet, pvSet, uniqueBlocks, uniqueBlockIn
     return idx
 }
 
-/** @returns {Promise<{ saveChestLoot: boolean, saveEntities: boolean } | null>} */
+/** @returns {Promise<{ saveChestLoot: boolean, saveEntities: boolean, saveAnchors: boolean, ultraCompact: boolean } | null>} */
 async function showSaveACSSOptionsForm(p) {
     const response = await new ModalFormData()
         .title('ACSS options')
@@ -917,6 +1121,14 @@ async function showSaveACSSOptionsForm(p) {
             defaultValue: true,
             tooltip: 'Players and dropped items are ignored. Only entity type id is saved.',
         })
+        .toggle('Anchors', {
+            defaultValue: true,
+            tooltip: 'Save arx:acss_anchor as force_anchor (void on load). Off: saved as the block itself.',
+        })
+        .toggle('Ultra compact', {
+            defaultValue: false,
+            tooltip: 'Very slow. Tries all 6 axis orders and keeps the smallest ACSS string (best RLE).',
+        })
         .submitButton('Continue')
         .show(p)
 
@@ -925,14 +1137,19 @@ async function showSaveACSSOptionsForm(p) {
     return {
         saveChestLoot: !!response.formValues[0],
         saveEntities: !!response.formValues[1],
+        saveAnchors: !!response.formValues[2],
+        ultraCompact: !!response.formValues[3],
     }
 }
 
-/** @param {{ saveChestLoot?: boolean, saveEntities?: boolean }} [options] */
+/** @param {{ saveChestLoot?: boolean, saveEntities?: boolean, saveAnchors?: boolean, ultraCompact?: boolean, player?: import("@minecraft/server").Player }} [options] */
 async function saveACSS(d, p1, p2, options = {}) {
     try {
     const saveChestLoot = options.saveChestLoot !== false
     const saveEntities = options.saveEntities !== false
+    const saveAnchors = options.saveAnchors !== false
+    const ultraCompact = !!options.ultraCompact
+    const player = options.player
     const acss = {
         head: {},
         palette: {},
@@ -960,7 +1177,7 @@ async function saveACSS(d, p1, p2, options = {}) {
     const pvSet = new Set()
     const uniqueBlocks = []
     const uniqueBlockIndex = new Map()
-    const blockIndices = new Uint32Array(volume)
+    const blockMap = new Map()
     const lootChests = saveChestLoot ? [] : null
     let forceAnchor = null
     let blockPos = 0
@@ -971,18 +1188,26 @@ async function saveACSS(d, p1, p2, options = {}) {
             y: b.location.y - anchor.y,
             z: b.location.z - anchor.z,
         }
+        const relKey = `${relativePos.x},${relativePos.y},${relativePos.z}`
 
-        if (b.typeId === ACSS_FORCE_ANCHOR_BLOCK) {
+        if (saveAnchors && b.typeId === ACSS_FORCE_ANCHOR_BLOCK) {
             if (!forceAnchor) {
                 forceAnchor = relativePos
             } else {
                 console.warn(`saveACSS: multiple ${ACSS_FORCE_ANCHOR_BLOCK} blocks found, using the first one`)
+                try {
+                    player?.sendMessage(`§eWarning: multiple acss_anchor blocks found, using the first one`)
+                } catch { }
             }
-            blockIndices[blockPos++] = collectBlockByData('structure_void', undefined, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
+            const idx = collectBlockByData('structure_void', undefined, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
+            blockMap.set(relKey, idx)
+            blockPos++
             continue
         }
 
-        blockIndices[blockPos++] = collectBlockFromWorld(b, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
+        const idx = collectBlockFromWorld(b, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
+        blockMap.set(relKey, idx)
+        blockPos++
 
         if (lootChests && isLootContainerBlock(b.typeId)) {
             const loot = readLootPathFromContainerBlock(b)
@@ -1015,14 +1240,12 @@ async function saveACSS(d, p1, p2, options = {}) {
     if (Object.keys(pkPal.palette).length) acss.pk = pkPal.palette
     if (Object.keys(pvPal.palette).length) acss.pv = pvPal.palette
 
-    let blocks3DArray = ''
-    for (let i = 0; i < blockPos; i++) {
-        blocks3DArray += indexToSymbol(blockIndices[i], PALETTE_ALPHABET, symPerBlock)
-    }
-    acss.b3d = RLE(blocks3DArray, 'compress', symPerBlock)
+    const { axisOrder, b3d } = pickBestAcssAxisOrder(blockMap, acss.head.s, symPerBlock, ultraCompact)
+    acss.b3d = b3d
+    if (axisOrder !== BMA_DEFAULT_AXIS_ORDER) acss.head.a = axisOrder
 
     if (lootChests?.length) acss.lootChests = lootChests
-    if (forceAnchor) acss.force_anchor = forceAnchor
+    if (saveAnchors && forceAnchor) acss.force_anchor = forceAnchor
 
     if (saveEntities) {
         const entityList = collectStructureEntities(d, anchor, corner)
@@ -1034,7 +1257,7 @@ async function saveACSS(d, p1, p2, options = {}) {
         }
     }
 
-    return obj2str(acss)
+    return acss2str(acss)
     } catch (error) {
         console.error(`[StructureBuilder] saveACSS: ${error}`)
         return null
@@ -1056,7 +1279,7 @@ export async function loadACSS(rawACSS, d, position, applyDenyBlocks, placement 
     // Validate ACSS JSON
     let acss = undefined
     try {
-        acss = str2obj(rawACSS)
+        acss = str2acss(rawACSS)
     }
     catch (error) {
         console.warn(`§cACSS fatal error: ${error}.\nACSS loading aborted`)
@@ -1108,6 +1331,7 @@ export async function loadACSS(rawACSS, d, position, applyDenyBlocks, placement 
     const forceAnchor = parseForceAnchor(acss.force_anchor, size)
     const effectivePlacement = forceAnchor ?? placement
     const { p1, p2 } = resolveACSSPlacement(position, size, effectivePlacement)
+    const axisOrder = resolveAcssAxisOrder(acss.head)
 
     // Validate world borders fitting
     const worldBorders = d.heightRange
@@ -1130,20 +1354,12 @@ export async function loadACSS(rawACSS, d, position, applyDenyBlocks, placement 
 
     try {
         let blockIndex = 0
-        for await (const b of new BlocksMegaArray(d, p1, p2)) {
+        for await (const b of new BlocksMegaArray(d, p1, p2, { forceAxisOrder: axisOrder })) {
             const offset = blockIndex * symPerBlock
             const blockKey = fullb3d.slice(offset, offset + symPerBlock)
             const blockDataRaw = acss.palette[blockKey]
             const bd = decodeBlockEntry(blockDataRaw, pk, pv)
-            if (bd.id !== 'structure_void') {
-                b.setType(bd.id)
-                if (bd.perms) {
-                    for (const perm in bd.perms) {
-                        const newPermutation = b.permutation.withState(perm, bd.perms[perm])
-                        b.setPermutation(newPermutation)
-                    }
-                }
-            }
+            applyBlockFromACSS(b, bd)
             blockIndex++
         }
 

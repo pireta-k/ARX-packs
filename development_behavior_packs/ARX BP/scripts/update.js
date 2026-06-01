@@ -253,6 +253,7 @@ const updates = {
     [vKey([0, 1, 17])]: () => console.warn('Arx update: 0.1.17'),
     [vKey([0, 1, 18])]: () => console.warn('Arx update: 0.1.18'),
     [vKey([0, 1, 19])]: () => console.warn('Arx update: 0.1.19'),
+    [vKey([0, 1, 24])]: () => console.warn('Arx update: 0.1.24'),
 }
 
 world.afterEvents.worldLoad.subscribe(() => {

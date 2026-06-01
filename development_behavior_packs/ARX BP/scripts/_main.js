@@ -33,6 +33,7 @@ import { gDP, iDP, ssDP } from "./arxLib/DPOperations"
 import { checkForTrait } from "./traits/traitsOperations"
 import { getPlayersInRadius } from "./getPlayersInRadius"
 import { getItem } from "./items/getItem"
+import { onWeaponInventoryChange, grantWeaponXpFromDamage, openWeaponSkillPick, WEAPON_SKILL_COMMAND } from "./items/weaponSkills"
 import { getActiveStaffChannel } from "./magic/getActiveStaffChannel"
 import { md5, obj2str } from "./arxLib/converters"
 import { isAdmin, getAdmins, getHoster } from './arxLib/admin'
@@ -85,26 +86,7 @@ world.afterEvents.playerInventoryItemChange.subscribe((event) => {
         // Анализ поднимаемного игроком веса
         weighAnalysis(p)
 
-        // Swords abilities regsitration
-        if (item.getTags().includes('is_weapon')) {
-            if (!gDP(item, 'everHolded')) {
-                item.setLore([
-                    'Made by ' + gDP(p, 'name'),
-                ]);
-                ssDP(item, 'everHolded', true)
-                ssDP(item, 'xp', 0)
-                ssDP(item, 'level', 0)
-                ssDP(item, 'abilities', [])
-
-                console.warn('Item registered')
-
-                // Set an item back to the slot
-                const inv = p.getComponent('minecraft:inventory')?.container;
-                if (inv && event.slot !== undefined) {
-                    inv.setItem(event.slot, item);
-                }
-            }
-        }
+        onWeaponInventoryChange(event)
     }
 })
 
@@ -610,6 +592,22 @@ system.beforeEvents.startup.subscribe(initEvent => {
             console.warn(gDP(item, 'level'))
         }
     )
+    initEvent.customCommandRegistry.registerCommand(
+        {
+            name: WEAPON_SKILL_COMMAND,
+            description: 'Выбор навыка оружия (если доступен апгрейд)',
+            permissionLevel: CommandPermissionLevel.Any,
+            cheatsRequired: false,
+        },
+        origin => {
+            const player = origin.initiator ?? origin.sourceEntity
+            if (!player || player.typeId !== 'minecraft:player') {
+                return { status: CustomCommandStatus.Failure }
+            }
+            openWeaponSkillPick(player)
+            return { status: CustomCommandStatus.Success }
+        }
+    )
 })
 
 // Смерти сущностей
@@ -886,6 +884,8 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
                     increaseSkillProgress(damager, "endurance", hurtEvent.damage * 4)
                 }
             }
+
+            grantWeaponXpFromDamage(damager, hurtEvent.damage)
         }
     }
 })

@@ -86,4 +86,63 @@ export const ruLocalization = {
     'info.dev_options.localization_review.next': 'Следующая',
     'info.dev_options.localization_review.back_overview': 'К обзору',
     'info.dev_options.back': 'Назад',
+
+    // Weapon skills
+    'weapon_skill.damage.name': 'Урон',
+    'weapon_skill.damage.description': '+1 базовый урон',
+
+    'weapon_skill.handy.name': 'Удобный',
+    'weapon_skill.handy.description': '-1 вес',
+
+    'weapon_skill.balanced.name': 'Сбалансированный',
+    'weapon_skill.balanced.description': '+10% скорости при удержании',
+
+    'weapon_skill.painful.name': 'Болезненный',
+    'weapon_skill.painful.description': 'Атака в ближнем бою накладывает слепоту на 5 сек. КД 1 мин',
+
+    'weapon_skill.massive.name': 'Массивный',
+    'weapon_skill.massive.description': 'Замедляет противника на 3 сек при попадании. КД 30 сек',
+
+    'weapon_skill.repair.name': 'Ремонт',
+    'weapon_skill.repair.description': 'Мгновенно чинит оружие',
+
+    'weapon_skill.rat_slayer.name': 'Крысобой',
+    'weapon_skill.rat_slayer.description': 'Наносит дополнительный урон крысам',
+
+    'weapon_skill.soul_stealer.name': 'Похититель душ',
+    'weapon_skill.soul_stealer.description': 'Слегка лечит вас при нанесении урона',
+
+    'weapon_skill.training.name': 'Тренировка',
+    'weapon_skill.training.description': 'Боевые и магические навыки растут быстрее с этим оружием',
+
+    'weapon_skill.explosive.name': 'Взрывной',
+    'weapon_skill.explosive.description': 'С шансом 10% создает взрыв при атаке',
+
+    'weapon_skill.destructive.name': 'Разрушительный',
+    'weapon_skill.destructive.description': 'Заменяет блокирование возможностью рывка к врагу',
+
+    'weapon_skill.obsessive.name': 'Одержимый',
+    'weapon_skill.obsessive.description': 'При атаке: ослепляет вас, но дает +6 базовой силы на 10 сек. КД 5 мин',
+
+    'weapon_skill.poisoned.name': 'Ядовитый',
+    'weapon_skill.poisoned.description': 'Шанс 10% наложить яд на 5 сек',
+
+    // Weapon skills UI
+    'weapon_skill.rarity.legendary': 'Легендарный',
+
+    'weapon_skill.ui.level': 'Уровень $0$',
+    'weapon_skill.ui.upgrade_available': 'Доступен апгрейд (/$0$)',
+    'weapon_skill.ui.made_by': 'Сделал: $0$',
+
+    'weapon_skill.ui.form_title': 'Навык оружия',
+    'weapon_skill.ui.form_header': 'УЛУЧШЕНИЕ ОРУЖИЯ',
+    'weapon_skill.ui.form_choose_one': 'Выберите 1 навык из предложенных:',
+    'weapon_skill.ui.form_stored_upgrades': 'Накоплено апгрейдов: $0$',
+
+    'weapon_skill.ui.skill_selected': '§aНавык оружия выбран.',
+    'weapon_skill.ui.upgrade_available_one': '§e§lАпгрейд оружия!§r §fДоступен выбор навыка. Меню: §e/$0$',
+    'weapon_skill.ui.upgrade_available_many': '§e§lАпгрейд оружия!§r §fДоступно улучшений: §a$0$§f. Меню: §e/$1$',
+    'weapon_skill.ui.hold_weapon_mainhand': '§cВозьмите нужное оружие в основную руку.',
+    'weapon_skill.ui.no_pending_upgrade': '§cНет ожидающего апгрейда оружия.',
+    'weapon_skill.ui.all_skills_learned': '§eВсе навыки оружия уже изучены.',
 }
