@@ -39,10 +39,11 @@ import { md5, obj2str } from "./arxLib/converters"
 import { isAdmin, getAdmins, getHoster } from './arxLib/admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { showLanguageForm } from "./lang/form"
+
 // Type of release. 
 // Available: alpha, beta, special, stable
 export const RELEASE = 'alpha'
-export const VERSION = [0, 1, 24]
+export const VERSION = [0, 2, 2]
 export const REPOSITORY = 'https://github.com/pireta-k/ARX-packs'
 
 world.afterEvents.playerButtonInput.subscribe((event) => {
@@ -753,12 +754,14 @@ function bleed(entity, intencity, damager) {
 }
 
 const bleedingMobs = [
+    // Vanilla mobs
     'minecraft:cow', 'minecraft:sheep', 'minecraft:chicken', 'minecraft:pig', 'minecraft:bat', 'minecraft:wolf', 'minecraft:polar_bear', 'minecraft:ocelot', 'minecraft:cat',
     'minecraft:parrot', 'minecraft:rabbit', 'minecraft:llama', 'minecraft:horse', 'minecraft:donkey', 'minecraft:mule', 'minecraft:turtle', 'minecraft:panda', 'minecraft:fox', 'minecraft:cave_spider',
     'minecraft:piglin', 'minecraft:hoglin', 'minecraft:goat', 'minecraft:axolotl', 'minecraft:frog', 'minecraft:camel', 'minecraft:sniffer', 'minecraft:armadillo',
 
     'minecraft:villager', 'minecraft:pillager',
 
+    // Arx
     "arx:cave_rat", "arx:fat_larva", "arx:deer", "arx:tsugunder", "arx:snow_lady", "arx:snow_bars", "arx:small_rat_white", "arx:small_rat_black", "arx:rat_monster_white", "arx:rat_monster",
     "arx:rat_eliminator", "arx:leech", "arx:larva", "arx:kapibara", "arx:hungry_rat", "arx:goose", "arx:gasgolder_istribitor", "arx:gasgolder", "arx:gabz", "arx:frintser", "arx:fiercewolf", "arx:crocodile",
     "arx:buffalo", "arx:big_leech", "arx:bear", "arx:baguk"

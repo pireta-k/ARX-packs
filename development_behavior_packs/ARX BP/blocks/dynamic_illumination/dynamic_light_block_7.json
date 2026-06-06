@@ -1,5 +1,5 @@
 {
-    "format_version": "1.21.30",
+    "format_version": "1.21.60",
     "minecraft:block": {
         "components": {
             "minecraft:collision_box": false,
@@ -25,7 +25,8 @@
             },
             "minecraft:connection_rule": {
                 "accepts_connections_from": "none"
-            }
+            },
+            "minecraft:replaceable": {}
         },
         "description": {
             "identifier": "arx:dynamic_light_block_7"

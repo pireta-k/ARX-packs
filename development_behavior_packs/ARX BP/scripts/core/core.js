@@ -1574,7 +1574,7 @@ export const coreFramework = {
     achievements: {
         tickSpeed: 30,
         operations: achievementsCoreTick,
-    },
+    }
 }
 
 /** Счётчик ошибок operations() по ключам coreFramework (для dev UI) */

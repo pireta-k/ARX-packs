@@ -42,155 +42,155 @@ const musicLocations = {
     // Overworld biomes
     "coldDay": {
         priority: 10,
-        condition: (player) => player.hasTag("in_snow_biome") && isDay(),
+        condition: (player) => isInBiomeWithTag(player, ['frozen', 'cold'], 'any') && isDay(),
         music: 'The_Snow_Queen'
     },
     "coldNight": {
         priority: 10,
-        condition: (player) => player.hasTag("in_snow_biome") && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, ['frozen', 'cold'], 'any') && !isDay(),
         music: 'Hidden_Past'
     },
 
     "birchDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_birch") && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'birch') && isDay(),
         music: 'Morning'
     },
     "birchNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_birch") && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'birch') && !isDay(),
         music: 'Silent_Night'
     },
 
     "beachDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_beach") && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'beach') && isDay(),
         music: 'Kalimba_Relaxation_Music'
     },
     "beachNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_beach") && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'beach') && !isDay(),
         music: 'Silver_Flame'
     },
 
     "desertDay": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:desert') && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'desert') && isDay(),
         music: 'Adding_the_Sun'
     },
     "desertNight": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:desert') && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'desert') && !isDay(),
         music: 'Comfortable_Mystery'
     },
 
     "taigaDay": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:taiga') && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'taiga') && isDay(),
         music: 'Ossuary_5_Rest'
     },
     "taigaNight": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:taiga') && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'taiga') && !isDay(),
         music: 'Ossuary_1_A_Beginning'
     },
 
     "jungleDay": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:jungle') && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'jungle') && isDay(),
         music: 'Energizing'
     },
     "jungleNight": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:jungle') && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'jungle') && !isDay(),
         music: 'Ancient_Rite'
     },
 
     "mangroveSwamp": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_mangrove_swamp"),
+        condition: (player) => isInBiomeWithTag(player, 'mangrove_swamp'),
         music: 'An_Upsetting_Theme'
     },
     "swamp": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_swamp"),
+        condition: (player) => isInBiomeWithTag(player, 'swamp'),
         music: 'Myst_on_the_Moor'
     },
 
     "mesaDay": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:mesa') && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'mesa') && isDay(),
         music: 'Ether_Vox'
     },
     "mesaNight": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:mesa') && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'mesa') && !isDay(),
         music: 'Immersed'
     },
 
     "oceanDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_ocean") && isDay(),
+        condition: (player) => isInBiomeWithTag(player, ['ocean', 'river'], 'any') && isDay(),
         music: 'Skye_Cuillin'
     },
     "oceanNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_ocean") && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, ['ocean', 'river'], 'any') && !isDay(),
         music: 'Almost_New'
     },
 
     "plainsDay": {
         priority: 6,
-        condition: (player) => (player.hasTag("BIOME_plains") || isInBiome(player, 'minecraft:meadow') || isInBiome(player, 'minecraft:flower_forest')) && isDay(),
+        condition: (player) => isInBiomeWithTag(player, ['plains', 'meadow', 'flower_forest'], 'any') && isDay(),
         music: 'Evening'
     },
     "plainsNight": {
         priority: 6,
-        condition: (player) => (player.hasTag("BIOME_plains") || isInBiome(player, 'minecraft:meadow') || isInBiome(player, 'minecraft:flower_forest')) && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, ['plains', 'meadow', 'flower_forest'], 'any') && !isDay(),
         music: 'Canon_in_D_Major'
     },
 
     "roofedDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_roofed") && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'roofed') && isDay(),
         music: 'Man_Down'
     },
     "roofedNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_roofed") && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'roofed') && !isDay(),
         music: 'Moorland'
     },
 
     "savannaDay": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_savanna") && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'savanna') && isDay(),
         music: 'Ascending_the_Vale'
     },
     "savannaNight": {
         priority: 10,
-        condition: (player) => player.hasTag("BIOME_savanna") && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'savanna') && !isDay(),
         music: 'With_the_Sea'
     },
 
-    "extremeHillsDay": {
+    "cherryHillsDay": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:extreme_hills') && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'cherry_grove') && isDay(),
         music: 'Devonshire_Waltz_Allegretto'
     },
-    "extremeHillsNight": {
+    "cherryHillsNight": {
         priority: 10,
-        condition: (player) => isInBiome(player, 'minecraft:extreme_hills') && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'cherry_grove') && !isDay(),
         music: 'A_Very_Brady_Special'
     },
 
     "forestDay": { // Default forest. Priority is 11 cus other forests also can trigger player.hasTag("BIOME_forest")
         priority: 11,
-        condition: (player) => player.hasTag("BIOME_forest") && isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'forest') && isDay(),
         music: 'Magic_Forest'
     },
     "forestNight": {
         priority: 11,
-        condition: (player) => player.hasTag("BIOME_forest") && !isDay(),
+        condition: (player) => isInBiomeWithTag(player, 'forest') && !isDay(),
         music: 'Temple_of_the_Manes'
     },
 
@@ -265,6 +265,18 @@ function isInBiome(player, biome) {
     const d = player.dimension
     if (d.isChunkLoaded(player.location)) return d.getBiome(player.location).id === biome
     else return false
+}
+
+// Get tags of a player's biome. tag — строка или массив тегов; mode — 'any' (хотя бы один) или 'all' (все)
+function isInBiomeWithTag(player, tag, mode = 'any') {
+    const d = player.dimension
+    if (!d.isChunkLoaded(player.location)) return false
+
+    const biomeTags = d.getBiome(player.location).getTags()
+    const required = Array.isArray(tag) ? tag : [tag]
+
+    if (mode === 'all') return required.every(t => biomeTags.includes(t))
+    return required.some(t => biomeTags.includes(t))
 }
 
 

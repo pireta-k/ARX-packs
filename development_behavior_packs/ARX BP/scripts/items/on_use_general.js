@@ -24,7 +24,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Тест
         case "arx:mod_sword":
             if (manageCD(player)) {
-                ssDP(world, 'latestV', [0, 0, 0])
+                // ssDP(world, 'latestV', [0, 0, 0])
             }
             break
 

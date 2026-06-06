@@ -1,0 +1,41 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "arx:eve",
+      "min_engine_version": "1.8.0",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/npc/eve"
+      },
+      "scripts": {
+        "initialize": [
+          "variable.hand_bob = 0.0;"
+        ],
+        "pre_animation": [
+          "variable.hand_bob = query.life_time < 0.01 ? 0.0 : variable.hand_bob + ((query.is_on_ground && query.is_alive ? math.clamp(math.sqrt(math.pow(query.position_delta(0), 2.0) + math.pow(query.position_delta(2), 2.0)), 0.0, 0.1) : 0.0) - variable.hand_bob) * 0.02;"
+        ],
+        "animate": [
+          "look_at_target_default",
+          "bob"
+        ]
+      },
+      "geometry": {
+        "default": "geometry.humanoid.customSlim"
+      },
+      "animations": {
+        "look_at_target_default": "animation.humanoid.look_at_target.default",
+        "bob": "animation.player.bob"
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#15ac3b",
+        "overlay_color": "#83ab82"
+      }
+    }
+  }
+}

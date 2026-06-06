@@ -4,6 +4,8 @@ import { gDP, ssDP } from "../arxLib/DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
 import { sleep } from "../arxLib/time"
+import { runJob } from "../arxLib/runJob"
+
 
 let ACSSStorage = {}
 
@@ -133,41 +135,41 @@ function restoreUndoBlock(b, entry) {
 
 async function applySbUndo(p) {
     try {
-    const snap = sbUndoByPlayer.get(getSbUndoPlayerKey(p))
-    if (!snap) {
-        p.sendMessage('§cNothing to undo')
-        return false
-    }
+        const snap = sbUndoByPlayer.get(getSbUndoPlayerKey(p))
+        if (!snap) {
+            p.sendMessage('§cNothing to undo')
+            return false
+        }
 
-    const d = p.dimension
-    if (d.id !== snap.dimensionId) {
-        p.sendMessage('§cUndo is for another dimension — go back or run a new operation')
-        return false
-    }
+        const d = p.dimension
+        if (d.id !== snap.dimensionId) {
+            p.sendMessage('§cUndo is for another dimension — go back or run a new operation')
+            return false
+        }
 
-    if (!snap.blocks.length) {
+        if (!snap.blocks.length) {
+            sbUndoByPlayer.delete(getSbUndoPlayerKey(p))
+            p.sendMessage('§cNothing to undo')
+            return false
+        }
+
+        p.sendMessage(`§bUndo... (${snap.blocks.length} blocks)`)
+        const undoMap = buildUndoBlockMap(snap.blocks)
+        const { p1, p2 } = getUndoBounds(snap.blocks)
+        let restored = 0
+
+        for await (const b of new BlocksMegaArray(d, p1, p2)) {
+            const entry = undoMap.get(blockLocKey(b.location.x, b.location.y, b.location.z))
+            if (!entry) continue
+            try {
+                restoreUndoBlock(b, entry)
+                restored++
+            } catch { }
+        }
+
         sbUndoByPlayer.delete(getSbUndoPlayerKey(p))
-        p.sendMessage('§cNothing to undo')
-        return false
-    }
-
-    p.sendMessage(`§bUndo... (${snap.blocks.length} blocks)`)
-    const undoMap = buildUndoBlockMap(snap.blocks)
-    const { p1, p2 } = getUndoBounds(snap.blocks)
-    let restored = 0
-
-    for await (const b of new BlocksMegaArray(d, p1, p2)) {
-        const entry = undoMap.get(blockLocKey(b.location.x, b.location.y, b.location.z))
-        if (!entry) continue
-        try {
-            restoreUndoBlock(b, entry)
-            restored++
-        } catch { }
-    }
-
-    sbUndoByPlayer.delete(getSbUndoPlayerKey(p))
-    p.sendMessage(`§bUndo done`)
-    return restored > 0
+        p.sendMessage(`§bUndo done`)
+        return restored > 0
     } catch (error) {
         console.error(`[StructureBuilder] applySbUndo: ${error}`)
         return false
@@ -1145,119 +1147,119 @@ async function showSaveACSSOptionsForm(p) {
 /** @param {{ saveChestLoot?: boolean, saveEntities?: boolean, saveAnchors?: boolean, ultraCompact?: boolean, player?: import("@minecraft/server").Player }} [options] */
 async function saveACSS(d, p1, p2, options = {}) {
     try {
-    const saveChestLoot = options.saveChestLoot !== false
-    const saveEntities = options.saveEntities !== false
-    const saveAnchors = options.saveAnchors !== false
-    const ultraCompact = !!options.ultraCompact
-    const player = options.player
-    const acss = {
-        head: {},
-        palette: {},
-        b3d: '',
-    }
-
-    acss.head = {
-        v: ACSS_VERSION,
-        s: [
-            Math.abs(p1.x - p2.x) + 1,
-            Math.abs(p1.y - p2.y) + 1,
-            Math.abs(p1.z - p2.z) + 1,
-        ],
-    }
-
-    const anchor = getStructureAnchor(p1, p2)
-    const corner = {
-        x: anchor.x + acss.head.s[0] - 1,
-        y: anchor.y + acss.head.s[1] - 1,
-        z: anchor.z + acss.head.s[2] - 1,
-    }
-
-    const volume = acss.head.s[0] * acss.head.s[1] * acss.head.s[2]
-    const pkSet = new Set()
-    const pvSet = new Set()
-    const uniqueBlocks = []
-    const uniqueBlockIndex = new Map()
-    const blockMap = new Map()
-    const lootChests = saveChestLoot ? [] : null
-    let forceAnchor = null
-    let blockPos = 0
-
-    for await (const b of new BlocksMegaArray(d, p1, p2)) {
-        const relativePos = {
-            x: b.location.x - anchor.x,
-            y: b.location.y - anchor.y,
-            z: b.location.z - anchor.z,
+        const saveChestLoot = options.saveChestLoot !== false
+        const saveEntities = options.saveEntities !== false
+        const saveAnchors = options.saveAnchors !== false
+        const ultraCompact = !!options.ultraCompact
+        const player = options.player
+        const acss = {
+            head: {},
+            palette: {},
+            b3d: '',
         }
-        const relKey = `${relativePos.x},${relativePos.y},${relativePos.z}`
 
-        if (saveAnchors && b.typeId === ACSS_FORCE_ANCHOR_BLOCK) {
-            if (!forceAnchor) {
-                forceAnchor = relativePos
-            } else {
-                console.warn(`saveACSS: multiple ${ACSS_FORCE_ANCHOR_BLOCK} blocks found, using the first one`)
-                try {
-                    player?.sendMessage(`§eWarning: multiple acss_anchor blocks found, using the first one`)
-                } catch { }
+        acss.head = {
+            v: ACSS_VERSION,
+            s: [
+                Math.abs(p1.x - p2.x) + 1,
+                Math.abs(p1.y - p2.y) + 1,
+                Math.abs(p1.z - p2.z) + 1,
+            ],
+        }
+
+        const anchor = getStructureAnchor(p1, p2)
+        const corner = {
+            x: anchor.x + acss.head.s[0] - 1,
+            y: anchor.y + acss.head.s[1] - 1,
+            z: anchor.z + acss.head.s[2] - 1,
+        }
+
+        const volume = acss.head.s[0] * acss.head.s[1] * acss.head.s[2]
+        const pkSet = new Set()
+        const pvSet = new Set()
+        const uniqueBlocks = []
+        const uniqueBlockIndex = new Map()
+        const blockMap = new Map()
+        const lootChests = saveChestLoot ? [] : null
+        let forceAnchor = null
+        let blockPos = 0
+
+        for await (const b of new BlocksMegaArray(d, p1, p2)) {
+            const relativePos = {
+                x: b.location.x - anchor.x,
+                y: b.location.y - anchor.y,
+                z: b.location.z - anchor.z,
             }
-            const idx = collectBlockByData('structure_void', undefined, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
+            const relKey = `${relativePos.x},${relativePos.y},${relativePos.z}`
+
+            if (saveAnchors && b.typeId === ACSS_FORCE_ANCHOR_BLOCK) {
+                if (!forceAnchor) {
+                    forceAnchor = relativePos
+                } else {
+                    console.warn(`saveACSS: multiple ${ACSS_FORCE_ANCHOR_BLOCK} blocks found, using the first one`)
+                    try {
+                        player?.sendMessage(`§eWarning: multiple acss_anchor blocks found, using the first one`)
+                    } catch { }
+                }
+                const idx = collectBlockByData('structure_void', undefined, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
+                blockMap.set(relKey, idx)
+                blockPos++
+                continue
+            }
+
+            const idx = collectBlockFromWorld(b, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
             blockMap.set(relKey, idx)
             blockPos++
-            continue
-        }
 
-        const idx = collectBlockFromWorld(b, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
-        blockMap.set(relKey, idx)
-        blockPos++
-
-        if (lootChests && isLootContainerBlock(b.typeId)) {
-            const loot = readLootPathFromContainerBlock(b)
-            if (loot) {
-                lootChests.push({
-                    x: relativePos.x,
-                    y: relativePos.y,
-                    z: relativePos.z,
-                    loot,
-                })
+            if (lootChests && isLootContainerBlock(b.typeId)) {
+                const loot = readLootPathFromContainerBlock(b)
+                if (loot) {
+                    lootChests.push({
+                        x: relativePos.x,
+                        y: relativePos.y,
+                        z: relativePos.z,
+                        loot,
+                    })
+                }
             }
         }
-    }
 
-    if (blockPos !== volume) {
-        console.warn(`saveACSS: expected ${volume} blocks, scanned ${blockPos}`)
-    }
-
-    const pkPal = buildSymbolPalette(pkSet)
-    const pvPal = buildSymbolPalette(pvSet)
-    const symPerBlock = symbolsPerBlock(uniqueBlocks.length)
-    acss.head.spb = symPerBlock
-
-    for (let i = 0; i < uniqueBlocks.length; i++) {
-        const { id, perms } = uniqueBlocks[i]
-        const sym = indexToSymbol(i, PALETTE_ALPHABET, symPerBlock)
-        acss.palette[sym] = encodeBlockEntry(id, perms, pkPal.reverse, pvPal.reverse)
-    }
-
-    if (Object.keys(pkPal.palette).length) acss.pk = pkPal.palette
-    if (Object.keys(pvPal.palette).length) acss.pv = pvPal.palette
-
-    const { axisOrder, b3d } = pickBestAcssAxisOrder(blockMap, acss.head.s, symPerBlock, ultraCompact)
-    acss.b3d = b3d
-    if (axisOrder !== BMA_DEFAULT_AXIS_ORDER) acss.head.a = axisOrder
-
-    if (lootChests?.length) acss.lootChests = lootChests
-    if (saveAnchors && forceAnchor) acss.force_anchor = forceAnchor
-
-    if (saveEntities) {
-        const entityList = collectStructureEntities(d, anchor, corner)
-        const entities = encodeStructureEntities(entityList)
-        if (entities) {
-            acss.entities = entities
-            acss.head.spe = entities.spe
-            delete entities.spe
+        if (blockPos !== volume) {
+            console.warn(`saveACSS: expected ${volume} blocks, scanned ${blockPos}`)
         }
-    }
 
-    return acss2str(acss)
+        const pkPal = buildSymbolPalette(pkSet)
+        const pvPal = buildSymbolPalette(pvSet)
+        const symPerBlock = symbolsPerBlock(uniqueBlocks.length)
+        acss.head.spb = symPerBlock
+
+        for (let i = 0; i < uniqueBlocks.length; i++) {
+            const { id, perms } = uniqueBlocks[i]
+            const sym = indexToSymbol(i, PALETTE_ALPHABET, symPerBlock)
+            acss.palette[sym] = encodeBlockEntry(id, perms, pkPal.reverse, pvPal.reverse)
+        }
+
+        if (Object.keys(pkPal.palette).length) acss.pk = pkPal.palette
+        if (Object.keys(pvPal.palette).length) acss.pv = pvPal.palette
+
+        const { axisOrder, b3d } = pickBestAcssAxisOrder(blockMap, acss.head.s, symPerBlock, ultraCompact)
+        acss.b3d = b3d
+        if (axisOrder !== BMA_DEFAULT_AXIS_ORDER) acss.head.a = axisOrder
+
+        if (lootChests?.length) acss.lootChests = lootChests
+        if (saveAnchors && forceAnchor) acss.force_anchor = forceAnchor
+
+        if (saveEntities) {
+            const entityList = collectStructureEntities(d, anchor, corner)
+            const entities = encodeStructureEntities(entityList)
+            if (entities) {
+                acss.entities = entities
+                acss.head.spe = entities.spe
+                delete entities.spe
+            }
+        }
+
+        return acss2str(acss)
     } catch (error) {
         console.error(`[StructureBuilder] saveACSS: ${error}`)
         return null
