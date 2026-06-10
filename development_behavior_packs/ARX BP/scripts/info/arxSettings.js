@@ -3,7 +3,7 @@ import { gDP, ssDP } from "../arxLib/DPOperations"
 import { fl } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
 import { world } from "@minecraft/server"
-import { coreFramework, coreErrorCounts } from "../core/core"
+import { coreFramework, coreErrorCounts, corePing } from "../core/core"
 import {
     getReviewLanguages,
     analyzeLocalization,
@@ -24,37 +24,40 @@ function isDevCoreBlockActive(coreKey) {
     }
 }
 
-/** @param {boolean} active */
-function formatDevCoreActiveBadge(active) {
-    return active ? '§f[§aE§f]' : '§f[§cD§f]'
-}
-
 const coreReviewDivider = '§8────────────────§r'
 
 /** @param {import("@minecraft/server").Player} p */
 function buildCoreReviewBody(p) {
     const lines = []
-    let total = 0
+    let errorsTotal = 0
     const keys = Object.keys(coreFramework)
 
     for (let i = 0; i < keys.length; i++) {
         const key = keys[i]
-        const count = coreErrorCounts[key] ?? 0
-        total += count
+        const numOfErrors = coreErrorCounts[key] ?? 0
+        const ping = corePing[key] ?? '?'
+        errorsTotal += numOfErrors
 
         const tick = coreFramework[key].tickSpeed
-        const errFmt = count === 0 ? `§a${count}` : `§c${count}`
-        const badge = formatDevCoreActiveBadge(isDevCoreBlockActive(key))
+        const errsMsg = numOfErrors === 0 ? `§a${numOfErrors}` : `§c${numOfErrors}`
+        const active = isDevCoreBlockActive(key)
 
-        if (i > 0) lines.push(coreReviewDivider)
-        lines.push(`${badge} §f${key} §8§o${tick}t`)
-        lines.push(fl(p, 'info.dev_options.core_review.block_errors', [errFmt]))
+        if (i > 0) lines.push(coreReviewDivider) // Push divider if not first line
+        // Core part str name and data, like [E 20t 1ms] mcf20
+        const status = active ? "§aEnabled" : '§8Disabled'
+        const pingColor = ping === 0 ? "§a" : ping === 1 ? "§e" : "§c"
+
+        // Add line to text
+        lines.push(`§r§f${key}\n§f${status}§f ${tick}t ${pingColor}${ping}§fms`)
+    
+        // Errors of this block
+        lines.push(fl(p, 'info.dev_options.core_review.block_errors', [errsMsg]))
     }
 
-    const totalFmt = total === 0 ? `§a${total}` : `§c${total}`
+    const totalErrorsMsg = errorsTotal === 0 ? `§a${errorsTotal}` : `§c${errorsTotal}`
     const header = [
         fl(p, 'info.dev_options.core_review.intro'),
-        fl(p, 'info.dev_options.core_review.total', [totalFmt]),
+        fl(p, 'info.dev_options.core_review.total', [totalErrorsMsg]),
         coreReviewDivider,
     ].join('\n')
 
@@ -222,10 +225,10 @@ export function devCoreReview(p) {
     const form = new ActionFormData()
         .title(fl(p, 'info.dev_options.core_review.title'))
         .body(buildCoreReviewBody(p))
-        .button(fl(p, 'info.dev_options.back'))
+        .button(fl(p, 'info.dev_options.update'))
 
     form.show(p).then(response => {
-        if (!response.canceled) devOptions(p)
+        if (!response.canceled) devCoreReview(p)
     })
 }
 

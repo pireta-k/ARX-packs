@@ -32,8 +32,19 @@ import { msgFromGuide, parceChatCommand } from "../chat"
 import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
 
-// Core framework 
-// There are all core parts with their tickspeeds and other data 
+/** Core framework 
+tickspeed (in ticks) - run this function every Tickspeed ticks
+
+operations () => func - code to execute
+
+OPTIONAL condition () => func - condition to run this part
+
+TO-DO
+OPTIONAL overclock: {    <- If this key exists, can overclock, else cannot 
+    importance: number, default 0.5 - importance of this part
+    type: default | onlyOverclock | oblyDownclock
+}
+*/
 export const coreFramework = {
     // Mcfunction core blocks
     mcf20: {
@@ -65,8 +76,8 @@ export const coreFramework = {
     // Watchdog system (input)
     watchdog: {
         tickSpeed: 1,
-        operations: () => {
-            if (world.getPlayers().length > 0) {
+        operations: (data) => {
+            if (data.players.length > 0) {
                 const hoster = getHoster()
                 if (hoster) setScore(hoster, 'watchdog', Math.floor(Math.random() * 4294967296) - 2147483648)
             }
@@ -75,8 +86,8 @@ export const coreFramework = {
     // Spawnpoint
     spawnpoint: {
         tickSpeed: 1,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (player.getDynamicProperty('respawnDelay') > 0) {
                     player.runCommand('spawnpoint @s -10000 4 -10000')
                 }
@@ -94,8 +105,8 @@ export const coreFramework = {
     grassGenerator: {
         condition: () => gDP(world, 'generateGrass'),
         tickSpeed: 100,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 player.dimension.spawnEntity('arx:grass_generator_launcher', player.location)
             }
         }
@@ -103,8 +114,8 @@ export const coreFramework = {
     // Melee pvp system
     meleePVPSystem: {
         tickSpeed: 1,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Blocking CD
                 if (player.getDynamicProperty('blockingResistanceCD') > 0) {
                     iDP(player, 'blockingResistanceCD', -1)
@@ -164,8 +175,8 @@ export const coreFramework = {
     // Knockout system
     knockoutSystem: {
         tickSpeed: 1,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Если мы притворяемся нокнутыми, но начали двигаться
                 if (player.getProperty('arx:is_knocked') === true && player.getDynamicProperty('respawnDelay') === 0 && player.hasTag('is_moving') && !player.hasTag('is_riding')) {
                     player.runCommand('event entity @s arx:property_is_knockout_set_0')
@@ -187,8 +198,8 @@ export const coreFramework = {
     // Soaking
     soaking: {
         tickSpeed: 1,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Основное намокание задается через DP wetness
                 const inRain = player.hasTag('in_water') && !player.hasTag('in_block_water')
                 let isBoatNearby = false
@@ -240,8 +251,8 @@ export const coreFramework = {
     },
     wateringCropsBySoaking: {
         tickSpeed: 80,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (gDP(player, 'wetness', 0) > 0) {
                     const blocksBelow = player.getAllBlocksStandingOn().filter(b => b.typeId === 'minecraft:farmland')
                     for (const b of blocksBelow) {
@@ -258,8 +269,8 @@ export const coreFramework = {
     autoclickerTracker: {
         tickSpeed: 2,
         condition: () => gDP(world, 'anticheat'),
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 const clicks = player.getDynamicProperty('anticheat:autoclick_tracker')
                 if (clicks > 0) {
                     if (clicks > 2) {
@@ -273,8 +284,8 @@ export const coreFramework = {
     // Hypersynergy Amulet CD
     hypersynergyAmulCd: {
         tickSpeed: 2,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (player.getDynamicProperty('amul_hypersynergyCD') > 0) {
                     if (player.getDynamicProperty('amul_hypersynergyCD') === 1) {
                         queueCommand(player, 'playsound tick @s ~ ~ ~')
@@ -288,8 +299,8 @@ export const coreFramework = {
     worldBorder: {
         tickSpeed: 4,
         condition: () => gDP(world, 'enableWorldBorder'),
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Контроль расстояния от места спавна
                 if (player.getDynamicProperty('hasRegisteredCharacter') && player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator' && player.dimension.id === 'minecraft:overworld') {
                     // Задаем двумерные векторы
@@ -332,8 +343,8 @@ export const coreFramework = {
     // Distance travelled
     distanceTravelled: {
         tickSpeed: 5,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (player.hasTag('is_moving') && player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator') {
                     iDP(player, "statistics:distance", 1.04 * (player.getDynamicProperty('speedPower') / 100))
                 }
@@ -343,8 +354,8 @@ export const coreFramework = {
     // Heartbeat 
     heartbeat: {
         tickSpeed: 16,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 const currentHP = player.getComponent('health').currentValue
                 if (currentHP <= 10 && currentHP > 0) {
                     const loudness = 1 / currentHP
@@ -363,8 +374,8 @@ export const coreFramework = {
     // Torch Particles 
     torchParicles: {
         tickSpeed: 10,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (checkForItem(player, 'Mainhand', 'minecraft:torch') || checkForItem(player, 'Mainhand', 'minecraft:soul_torch') || checkForItem(player, 'Mainhand', 'minecraft:copper_torch') || checkForItem(player, 'Mainhand', 'minecraft:redstone_torch')) {
                     player.runCommand('execute positioned ~ ~1.9 ~ run particle minecraft:basic_smoke_particle ^-0.3 ^0 ^0.4')
                 }
@@ -374,20 +385,20 @@ export const coreFramework = {
     // Time (different time counter systems)
     time: {
         tickSpeed: 20,
-        operations: () => {
+        operations: (data) => {
             // Rewrite global playtime panel
             try {
                 world.scoreboard.removeObjective('playtime_display')
             }
             catch { }
             world.scoreboard.addObjective('playtime_display', "§a§lHours played")
-            for (const player of world.getPlayers()) {
+            for (const player of data.players) {
                 setScore(player, 'playtime_display', gDP(player, 'playTimeH'))
             }
             world.scoreboard.setObjectiveAtDisplaySlot('List', { objective: world.scoreboard.getObjective('playtime_display'), sortOrder: 1 })
 
             // Every player's time
-            for (const player of world.getPlayers()) {
+            for (const player of data.players) {
                 // Playtime (doesn't depend on character existance)
                 {
                     // Seconds
@@ -411,8 +422,8 @@ export const coreFramework = {
     // Remove magic belt lamps
     removeMagicBeltLamps: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (!player.getDynamicProperty('allowArchilight')) {
                     player.runCommand('clear @s arx:archilight')
                 }
@@ -425,8 +436,8 @@ export const coreFramework = {
     // Stress - happiness system
     stress: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (player.getDynamicProperty('respawnDelay') === 0 && player.getGameMode() == 'Survival') {
                     // Заводим JS переменные
                     let stress = player.getDynamicProperty('stress') // Стресс
@@ -569,8 +580,8 @@ export const coreFramework = {
     // Animate killing time
     animKillingTime: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // If the player moves, set CD before animation to max value (= killingTimeAnimDelay)
                 if (player.hasTag('is_moving')) ssDP(player, 'KACD', killingTimeAnimDelay) // KACD == Killing Animation Cool Down
                 // Else (player isn't moving)
@@ -589,8 +600,8 @@ export const coreFramework = {
     fogs: {
         condition: () => gDP(world, 'enableFogs') !== false,
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Уменьшение no_fog
                 if (getScore(player, "no_fog") > 0) {
                     player.runCommand('scoreboard players add @s no_fog -1')
@@ -647,8 +658,8 @@ export const coreFramework = {
     // Temperature
     temperature: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator' && gDP(player, 'hasRegisteredCharacter')) {
                     let freezing = player.getDynamicProperty('freezing')
 
@@ -708,8 +719,8 @@ export const coreFramework = {
     // Knockout
     knockout: {
         tickSpeed: 20,
-        operations: async () => {
-            for (const player of world.getPlayers()) {
+        operations: async (data) => {
+            for (const player of data.players) {
                 // respawnDelay - задержка до момента, когда игрок встанет естественным образом
                 // reviveDelay - время, пока игрока поднимают. Хранится на нокнутом поднимаемом игроке
 
@@ -848,8 +859,8 @@ export const coreFramework = {
     // Passive bleeding
     bleeding: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 const particleLoc = player.getHeadLocation()
                 const molang = new MolangVariableMap()
                 const hitDirection = { x: 0, y: 0, z: 0 }
@@ -867,8 +878,8 @@ export const coreFramework = {
     // Improve skills
     skills: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Fortitude
                 if (player.hasTag('very_low_hp')) {
                     increaseSkillProgress(player, 'fortitude', 10)
@@ -893,8 +904,8 @@ export const coreFramework = {
     // Beacon spell
     beaconSpell: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (player.getDynamicProperty('magicBeacon') > 0) {
                     iDP(player, 'magicBeacon', -1)
                     if (player.getDynamicProperty('magicBeacon') === 0) {
@@ -928,9 +939,10 @@ export const coreFramework = {
     },
     // No character
     noCharacter: {
+        condition: (data) => data.players.some((p) => !gDP(p, 'hasRegisteredCharacter')),
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (!player.getDynamicProperty('hasRegisteredCharacter')) {
                     player.runCommand('effect @s regeneration 2 255 true')
                     player.runCommand('effect @s saturation 2 255 true')
@@ -941,8 +953,8 @@ export const coreFramework = {
     // Decrease DPs
     decreaseSPs: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Уменьшение DP из dynamicPropertiesToDecrease
                 for (const dp in dynamicPropertiesToDecrease) {
                     const DPValue = player.getDynamicProperty(dp)
@@ -964,8 +976,8 @@ export const coreFramework = {
     // Weigh Analysis
     weighAnalysis: {
         tickSpeed: 60,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 weighAnalysis(player)
             }
         }
@@ -973,8 +985,8 @@ export const coreFramework = {
     // Strength calculation
     strengthCalc: {
         tickSpeed: 2,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 let basicStrength = 0.5
 
                 // Кольца
@@ -1057,8 +1069,8 @@ export const coreFramework = {
     // Mana calculation
     manaCalc: {
         tickSpeed: 2,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 // Регенерация маны - рассчет
                 let mpRegenPower = 0.1
 
@@ -1224,8 +1236,8 @@ export const coreFramework = {
     // Speed calculation
     speedCalc: {
         tickSpeed: 2,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 let speedPower = 100 // База = 100%
 
                 // Увеличение от колец
@@ -1325,8 +1337,8 @@ export const coreFramework = {
     // Max HP calculation
     hpCalc: {
         tickSpeed: 10,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 let maxHP = 16
 
                 // Бонус от уровня
@@ -1356,8 +1368,8 @@ export const coreFramework = {
     // Jump boost calculation
     jumpCalc: {
         tickSpeed: 10,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 let jumpPower = 0
 
                 // Кольца
@@ -1405,8 +1417,8 @@ export const coreFramework = {
     // Ranged weapons accuracy calculation
     accuracyCalc: {
         tickSpeed: 10,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 let rangedAttackAccuracy = 0
 
                 if (checkForItem(player, "Feet", "arx:ring_lamenite_topaz")) { rangedAttackAccuracy += 6 }
@@ -1466,8 +1478,8 @@ export const coreFramework = {
     // Digging speed calculation
     diggingCalc: {
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 let diggingSpeed = 0
 
                 // Определяем значение
@@ -1491,9 +1503,10 @@ export const coreFramework = {
     // Traits
     // Schizophrenia 
     schizophrenia: {
+        condition: (data) => data.players.some((p) => checkForTrait(p, 'schizophrenic')),
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (checkForTrait(player, 'schizophrenic') && !player.getProperty('arx:is_knocked')) {
                     if (Math.random() < 0.01) {
                         let sound
@@ -1518,9 +1531,10 @@ export const coreFramework = {
     },
     // Impulsive paranoid
     impulsive_par: {
+        condition: (data) => data.players.some((p) => checkForTrait(p, 'impulsive_par')),
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (checkForTrait(player, 'impulsive_par') && !player.getProperty('arx:is_knocked')) {
                     if (Math.random() < 0.015) {
                         const playersNearImpulsivePar = getPlayersInRadius(player, 3, false)
@@ -1539,9 +1553,10 @@ export const coreFramework = {
     },
     // Paranoid masochist 
     paranoidMasochist: {
+        condition: (data) => data.players.some((p) => checkForTrait(p, 'paranoid_mas')),
         tickSpeed: 20,
-        operations: () => {
-            for (const player of world.getPlayers()) {
+        operations: (data) => {
+            for (const player of data.players) {
                 if (checkForTrait(player, 'paranoid_mas')) {
                     if (Math.random() < 0.002 && !player.getProperty('arx:is_knocked')) {
                         player.applyDamage(Math.ceil(Math.random() * 3))
@@ -1579,6 +1594,8 @@ export const coreFramework = {
 
 /** Счётчик ошибок operations() по ключам coreFramework (для dev UI) */
 export const coreErrorCounts = {}
+/** Object with core ping */
+export const corePing = {}
 
 // =====================
 // === Core Launcher === 
@@ -1586,6 +1603,11 @@ export const coreErrorCounts = {}
 world.afterEvents.worldLoad.subscribe(async () => {
     const errorName = `[§dCoreError§r]`
     try {
+
+        // Ping checker
+        let startTime = 0
+        let endTime = 0
+        
 
         // Wait for world to be ready
         let worldIsLoaded = false
@@ -1595,18 +1617,27 @@ world.afterEvents.worldLoad.subscribe(async () => {
         }
 
         system.runInterval(async () => { // Every tick
+            // Create data (to pass it into core blocks)
+            let data = {
+                players: world.getPlayers()
+            }
+
             // Launch core parts
             for (const key in coreFramework) {
+
                 const coreBlock = coreFramework[key] // Get CoreFramework value
                 // Tick check
                 const tick = system.currentTick
                 if (tick % coreBlock['tickSpeed'] === 0) {
 
+                    // Check start ms
+                    startTime = new Date()
+
                     // Condition check
                     let canExecute = true
                     if ('condition' in coreBlock) {
                         try {
-                            canExecute = coreBlock.condition()
+                            canExecute = coreBlock.condition(data)
                         }
                         catch (e) {
                             console.error(`${errorName}: Condition check internal error: ${e}`)
@@ -1616,13 +1647,19 @@ world.afterEvents.worldLoad.subscribe(async () => {
 
                     if (canExecute) {
                         try {
-                            coreBlock.operations()
+                            coreBlock.operations(data)
                         }
                         catch (err) {
                             console.error(`${errorName}, block [${key}]: ${err}`)
                             coreErrorCounts[key] = (coreErrorCounts[key] ?? 0) + 1
                         }
                     }
+
+                    // Check end ms
+                    endTime = new Date()
+
+                    // Save ping
+                    corePing[key] = endTime - startTime 
                 }
             }
         }, 1)
