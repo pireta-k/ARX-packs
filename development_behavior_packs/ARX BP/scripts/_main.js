@@ -39,6 +39,7 @@ import { md5, obj2str } from "./arxLib/converters"
 import { isAdmin, getAdmins, getHoster } from './arxLib/admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { showLanguageForm } from "./lang/form"
+import { setSBPoint } from "./sb/structureBuilder"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -579,8 +580,11 @@ system.beforeEvents.startup.subscribe(initEvent => {
             }
         }
     })
-    // Custom commands
-    initEvent.customCommandRegistry.registerCommand(
+    // === Custom commands ===
+    const ccr = initEvent.customCommandRegistry
+
+    // Test
+    ccr.registerCommand(
         {
             name: 'arx:test',
             description: 'Just a test func',
@@ -591,21 +595,46 @@ system.beforeEvents.startup.subscribe(initEvent => {
             const player = origin.initiator ?? origin.sourceEntity
             const item = getItem(player, 'mainhand')
             console.warn(gDP(item, 'level'))
+            return { status: CustomCommandStatus.Success }
         }
     )
-    initEvent.customCommandRegistry.registerCommand(
+    // Weapon upgrade
+    ccr.registerCommand(
         {
             name: WEAPON_SKILL_COMMAND,
-            description: 'Выбор навыка оружия (если доступен апгрейд)',
+            description: 'Apply an upgrade to you weapon',
             permissionLevel: CommandPermissionLevel.Any,
             cheatsRequired: false,
         },
         origin => {
             const player = origin.initiator ?? origin.sourceEntity
-            if (!player || player.typeId !== 'minecraft:player') {
-                return { status: CustomCommandStatus.Failure }
-            }
             openWeaponSkillPick(player)
+            return { status: CustomCommandStatus.Success }
+        }
+    )
+    // Structure Builder
+    const sbOptions = ccr.registerEnum('arx:sbOptions', ['p1', 'p2'])
+    ccr.registerCommand(
+        {
+            name: 'arx:sb',
+            description: 'Structure Builder functions',
+            permissionLevel: CommandPermissionLevel.GameDirectors,
+            cheatsRequired: false,
+            mandatoryParameters: [
+                {
+                    name: 'arx:sbOptions',
+                    type: CustomCommandParamType.Enum
+                }
+            ]
+        },
+        (origin, arg0) => {
+            const p = origin.initiator ?? origin.sourceEntity
+            if (arg0 === "p1") {
+                setSBPoint(p, 1, p.location)
+            }
+            else if (arg0 === "p2") {
+                setSBPoint(p, 2, p.location)
+            }
             return { status: CustomCommandStatus.Success }
         }
     )

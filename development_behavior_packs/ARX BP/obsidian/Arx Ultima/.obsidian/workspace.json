@@ -1,0 +1,198 @@
+{
+  "main": {
+    "id": "d697d10de773eaa2",
+    "type": "split",
+    "children": [
+      {
+        "id": "fc71b52023be2480",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "52aad2615766b62b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Arx Ultima 1.x stable release.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Arx Ultima 1.x stable release"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3d8e3fb5406e4185",
+    "type": "split",
+    "children": [
+      {
+        "id": "95cd1bc4ed8a2705",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d6692db180d5ff5a",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "a55fa1f0644f906a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "f671a8221c8bdbf3",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "196f16822b0e7fff",
+    "type": "split",
+    "children": [
+      {
+        "id": "523af419acf9b2f3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d311978021a2172e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Arx Ultima 1.x stable release.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Arx Ultima 1.x stable release"
+            }
+          },
+          {
+            "id": "b9d73778d9d76b32",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Arx Ultima 1.x stable release.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Arx Ultima 1.x stable release"
+            }
+          },
+          {
+            "id": "3a33f6d735a78b03",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "1042685a7d61f94a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "bc6a179a9a3ef38e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Arx Ultima 1.x stable release.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Arx Ultima 1.x stable release"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "52aad2615766b62b",
+  "lastOpenFiles": [
+    "механику ветра.md",
+    "Arx Ultima 1.x stable release.md",
+    "Доделать механику опыта оружия.md",
+    "Переработать руны.md",
+    "Нужен fallback в случае ошибки загрузки ACSS.md",
+    "Сделать траву более разообразной.md",
+    "Переделать крафт шахмат.md",
+    "лут в данжах.md",
+    "Доработать зарытое сокровище.md"
+  ]
+}

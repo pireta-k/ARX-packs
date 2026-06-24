@@ -1,0 +1,1 @@
+[Фото](https://cdn.discordapp.com/attachments/991657209685606452/1498350432412766360/image.png?ex=6a3b53d5&is=6a3a0255&hm=b4241a9a19fafe9a75f7e45c79e20fd09a8923644eb63a4268fe85cdf7d084c2&)

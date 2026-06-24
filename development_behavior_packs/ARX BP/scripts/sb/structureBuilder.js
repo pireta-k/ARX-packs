@@ -18,12 +18,29 @@ world.afterEvents.playerSwingStart.subscribe((event) => {
 
     if (b && checkForItem(p, "mainhand", 'arx:structurebuilder_hammer')) {
         try {
-            ssDP(p, `sb:point1`, b.location)
-            p.sendMessage(`Saved §aPoint 1`)
+            setSBPoint(p, 1, b.location)
         }
         catch { } // Block is too far away
     }
 })
+
+const allowedPoints = [1, 2]
+export function setSBPoint(p, pointNum, loc) {
+    // Unknown point number
+    if (!allowedPoints.includes(pointNum)) return
+    // Edit location
+    const locAdapted = {
+        x: Math.trunc(loc.x),
+        y: Math.trunc(loc.y),
+        z: Math.trunc(loc.z)
+    }
+    // Get color
+    const color = pointNum === 1 ? '§a' : '§c'
+    // Set DP
+    ssDP(p, `sb:point${pointNum}`, locAdapted)
+    // Send message
+    p.sendMessage(`Saved ${color}Point ${pointNum}`)
+}
 
 const defaultCoords = { x: 0, y: 0, z: 0 }
 
@@ -357,6 +374,7 @@ class BlocksMegaArray {
 
         this.dimension = dimension
         this.axisOrder = resolveBlocksMegaArrayAxisOrder(options)
+        this.allowUnsafeOptimisation = options.allowUnsafeOptimisation ?? false
 
         // Anchor is a Vector3 vertex of MegaArray with smallest values
         this.anchor = {
@@ -389,6 +407,11 @@ class BlocksMegaArray {
         }
     }
 
+    // Iterator, like main iterator, but with runJob optimizaion. TO-DO
+    runJob() {
+        
+    }
+
     // Main blocks iterator
     async *[Symbol.asyncIterator]() {
         for (const chunk of this.iterMegaChunks()) {
@@ -400,13 +423,18 @@ class BlocksMegaArray {
                 max: { x: Math.min(chunk.absPos.x + 31, this.top.x), y: chunk.height.max, z: Math.min(chunk.absPos.z + 31, this.top.z) }
             }
 
-            await chunk.startTick()
+            const allowSkipTicking = this.allowUnsafeOptimisation && chunk.isLoaded()
+
+            if (!allowSkipTicking) {
+                await chunk.startTick()
+            }
 
             // Iterate and yield blocks (default axis order: y desc → x asc → z asc)
             for (const coord of iterateActiveAreaByAxisOrder(activeArea, this.axisOrder)) {
                 yield this.dimension.getBlock(coord)
             }
-            await chunk.delTick()
+
+            if (!allowSkipTicking) await chunk.delTick()
         }
     }
 
@@ -430,6 +458,15 @@ class BlocksMegaArray {
             this.parent.dimension.runCommand(`tickingarea remove sb`)
             await sleep(1)
         }
+
+        // Can the chunk be loaded without custom tickingarea?
+        isLoaded() {
+            const corner0Loaded = this.parent.dimension.isChunkLoaded({ x: this.absPos.x, y: this.parent.anchor.y, z: this.absPos.z })
+            const corner1Loaded = this.parent.dimension.isChunkLoaded({ x: this.absPos.x + 32, y: this.parent.anchor.y, z: this.absPos.z })
+            const corner2Loaded = this.parent.dimension.isChunkLoaded({ x: this.absPos.x, y: this.parent.top.y, z: this.absPos.z + 32 })
+            const corner3Loaded = this.parent.dimension.isChunkLoaded({ x: this.absPos.x + 32, y: this.parent.top.y, z: this.absPos.z + 32 })
+            return corner0Loaded && corner1Loaded && corner2Loaded && corner3Loaded
+        }
     }
 }
 
@@ -439,8 +476,7 @@ export async function onUseSBHammer(p) {
     if (!sneaking) { // Save point
         const b = p.getBlockFromViewDirection()?.block
         try {
-            ssDP(p, `sb:point2`, b.location)
-            p.sendMessage(`Saved §cPoint 2`)
+            setSBPoint(p, 2, b.location)
         }
         catch { } // Block is too far away
     }
@@ -489,7 +525,7 @@ export async function onUseSBHammer(p) {
                         const canUndo = volume <= UNDO_MAX_VOLUME
                         const undoBlocks = canUndo ? [] : null
                         p.sendMessage(`§bDeleting... (${volume} blocks)`)
-                        for await (const b of new BlocksMegaArray(d, point1, point2)) {
+                        for await (const b of new BlocksMegaArray(d, point1, point2, { allowUnsafeOptimisation: true })) {
                             try {
                                 if (undoBlocks) undoBlocks.push(captureBlockForUndo(b))
                                 b.setType('minecraft:air')
