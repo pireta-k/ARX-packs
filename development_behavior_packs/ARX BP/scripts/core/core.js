@@ -13,7 +13,7 @@ import { channelRomanNums } from '../magic/channelRomanNums'
 import { weighAnalysis } from '../weighAnalysis'
 import { checkForTrait } from "../traits/traitsOperations"
 import { killingTimeAnimDelay, animate_killing_time } from './animate_killing_time'
-import { ssDP, iDP, gDP } from '../arxLib/DPOperations'
+import { sDP, iDP, gDP } from '../arxLib/DPOperations'
 import { acquireTrait } from "../traits/traitsOperations"
 import { sendToActionBar, actionBarCoreTick } from './actionBarCore'
 import { syncHud, updateStressHud, clearHud } from './hud'
@@ -211,7 +211,7 @@ export const coreFramework = {
                 // Зонт или амулет ненамокания 
                 const holdingUmbrella = checkForItem(player, 'mainhand', 'arx:umbrella_golden_silk') || checkForItem(player, 'mainhand', 'arx:umbrella_silk') || checkForItem(player, 'mainhand', 'arx:umbrella_skin') || checkForItem(player, 'mainhand', 'arx:umbrella_small_silk')
                 for (let playerNearUmbrella of getPlayersInRadius(player, 1.5, false)) {
-                    ssDP(playerNearUmbrella, 'someoneCoversWithUmbrella', true)
+                    sDP(playerNearUmbrella, 'someoneCoversWithUmbrella', true)
                 }
                 const antiRainAmul = checkForItem(player, 'Legs', 'arx:amul_sapphire')
 
@@ -244,8 +244,8 @@ export const coreFramework = {
                 }
 
                 // В самом конце
-                ssDP(player, 'wetness', wetness)
-                ssDP(player, 'someoneCoversWithUmbrella', false)
+                sDP(player, 'wetness', wetness)
+                sDP(player, 'someoneCoversWithUmbrella', false)
             }
         }
     },
@@ -276,7 +276,7 @@ export const coreFramework = {
                     if (clicks > 2) {
                         console.warn(`${player.name} имеет подозрителькую скорость клика: ${clicks}/0.1сек`)
                     }
-                    ssDP(player, 'anticheat:autoclick_tracker', 0)
+                    sDP(player, 'anticheat:autoclick_tracker', 0)
                 }
             }
         }
@@ -405,11 +405,11 @@ export const coreFramework = {
                     const currentSec = iDP(player, 'playTimeSec')
                     // Minute passed
                     if (currentSec === 60) {
-                        ssDP(player, 'playTimeSec', 0)
+                        sDP(player, 'playTimeSec', 0)
                         const currentMin = iDP(player, 'playTimeMin')
                         // Hour passed
                         if (currentMin === 60) {
-                            ssDP(player, 'playTimeMin', 0)
+                            sDP(player, 'playTimeMin', 0)
                             iDP(player, 'playTimeH')
                         }
                     }
@@ -566,9 +566,9 @@ export const coreFramework = {
                     }
 
                     // Записываем полученные переменные в DP
-                    ssDP(player, 'stress', stress) // Стресс
-                    ssDP(player, 'stressLevel', stressLevel) // Уровень стресса
-                    ssDP(player, 'stressDynamic', stressDynamic) // Корректирующая динамика
+                    sDP(player, 'stress', stress) // Стресс
+                    sDP(player, 'stressLevel', stressLevel) // Уровень стресса
+                    sDP(player, 'stressDynamic', stressDynamic) // Корректирующая динамика
 
                     updateStressHud(player, stressLevel)
                 } else {
@@ -583,7 +583,7 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 // If the player moves, set CD before animation to max value (= killingTimeAnimDelay)
-                if (player.hasTag('is_moving')) ssDP(player, 'KACD', killingTimeAnimDelay) // KACD == Killing Animation Cool Down
+                if (player.hasTag('is_moving')) sDP(player, 'KACD', killingTimeAnimDelay) // KACD == Killing Animation Cool Down
                 // Else (player isn't moving)
                 else {
                     iDP(player, 'KACD', -1)
@@ -591,7 +591,7 @@ export const coreFramework = {
 
                 if (gDP(player, 'KACD') <= 0) {
                     animate_killing_time(player)
-                    ssDP(player, 'KACD', killingTimeAnimDelay)
+                    sDP(player, 'KACD', killingTimeAnimDelay)
                 }
             }
         }
@@ -711,7 +711,7 @@ export const coreFramework = {
                         }
                     }
 
-                    ssDP(player, 'freezing', freezing)
+                    sDP(player, 'freezing', freezing)
                 }
             }
         }
@@ -744,7 +744,7 @@ export const coreFramework = {
                                 rand === 1 ? 'Сколько прошло времени...?' : 'Как больно...'
 
                         player.sendMessage(`§o§e${text}\n§7Вы ещё не до конца поняли, что к чему, но уже готовы бежать. (Получен временный бонус скорости)`)
-                        ssDP(player, 'speedBoostAfterKnockout', 40)
+                        sDP(player, 'speedBoostAfterKnockout', 40)
                     }
 
                     // Если есть кристалл быстрого возрождения
@@ -801,7 +801,7 @@ export const coreFramework = {
                                     player.runCommand(`tellraw @s { "rawtext": [ { "text": "${nearbyPlayer.getDynamicProperty('name')} §aчувствует себя лучше" } ] }`)
 
                                     // Выставляем данные
-                                    ssDP(nearbyPlayer, 'respawnDelay', 0)
+                                    sDP(nearbyPlayer, 'respawnDelay', 0)
                                     nearbyPlayer.setProperty("arx:is_knocked", false)
                                     nearbyPlayer.runCommand('event entity @s arx:property_is_knockout_set_0')
                                 }
@@ -827,7 +827,7 @@ export const coreFramework = {
                             }
                         }
                         if (!someoneWhoIsHelpingMe) {
-                            ssDP(player, 'reviveDelay', 0)
+                            sDP(player, 'reviveDelay', 0)
                         }
                     }
                     // Темнеем камеру
@@ -839,7 +839,7 @@ export const coreFramework = {
                 }
 
                 // Обработка переменных
-                ssDP(player, 'respawnDelayLastPass', player.getDynamicProperty('respawnDelay'))
+                sDP(player, 'respawnDelayLastPass', player.getDynamicProperty('respawnDelay'))
                 if (player.getDynamicProperty('respawnDelay') > 0) {
                     iDP(player, 'respawnDelay', -1)
                 }
@@ -1062,7 +1062,7 @@ export const coreFramework = {
                 basicStrength < -30 ? player.runCommand(`event entity @s arx:setBasicStrength_-30`) : player.runCommand(`event entity @s arx:setBasicStrength_${basicStrength}`)
 
                 // Записывание в DP
-                ssDP(player, 'basicStrength', basicStrength)
+                sDP(player, 'basicStrength', basicStrength)
             }
         }
     },
@@ -1115,7 +1115,7 @@ export const coreFramework = {
                 // Увеличение от прокачки
                 mpRegenPower += player.getDynamicProperty('skill:mp_regen_level') / 3
 
-                ssDP(player, "mpRegenPower", mpRegenPower)
+                sDP(player, "mpRegenPower", mpRegenPower)
 
                 // Максимальная мана - рассчет
                 let maxMp = 20
@@ -1169,11 +1169,11 @@ export const coreFramework = {
                 maxMp += gDP(player, 'MPPermanentBonus', 0)
 
                 // Записываем максмп в дп
-                ssDP(player, "maxMp", maxMp)
+                sDP(player, "maxMp", maxMp)
 
                 // Макс мана отрицательна
                 if (maxMp < 0 || player.getDynamicProperty("mp") < 0) {
-                    ssDP(player, 'mp', 0)
+                    sDP(player, 'mp', 0)
                 }
                 // Регенерируем
                 else if (player.getDynamicProperty("mp") < maxMp) {
@@ -1197,13 +1197,13 @@ export const coreFramework = {
                 }
                 // Мана больше макс маны
                 else if (player.getDynamicProperty("mp") > maxMp) { // Маны больше чем надо
-                    ssDP(player, 'mp', maxMp)
-                    ssDP(player, 'MPSmoothAccrue', 0)
+                    sDP(player, 'mp', maxMp)
+                    sDP(player, 'MPSmoothAccrue', 0)
                     displayMPAndAdjacent(player)
                 }
                 // Мана равна макс мане
                 else {
-                    ssDP(player, 'MPSmoothAccrue', 0)
+                    sDP(player, 'MPSmoothAccrue', 0)
 
                     // Определяем, что у нас за предмет
                     const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Mainhand)
@@ -1329,7 +1329,7 @@ export const coreFramework = {
                 if (speedPower && player.getDynamicProperty("speedPower") != speedPower) {
                     const movementComponent = player.getComponent("minecraft:movement")
                     movementComponent.setCurrentValue(speedPower / 1000)
-                    ssDP(player, "speedPower", speedPower)
+                    sDP(player, "speedPower", speedPower)
                 }
             }
         }
@@ -1351,7 +1351,7 @@ export const coreFramework = {
                 if (player.getDynamicProperty('ghostBoostByScarletMoon')) maxHP += 10
 
                 // Макс хп - запись в DP
-                ssDP(player, "maxHP", maxHP)
+                sDP(player, "maxHP", maxHP)
 
                 // Исполнение
                 player.runCommand(`event entity @s arx:set_${maxHP}_hp`)
@@ -1407,7 +1407,7 @@ export const coreFramework = {
                 jumpPower = Math.round(jumpPower)
 
                 // Отправка в DP
-                ssDP(player, "jumpPower", jumpPower)
+                sDP(player, "jumpPower", jumpPower)
 
                 // Прыжок - реализация
                 if (jumpPower > 0) { player.runCommand(`effect @s jump_boost 1 ${jumpPower - 1} true`) }
@@ -1730,7 +1730,7 @@ export function displayMPAndAdjacent(player) {
         }
 
         if (staffChannelNum > 1 && !player.getDynamicProperty('hasEverHoldedMultiChannelStaff')) {
-            ssDP(player, 'hasEverHoldedMultiChannelStaff', true)
+            sDP(player, 'hasEverHoldedMultiChannelStaff', true)
             msgFromGuide(player, 'Вы держите §aмногоканальный посох§f! Чтобы выбрать канал магии, присядьте и поворачивайте камерой вверх-вниз. Чтобы зафиксировать выбранный канал, встанье.')
         }
 

@@ -1,6 +1,6 @@
 import { ModalFormData, MessageFormData, ActionFormData } from "@minecraft/server-ui"
 import { getScore, setScore } from "./arxLib/scoresOperations"
-import { gDP, ssDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/DPOperations"
 import { world } from "@minecraft/server"
 import { fl, setPlayerLanguage } from "./lang/fetchLocalization"
 import { showLanguageForm } from "./lang/form"
@@ -35,9 +35,9 @@ export async function registerCharacter(player) {
     // Everything is fine
     else {
         // Version notification check
-        if (RELEASE != 'stable' && !gDP(player, 'hasAlreadySeenVersionWarning')) ssDP(player, 'registerCharacterStage', -9)
+        if (RELEASE != 'stable' && !gDP(player, 'hasAlreadySeenVersionWarning')) sDP(player, 'registerCharacterStage', -9)
         // Language check
-        if (gDP(player, 'language') === undefined) ssDP(player, 'registerCharacterStage', -10)
+        if (gDP(player, 'language') === undefined) sDP(player, 'registerCharacterStage', -10)
 
         switch (player.getDynamicProperty('registerCharacterStage')) {
 
@@ -59,7 +59,7 @@ export async function registerCharacter(player) {
                             setRegWindow(player, thirstRegStep)
                         }
                     })
-                ssDP(player, 'hasAlreadySeenVersionWarning', true)
+                sDP(player, 'hasAlreadySeenVersionWarning', true)
                 break
 
             case 10: // Выбор пола 10
@@ -128,7 +128,7 @@ export async function registerCharacter(player) {
                             }
 
                             if (!wrongInput) {
-                                ssDP(player, "name", correctedName)
+                                sDP(player, "name", correctedName)
 
                                 setRegWindow(player, 40)
                             }
@@ -164,7 +164,7 @@ export async function registerCharacter(player) {
                     .then(response => {
                         const fv = response.formValues
                         if (fv) {
-                            ssDP(player, 'tastesRegSelection', fv)
+                            sDP(player, 'tastesRegSelection', fv)
 
                             // Is the selection balanced?
                             const resultWeight = fv.reduce((sum, selectedIndex) => sum + tasteWeights[selectedIndex], 0)
@@ -178,11 +178,11 @@ export async function registerCharacter(player) {
                             }
                             // It is balanced
                             else {
-                                ssDP(player, 'playerTaste_meat', tasteDPs[fv[0]])
-                                ssDP(player, 'playerTaste_fish', tasteDPs[fv[1]])
-                                ssDP(player, 'playerTaste_bread', tasteDPs[fv[2]])
-                                ssDP(player, 'playerTaste_dairy', tasteDPs[fv[3]])
-                                ssDP(player, 'playerTaste_herbal', tasteDPs[fv[4]])
+                                sDP(player, 'playerTaste_meat', tasteDPs[fv[0]])
+                                sDP(player, 'playerTaste_fish', tasteDPs[fv[1]])
+                                sDP(player, 'playerTaste_bread', tasteDPs[fv[2]])
+                                sDP(player, 'playerTaste_dairy', tasteDPs[fv[3]])
+                                sDP(player, 'playerTaste_herbal', tasteDPs[fv[4]])
 
                                 setRegWindow(player, 50)
                             }
@@ -246,12 +246,12 @@ export async function registerCharacter(player) {
                     .show(player).then(response => {
 
                         if (response.formValues) {
-                            ssDP(player, 'height', response.formValues[0])
+                            sDP(player, 'height', response.formValues[0])
                             player.setProperty("arx:height", response.formValues[0])
                             player.runCommand(`event entity @s arx:setHeight_${response.formValues[0]}`)
 
 
-                            ssDP(player, "registerCharacterStage", 70)
+                            sDP(player, "registerCharacterStage", 70)
                             player.runCommand(`tellraw @s { "rawtext": [ { "text": "Посмотрите на своего персонажа от третьего лица, §aвам нравится§f его §aрост§f? Возвращайтесь к <создать персонажа>, когда определитесь с ответом." } ] }`)
                         }
                     })
@@ -319,8 +319,8 @@ export async function registerCharacter(player) {
                             if (response.selection === 0) {
                                 player.teleport(gDP(world, 'worldSpawnPoint'), { dimension: world.getDimension('minecraft:overworld'), checkForBlocks: false, keepVelocity: false })
 
-                                ssDP(player, "registerCharacterStage", thirstRegStep)
-                                ssDP(player, "hasRegisteredCharacter", true)
+                                sDP(player, "registerCharacterStage", thirstRegStep)
+                                sDP(player, "hasRegisteredCharacter", true)
                             }
                             else if (response.selection === 1) setRegWindow(player, thirstRegStep)
                         }
@@ -330,12 +330,12 @@ export async function registerCharacter(player) {
             // Smth unexpected
             default:
                 player.sendMessage('Unexpected registerCharacterStage value. Registration restarted.')
-                ssDP(player, 'registerCharacterStage', thirstRegStep)
+                sDP(player, 'registerCharacterStage', thirstRegStep)
         }
     }
 }
 
 function setRegWindow(player, value) {
-    ssDP(player, "registerCharacterStage", value)
+    sDP(player, "registerCharacterStage", value)
     registerCharacter(player)
 }

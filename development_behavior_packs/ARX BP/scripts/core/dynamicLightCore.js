@@ -1,6 +1,6 @@
 import { world } from "@minecraft/server"
 import { checkForItem } from '../items/checkForItem'
-import { ssDP } from "../arxLib/DPOperations"
+import { sDP } from "../arxLib/DPOperations"
 
 export function dynamicLightCoreTick() {
     for (const player of world.getPlayers()) {
@@ -26,7 +26,7 @@ export function dynamicLightCoreTick() {
         if (dynamicLightPower > 15) dynamicLightPower = 15
 
         // Write in DP
-        ssDP(player, 'dynamicLightPower', dynamicLightPower)
+        sDP(player, 'dynamicLightPower', dynamicLightPower)
 
         if (dynamicLightPower > 0) launchLight(player, player.getHeadLocation(), dynamicLightPower)
     }

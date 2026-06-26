@@ -21,20 +21,20 @@ import { dispelMagic } from './SPELLDispelMagic'
 import { dispelEffects } from './SPELLDispelEffects'
 
 // Other
-import { iDP, ssDP } from '../../arxLib/DPOperations'
+import { iDP, sDP } from '../../arxLib/DPOperations'
 import { setScore, getScore } from '../../arxLib/scoresOperations';
 import { getEntityFamilies } from '../../_main';
 import { system } from "@minecraft/server"
 import { runeCiphers } from '../rune_cipher_list'
-import { sl } from '../../lang/fetchLocalization'
+import { checkLocalization, sl } from '../../lang/fetchLocalization'
 
 /**
  * Реестр заклинаний
  * Каждое заклинание указывает:
  * - mpCost: стоимость маны
  * - description: описание
- * - validTargets: массив поддерживаемых целей (1 - на себя, 2 - на другого). Если не указано, все цели доступны
  * - onlyOnPlayers: заклинане можно использовать только на игроков
+ * - rayCast - do not cast instantly on a caster and perform a rayCast. True by default
  * - handler: функция, принимающая player, spellData (с информацией о заклинании)
  */
 export let spellRegistry = {
@@ -65,22 +65,22 @@ export let spellRegistry = {
     "mobilitas arcus": {
         mpCost: 8,
         color: '#379b2c',
+        rayCast: false,
         description: 'заклинание рывка',
-        validTargets: [1],
         handler: (player) => { magicDash(player, 7) }
     },
     "mobilitas arcus magna": {
         mpCost: 15,
         color: '#379b2c',
+        rayCast: false,
         description: 'заклинание усиленного рывка',
-        validTargets: [1],
         handler: (player) => { magicDash(player, 14) }
     },
     "mobilitas arcus magna magna": {
         mpCost: 35,
         color: '#379b2c',
+        rayCast: false,
         description: 'заклинание сверхрывка',
-        validTargets: [1],
         handler: (player) => { magicDash(player, 30) }
     },
 
@@ -88,21 +88,21 @@ export let spellRegistry = {
         mpCost: 16,
         color: '#379b2c',
         description: 'заклинание призрачного рывка',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { magicDash(player, 7, true) }
     },
     "mobilitas arcus non visus magna": {
         mpCost: 30,
         color: '#379b2c',
         description: 'заклинание призрачного усиленного рывка',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { magicDash(player, 14, true) }
     },
     "mobilitas arcus non visus magna magna": {
         mpCost: 70,
         color: '#379b2c',
         description: 'заклинание призрачного сверхрывка',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { magicDash(player, 30, true) }
     },
 
@@ -251,11 +251,11 @@ export let spellRegistry = {
         mpCost: 40,
         color: '#ae19cb',
         description: 'заклинание маяка с задержкой 10 секунд',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => {
             sl(player, 'magic.spell.beacon_set')
             player.runCommand('summon arx:magic_beacon ~ ~ ~')
-            ssDP(player, 'magicBeacon', 10)
+            sDP(player, 'magicBeacon', 10)
             player.runCommand(`tag @e[type=arx:magic_beacon, r=0.1] add ${player.name}`)
         }
     },
@@ -263,11 +263,11 @@ export let spellRegistry = {
         mpCost: 60,
         color: '#ae19cb',
         description: 'заклинание маяка с задержкой 30 секунд',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => {
             sl(player, 'magic.spell.beacon_set')
             player.runCommand('summon arx:magic_beacon ~ ~ ~')
-            ssDP(player, 'magicBeacon', 30)
+            sDP(player, 'magicBeacon', 30)
             player.runCommand(`tag @e[type=arx:magic_beacon, r=0.1] add ${player.name}`)
         }
     },
@@ -353,7 +353,7 @@ export let spellRegistry = {
         mpCost: 10,
         color: '#86decf',
         description: 'заклинание цепи заклинаний',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { chain(player) }
     },
 
@@ -364,7 +364,7 @@ export let spellRegistry = {
         description: 'заклинание слабого улучшения навыка стрельбы из лука',
         onlyOnPlayers: true,
         handler: (player) => {
-            ssDP(player, 'shootingBoostBySpell_plus2', 60)
+            sDP(player, 'shootingBoostBySpell_plus2', 60)
         }
     },
     "arcus magna": {
@@ -373,7 +373,7 @@ export let spellRegistry = {
         description: 'заклинание мощного улучшения навыка стрельбы из лука',
         onlyOnPlayers: true,
         handler: (player) => {
-            ssDP(player, 'shootingBoostBySpell_plus4', 60)
+            sDP(player, 'shootingBoostBySpell_plus4', 60)
         }
     },
     "non arcus": {
@@ -382,7 +382,7 @@ export let spellRegistry = {
         description: 'заклинание слабого ухудшения навыка стрельбы из лука',
         onlyOnPlayers: true,
         handler: (player) => {
-            ssDP(player, 'shootingBoostBySpell_minus2', 60)
+            sDP(player, 'shootingBoostBySpell_minus2', 60)
         }
     },
     "non arcus magna": {
@@ -391,7 +391,7 @@ export let spellRegistry = {
         description: 'заклинание мощного ухудшения навыка стрельбы из лука',
         onlyOnPlayers: true,
         handler: (player) => {
-            ssDP(player, 'shootingBoostBySpell_minus4', 60)
+            sDP(player, 'shootingBoostBySpell_minus4', 60)
         }
     },
 
@@ -400,35 +400,35 @@ export let spellRegistry = {
         mpCost: 20,
         color: '#8832cb',
         description: 'заклинание броска маленькой мышью',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { throwMob(player, 'arx:small_rat_black', 1.5, 'become_agressive') }
     },
     "invocatio rattum alternus": {
         mpCost: 25,
         color: '#8832cb',
         description: 'заклинание броска маленькой белой мышью',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { throwMob(player, 'arx:small_rat_white', 1.5, 'become_agressive') }
     },
     "invocatio rattum magna": {
         mpCost: 60,
         color: '#8832cb',
         description: 'заклинание броска пещерной крысой',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { throwMob(player, 'arx:cave_rat') }
     },
     "invocatio rattum magna magna": {
         mpCost: 120,
         color: '#8832cb',
         description: 'заклинание броска крысиным монстром',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { throwMob(player, 'arx:rat_monster', 1, 'become_agressive') }
     },
     "invocatio rattum magna magna alternus": {
         mpCost: 150,
         color: '#8832cb',
         description: 'заклинание броска белым крысиным монстром',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { throwMob(player, 'arx:rat_monster_white', 1, 'become_agressive') }
     },
 
@@ -437,21 +437,21 @@ export let spellRegistry = {
         mpCost: 5,
         color: '#a7c9cf',
         description: 'слабое заклинание левитации',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { classicTossing(player, 2) }
     },
     "aura magna": {
         mpCost: 15,
         color: '#a7c9cf',
         description: 'хорошее заклинание левитации',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { classicTossing(player, 6) }
     },
     "aura magna magna": {
         mpCost: 45,
         color: '#a7c9cf',
         description: 'мощное заклинание левитации',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { classicTossing(player, 10) }
     },
 
@@ -459,7 +459,7 @@ export let spellRegistry = {
         mpCost: 10,
         color: '#5b3016',
         description: 'заклинание метки',
-        validTargets: [1],
+        rayCast: false,
         handler: (player) => { setScore(player, 'mark', 60) }
     },
 
@@ -467,7 +467,6 @@ export let spellRegistry = {
         mpCost: 30,
         color: '#6e20d4',
         description: 'заклинание успокоения всех крыс, у которых есть спокойная фаза',
-        validTargets: [2],
         handler: (entity) => {
             if (getEntityFamilies(entity).includes('rat')) {
                 entity.runCommand('event entity @s become_calm')
@@ -480,7 +479,6 @@ export let spellRegistry = {
         mpCost: 30,
         color: '#d42020',
         description: 'заклинание провокации всех спокойных крыс',
-        validTargets: [2],
         handler: (entity) => {
             if (getEntityFamilies(entity).includes('rat')) {
                 entity.runCommand('event entity @s become_agressive')
@@ -493,7 +491,6 @@ export let spellRegistry = {
         mpCost: 60,
         color: '#8b4088',
         description: 'заклинание уничтожения небольших крыс',
-        validTargets: [2],
         handler: (entity) => {
             if (getEntityFamilies(entity).includes('can_be_despawned_by_ratatao_spell')) {
                 entity.dimension.spawnParticle('arx:spell_despawn_rats', { x: entity.location.x, y: entity.location.y + 0.3, z: entity.location.z })
@@ -691,7 +688,6 @@ export let spellRegistry = {
         mpCost: 80,
         color: '#cc7979',
         description: 'заклинание оживления манекенов',
-        validTargets: [2],
         handler: (entity) => {
             if (entity.typeId === 'minecraft:armor_stand') {
                 entity.runCommand('summon arx:resurrected_armor_stand ~ ~ ~ ~ ~')
@@ -874,4 +870,7 @@ Object.keys(spellRegistry).forEach(spell => {
         cipher = runeSipher + cipher
     })
     spellRegistry[spell]['cipher'] = cipher
+    // Check descriptions for spells
+    const langKey = `spell.${spell}`
+    if (!checkLocalization(langKey)) console.warn(`No description for spell ${spell}`)
 })

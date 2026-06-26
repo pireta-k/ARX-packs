@@ -26,4 +26,4 @@ function getBodyText(p) {
     return bodyText
 }
 
-const specialThanks = ['Zelenchik', 'Magik', 'Максик', 'Ирочка', 'Serty']
+const specialThanks = ['Serty', 'Zelenchik', 'Magik', 'Максик', 'Ирочка']

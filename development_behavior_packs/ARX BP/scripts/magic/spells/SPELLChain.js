@@ -1,4 +1,4 @@
-import { iDP, ssDP } from '../../arxLib/DPOperations'
+import { iDP, sDP } from '../../arxLib/DPOperations'
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { useStaff } from '../on_use_magic_items'
 import { system } from "@minecraft/server"
@@ -42,7 +42,7 @@ function editChain(player) {
             addChannelToChain(player)
         }
         if (response.selection === 1) {
-            ssDP(player, 'chainSpell', undefined)
+            sDP(player, 'chainSpell', undefined)
             editChain(player)
         }
     })
@@ -75,7 +75,7 @@ function addChannelToChain(player) {
                     else {
                         channelsString = String(result)
                     }
-                    ssDP(player, 'chainSpell', channelsString)
+                    sDP(player, 'chainSpell', channelsString)
                 }
 
                 editChain(player)

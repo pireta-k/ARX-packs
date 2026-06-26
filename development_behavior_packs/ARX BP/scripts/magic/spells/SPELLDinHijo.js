@@ -1,4 +1,4 @@
-import { ssDP } from '../../arxLib/DPOperations';
+import { sDP } from '../../arxLib/DPOperations';
 import { findSpell } from '../findSpell';
 import { checkForItem } from '../../items/checkForItem';
 import { spellRegistry } from './_spellRegistry';
@@ -31,5 +31,5 @@ export function dinHijo(targetPlayer, channels, spellData) {
         spellData.initiator.sendMessage(message)
 
     }
-    ssDP(spellData.initiator, 'hasEverCastedDinHijo', true)
+    sDP(spellData.initiator, 'hasEverCastedDinHijo', true)
 }

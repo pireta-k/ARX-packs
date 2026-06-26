@@ -1,5 +1,5 @@
 import { ModalFormData, ActionFormData } from "@minecraft/server-ui"
-import { gDP, ssDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/DPOperations"
 import { fl } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
 import { world } from "@minecraft/server"
@@ -109,23 +109,23 @@ export function arxSettings(p) {
 
         if (response.formValues) {
             // myRule:manaDisplayMode
-            if (response.formValues[0] === 0) ssDP(p, 'myRule:manaDisplayMode', 'integers')
-            else if (response.formValues[0] === 1) ssDP(p, 'myRule:manaDisplayMode', 'decimals')
-            else if (response.formValues[0] === 2) ssDP(p, 'myRule:manaDisplayMode', 'none')
+            if (response.formValues[0] === 0) sDP(p, 'myRule:manaDisplayMode', 'integers')
+            else if (response.formValues[0] === 1) sDP(p, 'myRule:manaDisplayMode', 'decimals')
+            else if (response.formValues[0] === 2) sDP(p, 'myRule:manaDisplayMode', 'none')
 
-            if (response.formValues[1] === 0) ssDP(p, 'myRule:showAttackCDMode', 'seconds')
-            else if (response.formValues[1] === 1) ssDP(p, 'myRule:showAttackCDMode', 'secondsFloat')
-            else if (response.formValues[1] === 2) ssDP(p, 'myRule:showAttackCDMode', 'ticks')
-            else if (response.formValues[1] === 3) ssDP(p, 'myRule:showAttackCDMode', 'line')
-            else if (response.formValues[1] === 4) ssDP(p, 'myRule:showAttackCDMode', 'none')
+            if (response.formValues[1] === 0) sDP(p, 'myRule:showAttackCDMode', 'seconds')
+            else if (response.formValues[1] === 1) sDP(p, 'myRule:showAttackCDMode', 'secondsFloat')
+            else if (response.formValues[1] === 2) sDP(p, 'myRule:showAttackCDMode', 'ticks')
+            else if (response.formValues[1] === 3) sDP(p, 'myRule:showAttackCDMode', 'line')
+            else if (response.formValues[1] === 4) sDP(p, 'myRule:showAttackCDMode', 'none')
 
-            if (response.formValues[2] === 0) ssDP(p, 'myRule:chatPrefixes', 'fullEN')
-            else if (response.formValues[2] === 1) ssDP(p, 'myRule:chatPrefixes', 'shortEN')
+            if (response.formValues[2] === 0) sDP(p, 'myRule:chatPrefixes', 'fullEN')
+            else if (response.formValues[2] === 1) sDP(p, 'myRule:chatPrefixes', 'shortEN')
 
-            ssDP(p, 'myRule:canSeeServerSpeedInInfoBook', response.formValues[3])
+            sDP(p, 'myRule:canSeeServerSpeedInInfoBook', response.formValues[3])
 
-            ssDP(p, 'myRule:cinematographicMode', response.formValues[4])
-            ssDP(p, 'myRule:devMode', response.formValues[5])
+            sDP(p, 'myRule:cinematographicMode', response.formValues[4])
+            sDP(p, 'myRule:devMode', response.formValues[5])
         }
     })
 }
@@ -152,11 +152,11 @@ export function arxGlobalSettings(p) {
     form.show(p).then(response => {
         const fv = response.formValues
         if (response.formValues) {
-            ssDP(world, 'generateGrass', fv[0])
-            ssDP(world, 'anticheat', fv[1])
-            ssDP(world, 'allowArxCameras', fv[2])
-            ssDP(world, 'enableWorldBorder', fv[3])
-            ssDP(world, 'worldBorderRange', fv[4])
+            sDP(world, 'generateGrass', fv[0])
+            sDP(world, 'anticheat', fv[1])
+            sDP(world, 'allowArxCameras', fv[2])
+            sDP(world, 'enableWorldBorder', fv[3])
+            sDP(world, 'worldBorderRange', fv[4])
         }
     })
 }
@@ -287,7 +287,7 @@ export function devOptions(p, tab = 'main') {
         if (response.selection < toggleCount) {
             const selected = toggles[response.selection]
             if (!selected) return
-            ssDP(world, selected.dp, !selected.value)
+            sDP(world, selected.dp, !selected.value)
             devOptions(p, tab)
             return
         }

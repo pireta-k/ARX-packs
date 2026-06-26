@@ -2,7 +2,7 @@ import { checkForItem } from "./items/checkForItem"
 import { getScore } from "./arxLib/scoresOperations"
 import { checkForTrait } from './traits/traitsOperations'
 import { getNearestPlayer } from './getNearestPlayer'
-import { gDP, ssDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/DPOperations"
 
 export function weighAnalysis(player) {
     // weighLimit - ограничение переносимого веса, при переходе за который накладывается штраф
@@ -66,7 +66,7 @@ export function weighAnalysis(player) {
     }
 
     // Отправляем значения в dynamicProperty
-    ssDP(player, 'weighLimit', weighLimit)
-    ssDP(player, 'weighLoading', weighLoading)
-    ssDP(player, 'overLoading', weighLoading - weighLimit)
+    sDP(player, 'weighLimit', weighLimit)
+    sDP(player, 'weighLoading', weighLoading)
+    sDP(player, 'overLoading', weighLoading - weighLimit)
 }

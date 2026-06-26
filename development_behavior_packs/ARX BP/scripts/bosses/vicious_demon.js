@@ -1,7 +1,7 @@
 import { world, system } from "@minecraft/server"
 import { ActionFormData } from "@minecraft/server-ui"
 import { getEntitiesInCube } from '../core/music_core'
-import { iDP, ssDP } from "../arxLib/DPOperations"
+import { iDP, sDP } from "../arxLib/DPOperations"
 
 // Взаимодействуем с мечом призыва демона
 export function interactWithViciousDemonSpawner(player) {
@@ -24,8 +24,8 @@ export function interactWithViciousDemonSpawner(player) {
 
 // Стартуем бой с порочным демоном?
 export function startBattleWithViciousDemon() {
-    ssDP(world, 'vicious_demon:cd_before_battle', 6)
-    ssDP(world, 'vicious_demon:is_fight_right_now', true)
+    sDP(world, 'vicious_demon:cd_before_battle', 6)
+    sDP(world, 'vicious_demon:is_fight_right_now', true)
     door('close')
 
     const entities = getEntitiesInCube([-2252, 32, 1843], [-2227, 22, 1866])
@@ -37,7 +37,7 @@ export function startBattleWithViciousDemon() {
 }
 
 function endBattleWithViciousDemon() {
-    ssDP(world, 'vicious_demon:is_fight_right_now', false)
+    sDP(world, 'vicious_demon:is_fight_right_now', false)
     door('open')
 
     const entities = getEntitiesInCube([-2252, 32, 1843], [-2227, 22, 1866])
@@ -101,7 +101,7 @@ system.runInterval(() => {
 
 world.afterEvents.entityDie.subscribe((dieEvent) => {
     if (dieEvent.deadEntity.typeId === "arx:vicious_demon") {
-        ssDP(world, 'vicious_demon:hasEverDefeated', true)
+        sDP(world, 'vicious_demon:hasEverDefeated', true)
         endBattleWithViciousDemon()
 
         const entities = getEntitiesInCube([-2252, 32, 1843], [-2227, 22, 1866])

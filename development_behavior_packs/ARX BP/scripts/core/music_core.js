@@ -2,7 +2,7 @@
 
 // Imports
 import { world } from "@minecraft/server"
-import { ssDP } from "../arxLib/DPOperations"
+import { sDP } from "../arxLib/DPOperations"
 import { checkForItem } from "../items/checkForItem"
 
 const musicOptions = { fade: 2, loop: true }
@@ -248,7 +248,7 @@ export function musicCoreTick() {
         }
 
         // Remember player's music location
-        ssDP(player, 'musicLocation', musicLocation)
+        sDP(player, 'musicLocation', musicLocation)
 
         // Now, check, is the music alrealy playing?
         if (musicLocation === musicLocationLastPass) continue

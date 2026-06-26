@@ -1,5 +1,5 @@
 import { acquireTrait, checkForTrait } from "../traits/traitsOperations"
-import { ssDP, iDP, gDP } from "../arxLib/DPOperations"
+import { sDP, iDP, gDP } from "../arxLib/DPOperations"
 import { sl, fl } from '../lang/fetchLocalization'
 
 // Potions, alcohol and consumables with unusual effect
@@ -36,16 +36,16 @@ export const potionsRegistry = {
     'arx:potion_instant_mp': (player => iDP(player, 'MPSmoothAccrue', 30)),
     'arx:potion_instant_mp_p_upgrade': (player => iDP(player, 'MPSmoothAccrue', 90)),
 
-    'arx:potion_mp_max': (player => ssDP(player, 'maxMPBonusFromPotion', 180)),
-    'arx:potion_mp_max_d_upgrade': (player => ssDP(player, 'maxMPBonusFromPotion', 480)),
-    'arx:potion_mp_max_p_upgrade': (player => ssDP(player, 'maxMPBonusFromPotionImproved', 180)),
+    'arx:potion_mp_max': (player => sDP(player, 'maxMPBonusFromPotion', 180)),
+    'arx:potion_mp_max_d_upgrade': (player => sDP(player, 'maxMPBonusFromPotion', 480)),
+    'arx:potion_mp_max_p_upgrade': (player => sDP(player, 'maxMPBonusFromPotionImproved', 180)),
 
-    'arx:potion_mp_regen': (player => ssDP(player, 'MPRegenBonusFromPotion', 180)),
-    'arx:potion_mp_regen_d_upgrade': (player => ssDP(player, 'MPRegenBonusFromPotion', 480)),
-    'arx:potion_mp_regen_p_upgrade': (player => ssDP(player, 'MPRegenBonusFromPotionImproved', 180)),
+    'arx:potion_mp_regen': (player => sDP(player, 'MPRegenBonusFromPotion', 180)),
+    'arx:potion_mp_regen_d_upgrade': (player => sDP(player, 'MPRegenBonusFromPotion', 480)),
+    'arx:potion_mp_regen_p_upgrade': (player => sDP(player, 'MPRegenBonusFromPotionImproved', 180)),
 
-    'arx:potion_no_freezing': (player => ssDP(player, 'freezingBlockByPotion', 300)),
-    'arx:potion_no_freezing_d_upgrade': (player => ssDP(player, 'freezingBlockByPotion', 1200)),
+    'arx:potion_no_freezing': (player => sDP(player, 'freezingBlockByPotion', 300)),
+    'arx:potion_no_freezing_d_upgrade': (player => sDP(player, 'freezingBlockByPotion', 1200)),
 
     'arx:potion_perm_mp_max': (player => processPermanentPotion(player, 'arx:potion_perm_mp_max')),
     'arx:potion_perm_mp_regen': (player => processPermanentPotion(player, 'arx:potion_perm_mp_regen')),
@@ -76,9 +76,9 @@ export const potionsRegistry = {
     'arx:potion_trait_neutral': (player => acquireTrait(player, [0, 1, 0])),
     'arx:potion_trait_positive': (player => acquireTrait(player, [1, 0, 0])),
 
-    'arx:potion_weight_limit_bonus': (player => ssDP(player, 'weighLimitBonusByPotion', 180)),
-    'arx:potion_weight_limit_bonus_d_upgrade': (player => ssDP(player, 'weighLimitBonusByPotion', 480)),
-    'arx:potion_weight_limit_bonus_p_upgrade': (player => ssDP(player, 'weighLimitBonusByPotionImproved', 180)),
+    'arx:potion_weight_limit_bonus': (player => sDP(player, 'weighLimitBonusByPotion', 180)),
+    'arx:potion_weight_limit_bonus_d_upgrade': (player => sDP(player, 'weighLimitBonusByPotion', 480)),
+    'arx:potion_weight_limit_bonus_p_upgrade': (player => sDP(player, 'weighLimitBonusByPotionImproved', 180)),
 
     // === OTHER ===
     'arx:le_fishe_au_chocolat': (player => {

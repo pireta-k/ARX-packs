@@ -11,7 +11,7 @@ import { runeCiphers } from './magic/rune_cipher_list'
 import { cipherRuneSequence } from './magic/on_use_magic_items'
 
 import { acquireTrait, checkForTrait, clearTraits } from './traits/traitsOperations'
-import { ssDP } from "./arxLib/DPOperations"
+import { sDP } from "./arxLib/DPOperations"
 import { isAdmin, getAdmins } from './arxLib/admin'
 
 // Обработка чата before
@@ -75,7 +75,7 @@ export function parceChatCommand(player, trimmedMessage) {
         }
 
         else if (command[0] == "!") { // Инфо о командах
-            ssDP(player, 'hasEverSeenArxCommandsHelp', true)
+            sDP(player, 'hasEverSeenArxCommandsHelp', true)
             queueCommand(player, `function javascript/arx_commands_help`);
         }
 
@@ -88,7 +88,7 @@ export function parceChatCommand(player, trimmedMessage) {
             else {
                 if (newName.length < 30) {
                     queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§aИмя персонажа для локального чата изменено на §f${newName}§a." } ] }`)
-                    ssDP(player, "name", newName)
+                    sDP(player, "name", newName)
                 }
                 else {
                     queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cПожалуйста, введите более короткое имя." } ] }`)
@@ -130,7 +130,7 @@ export function parceChatCommand(player, trimmedMessage) {
                         }
 
                         // Установка свойства
-                        ssDP(targetPlayer, command[1], value)
+                        sDP(targetPlayer, command[1], value)
 
                         queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§dDP§f ${command[1]} §dигрока §f${targetPlayer.name}§d изменено на §f${value}" } ] }`);
                     }
@@ -201,7 +201,7 @@ export function parceChatCommand(player, trimmedMessage) {
                         }
                         if (textToSend) targetPlayer.sendMessage(textToSend)
                         queueCommand(targetPlayer, 'playsound random.orb @s ~ ~ ~ ')
-                        ssDP(targetPlayer, 'verify', true)
+                        sDP(targetPlayer, 'verify', true)
                     }
                 }
             }
@@ -209,7 +209,7 @@ export function parceChatCommand(player, trimmedMessage) {
 
         else if (command[0] == "!i" || command[0] == "!и") { // Открыть инфо
             player.sendMessage('§aЗакройте чат и прыгните§f, чтобы открыть <Инфо>')
-            ssDP(player, 'ui:readyToOpenInfoBook', true)
+            sDP(player, 'ui:readyToOpenInfoBook', true)
         }
 
         else if (command[0].toLowerCase() == "!w" || command[0].toLowerCase() == "!ш") { // Использование шёпота
@@ -388,9 +388,9 @@ function sendChatMessage(player, speech, prefix, clearDistance = 0, senderName =
                         const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Legs)
                         cipherRuneSequence(player, rune, item?.getTags())
                         // Выдаем КД
-                        if (checkForItem(player, "Legs", 'arx:amul_hypersynergy')) ssDP(player, 'amul_hypersynergyCD', 100)
-                        if (checkForItem(player, "Legs", 'arx:amul_hypersynergy_improved')) ssDP(player, 'amul_hypersynergyCD', 35)
-                        if (checkForItem(player, "Legs", 'arx:amul_hypersynergy_superior')) ssDP(player, 'amul_hypersynergyCD', 5)
+                        if (checkForItem(player, "Legs", 'arx:amul_hypersynergy')) sDP(player, 'amul_hypersynergyCD', 100)
+                        if (checkForItem(player, "Legs", 'arx:amul_hypersynergy_improved')) sDP(player, 'amul_hypersynergyCD', 35)
+                        if (checkForItem(player, "Legs", 'arx:amul_hypersynergy_superior')) sDP(player, 'amul_hypersynergyCD', 5)
                     }
                     else {
                         player.sendMessage("§cОткат амулета гиперсинергии ещё не закончился.")

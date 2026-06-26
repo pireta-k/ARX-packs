@@ -1,39 +1,45 @@
 import { ActionFormData } from "@minecraft/server-ui"
 import { spellRegistry } from '../magic/spells/_spellRegistry'
+import { fl } from "../lang/fetchLocalization"
 
 // Выводим экранчик с известными заклинаниями
-export function knownSpellsBook(player) {
+export function knownSpellsBook(p) {
     const form = new ActionFormData()
-        .title("Открытые заклинания")
-
-    let body = 'Когда вы сотворите новое заклинание,\nоно автоматически появится тут!\n\n'
+        .title(fl(p, 'info.knownSpells.title'))
 
     let spellsArray = []
     // Переменные о известных заклинаниях хранятся в DP в виде ksb:cipher (cipher - шифровка заклинания)
     Object.keys(spellRegistry).forEach(spell => {
         const knownSpellDP = `ksb:${spellRegistry[spell].cipher}`
-        const isKnown = player.getDynamicProperty(knownSpellDP)
+        const isKnown = p.getDynamicProperty(knownSpellDP)
         if (isKnown) {
-            spellsArray.push(`§d${decorateSpellText(spell)}§f: ${spellRegistry[spell].description}`)
+            // Push and decorate spell string
+            spellsArray.push(`§d${decorateSpellText(spell)}§f: §o§7${spellRegistry[spell].description}`)
         }
     })
-    body += `Вы знаете §d${spellsArray.length}§f заклинаний\n\n`
+
+    let body = spellsArray.length === 0
+        ? (fl(p, 'info.knownSpells.no_discovered_spells') + '\n\n')
+        : (fl(p, 'info.knownSpells.num_of_known_spells', [spellsArray.length]) + '\n\n')
+
     body += spellsArray.join('\n§7======================§f\n')
 
     form.body(body)
-    form.show(player)
+    form.show(p)
 }
 
+// Edit spell string to make it more stylish
 function decorateSpellText(spell) {
     let spellArr = spell.split(' ')
-    let color = '§f'
-    switch (spellArr[0]) {
-        case 'kon': color = '§c'; break
-        case 'sin': color = '§a'; break
-        case 'san': color = '§e'; break
-        case 'din': color = '§d'; break
-    }
-    spellArr[0] = color + spellArr[0] + '§v'
+
+    // Capitalize
+    spellArr = spellArr.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+
+    // Paint
+    const firstRuneColor = '§d'
+    const basicColor = '§f'
+    const firstRune = spellArr[0]
+    spellArr[0] = firstRuneColor + firstRune + basicColor
 
     return spellArr.join(' ')
 }

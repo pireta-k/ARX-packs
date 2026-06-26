@@ -1,7 +1,7 @@
 import { getTime } from "./arxLib/time"
 import { checkForItem } from "./items/checkForItem"
 import { world } from "@minecraft/server"
-import { ssDP } from "./arxLib/DPOperations"
+import { sDP } from "./arxLib/DPOperations"
 
 // Получаем историю блока (триггер)
 world.afterEvents.entityHitBlock.subscribe((hitEvent) => {
@@ -31,7 +31,7 @@ function recordBlockHistory(block, player) {
     const DPName = `bH:${block.location.x},${block.location.y},${block.location.z},${block.dimension.id.split(':')[1].substring(0, 2)}`
     const valueToRecord = `["${player.name}","${y}${m}${d}","${h}${min}${s}"]`
 
-    ssDP(world, DPName, valueToRecord)
+    sDP(world, DPName, valueToRecord)
 }
 
 // Функция чтения истории блока

@@ -8,7 +8,7 @@ import { checkForItem } from "./checkForItem"
 import { infoScreen } from '../info/_infoScreen'
 import { manageCD } from "../manageCD";
 import { clearTraits, acquireTrait } from '../traits/traitsOperations'
-import { iDP, ssDP, gDP } from "../arxLib/DPOperations";
+import { iDP, sDP, gDP } from "../arxLib/DPOperations";
 import { sl } from "../lang/fetchLocalization";
 import { onUseSBHammer } from "../sb/structureBuilder";
 import { prospect, runProspection } from '../sb/prospect'
@@ -24,7 +24,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Тест
         case "arx:mod_sword":
             if (manageCD(player)) {
-                // ssDP(world, 'latestV', [0, 0, 0])
+                // sDP(world, 'latestV', [0, 0, 0])
             }
             break
 
@@ -228,7 +228,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         case "arx:bunker_access_card":
             if (manageCD(player)) {
                 if (!world.getDynamicProperty('isRatBarOpened')) {
-                    ssDP(world, 'isRatBarOpened', true)
+                    sDP(world, 'isRatBarOpened', true)
                     system.runTimeout(() => {
                         player.dimension.playSound('beep.long', { x: -2098, y: 63, z: 1497 })
                     }, 20)
@@ -266,7 +266,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
                         manageCD(player)
                         const currentWet = player.getDynamicProperty('wetness')
                         const valueWet = checkForItem(player, 'chest', undefined) ? 1200 : 300
-                        ssDP(player, 'wetness', currentWet - valueWet)
+                        sDP(player, 'wetness', currentWet - valueWet)
                         player.runCommand('playsound armor.equip_leather @a ~ ~ ~ ')
                         player.addEffect('slowness', 30, { amplifier: 1, showParticles: false })
                     } else {
@@ -373,7 +373,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Свитки
         case "arx:scroll_of_healing":
             if (player.getDynamicProperty('scrollOfHealingCD') == 0) {
-                ssDP(player, 'scrollOfHealingCD', 60)
+                sDP(player, 'scrollOfHealingCD', 60)
                 player.runCommand('effect @s regeneration 10 1 true')
                 player.runCommand('clear @s arx:scroll_of_healing 0 1')
                 player.runCommand(`tellraw @s { "rawtext": [ { "text": "§aСвиток использован!" } ] }`)
@@ -392,7 +392,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
             break
 
         case "arx:scroll_of_water_blocking":
-            ssDP(player, 'wetness', 0)
+            sDP(player, 'wetness', 0)
             setScore(player, 'water_block', 30)
             player.runCommand('clear @s arx:scroll_of_water_blocking 0 1')
             player.runCommand(`tellraw @s { "rawtext": [ { "text": "§aСвиток использован!" } ] }`)
@@ -404,10 +404,10 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
 
                 player.runCommand('effect @s clear')
 
-                ssDP(player, 'ghostWithering', 0)
-                ssDP(player, 'ghostWitheringLevel', 0)
-                ssDP(player, 'ghostUltimateResistance', 0)
-                ssDP(player, 'ghostBoostByScarletMoon', false)
+                sDP(player, 'ghostWithering', 0)
+                sDP(player, 'ghostWitheringLevel', 0)
+                sDP(player, 'ghostUltimateResistance', 0)
+                sDP(player, 'ghostBoostByScarletMoon', false)
 
                 player.setProperty('arx:is_ghost', false)
                 player.runCommand('clear @s arx:scroll_of_reborning 0 1')
@@ -617,7 +617,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
 function launchBlocking(player) {
     // Выдаем группу компонентов для блокировки
     player.runCommand('event entity @s arx:set_blocking_damage_sensor')
-    ssDP(player, 'blockingResistanceCD', 30)
+    sDP(player, 'blockingResistanceCD', 30)
     // Запрещаем урон
-    ssDP(player, 'prohibit_damage', 30)
+    sDP(player, 'prohibit_damage', 30)
 }

@@ -2,7 +2,7 @@
 // channels - число каналов, которое мы рассматриваем
 // considerChannelHolding - стоит ли нам обращать внимание на правило удержания канала?
 
-import { ssDP } from "../arxLib/DPOperations";
+import { sDP } from "../arxLib/DPOperations";
 
 export function getActiveStaffChannel(player, channels, considerChannelHolding = true, forceChannelHolding = false) {
 
@@ -18,7 +18,7 @@ export function getActiveStaffChannel(player, channels, considerChannelHolding =
         if (player.isSneaking || forceChannelHolding) {
             // Запоминаем текущий канал
             const channel = getChannel(player, channels)
-            ssDP(player, 'holdedMagicChannel', channel)
+            sDP(player, 'holdedMagicChannel', channel)
             return channel
         }
         // Мы не на присяде. Надо вернуть канал, который был последним удержанным

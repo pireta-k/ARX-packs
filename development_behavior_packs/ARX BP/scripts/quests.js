@@ -1,4 +1,4 @@
-import { gDP, ssDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/DPOperations"
 import { fl } from "./lang/fetchLocalization"
 import { ActionFormData } from "@minecraft/server-ui"
 import { world } from "@minecraft/server"
@@ -94,7 +94,7 @@ export class Quest {
     // Internal 
     setStatus(status) {
         this.status = status
-        ssDP(this.dpObj, this.statusDP, status)
+        sDP(this.dpObj, this.statusDP, status)
     }
     checkStage(stage) {
         const { min, max } = this.data.stages || { min: 0, max: 0 }
@@ -104,7 +104,7 @@ export class Quest {
     // Stages
     setStage(stage) {
         if (this.checkStage(stage)) {
-            ssDP(this.dpObj, this.stageDP, stage)
+            sDP(this.dpObj, this.stageDP, stage)
         } else console.error(`Trying to set stage ${stage} to quest ${this.id}, which is beyond allowed borders`)
     }
     incStage(valueToIncrease = 1) {

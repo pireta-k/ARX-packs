@@ -5,17 +5,17 @@ const specialDataTypePrefix = 'JSON$'
 // Safely Set Dynamic Property
 // Saves value to Dynamic Property with extended data types
 // object - the object we should save DP on
-export function ssDP(object, DPName, value) {
+export function sDP(object, DPName, value) {
     if (!object || !DPName) {
-        console.warn(`Called ssDP() without necessary vars`)
+        console.warn(`Called sDP() without necessary vars`)
         return undefined
     }
     if (typeof value === 'function') {
-        console.warn('Cannot write function to DP with ssDP()')
+        console.warn('Cannot write function to DP with sDP()')
         return undefined
     }
     if (typeof value === 'string' && value.startsWith(specialDataTypePrefix)) {
-        console.warn(`ssDP(): cannot write a string that starts with ${specialDataTypePrefix}`)
+        console.warn(`sDP(): cannot write a string that starts with ${specialDataTypePrefix}`)
         return undefined
     }
 
@@ -28,13 +28,15 @@ export function ssDP(object, DPName, value) {
     }
     // If the new value is not equal to the old value, write the new value
     if (oldValue !== value) {
-        try { // I use try - catch, because sometimes system can throw an error when trying to ssdp at imcopletely loaded player. It just can be ignored
+        try { // I use try - catch, because sometimes system can throw an error when trying to sDP at imcopletely loaded player. It just can be ignored
             object.setDynamicProperty(DPName, value)
         }
         catch {
-            console.log(`ssDP(): an unexpected problem with writing DP to Entity`)
+            console.log(`sDP(): an unexpected problem with writing DP to Entity`)
         }
     }
+
+    return true
 }
 
 /** Increase Dyncamic Property
@@ -59,13 +61,13 @@ export function iDP(object, DPName, valueToIncrease = 1) {
 
     // If DP is empty (minecraft returns undefined if DP is empty), set it to valueToIncrease
     if (currentValue === undefined) {
-        ssDP(object, DPName, valueToIncrease)
+        sDP(object, DPName, valueToIncrease)
         return valueToIncrease
     }
     // If DP is a string
     else if (typeof currentValue === 'string') {
         const newVlaue = currentValue + String(valueToIncrease)
-        ssDP(object, DPName, newVlaue)
+        sDP(object, DPName, newVlaue)
         return newVlaue
     }
     // If DP is a number
@@ -75,13 +77,13 @@ export function iDP(object, DPName, valueToIncrease = 1) {
             return undefined
         }
         const newVlaue = currentValue + valueToIncrease
-        ssDP(object, DPName, newVlaue)
+        sDP(object, DPName, newVlaue)
         return newVlaue
     }
     // If DP is an array
     else if (Array.isArray(currentValue)) {
         currentValue.push(valueToIncrease)
-        ssDP(object, DPName, currentValue)
+        sDP(object, DPName, currentValue)
         return currentValue
     }
     // Fallback (I don't see the way this code activates, but why not)
@@ -114,7 +116,7 @@ export function gDP(object, DPName, fallback = undefined) {
         catch {
             console.warn(`gDP(): dp ${DPName} cannot be deserialized (value: ${value})`)
             // Reset it
-            ssDP(object, DPName, undefined)
+            sDP(object, DPName, undefined)
             return undefined
         }
     }

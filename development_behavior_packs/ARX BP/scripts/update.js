@@ -2,7 +2,7 @@
 
 import { world, system } from "@minecraft/server";
 import { VERSION } from "./_main"
-import { gDP, ssDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/DPOperations"
 import { getAdmins } from "./arxLib/admin";
 import { setScore } from "./arxLib/scoresOperations"
 import { createProspectionTarget, runProspection, validateTickingAreaLoading } from "./sb/prospect"
@@ -66,7 +66,7 @@ export async function detectUpdate() {
     // Downgrade (older pack on newer world data) — don't run migrations, only sync latestV
     if (versionLess(currentV, latestV)) {
         console.warn(`Arx: downgrade ${vKey(latestV)} -> ${vKey(currentV)}, skipping updates`)
-        ssDP(world, 'latestV', currentV)
+        sDP(world, 'latestV', currentV)
         return
     }
 
@@ -90,7 +90,7 @@ async function applyUpdates(currentV, latestV) {
         }
     }
 
-    ssDP(world, 'latestV', currentV)
+    sDP(world, 'latestV', currentV)
     getAdmins().forEach(p => {
         p.sendMessage(`Arx update detected: ${vKey(latestV)} -> ${vKey(currentV)}`)
     })
@@ -115,7 +115,7 @@ async function runArxFirstLoad() {
     await waitUntilHosterIsLoaded(hoster)
 
     setScore(hoster, 'verify', 2) // After world_reg and player load — needs scoreboardIdentity
-    ssDP(hoster, 'isHoster', true)
+    sDP(hoster, 'isHoster', true)
 
     world.setDefaultSpawnLocation({ x: -10000, y: 4, z: -10000 })
 
@@ -132,13 +132,13 @@ async function runArxFirstLoad() {
     world.gameRules.recipesUnlock = false
 
     // Arx default settings
-    ssDP(world, 'generateGrass', true)
-    ssDP(world, 'anticheat', true)
-    ssDP(world, 'allowArxCameras', true)
-    ssDP(world, 'enableWorldBorder', false)
-    ssDP(world, 'worldBorderRange', 5000)
-    ssDP(world, 'enableAmbienceCore', true)
-    ssDP(world, 'enableFogs', true)
+    sDP(world, 'generateGrass', true)
+    sDP(world, 'anticheat', true)
+    sDP(world, 'allowArxCameras', true)
+    sDP(world, 'enableWorldBorder', false)
+    sDP(world, 'worldBorderRange', 5000)
+    sDP(world, 'enableAmbienceCore', true)
+    sDP(world, 'enableFogs', true)
 
     // Load lobby chunks before hoster teleports there
     await validateTickingAreaLoading(d, { x: -9980, z: -9980 }, { x: -10020, z: -10020 }, 'lobbyReg')
@@ -161,7 +161,7 @@ async function runArxFirstLoad() {
     )
     const spawn = spawnLocation ?? initialSpawnPoint
     if (!spawnLocation) console.warn('Arx first load: prospection fallback to initial spawn')
-    ssDP(world, 'worldSpawnPoint', { x: spawn.x, y: (spawn.y ?? 64) + 1, z: spawn.z })
+    sDP(world, 'worldSpawnPoint', { x: spawn.x, y: (spawn.y ?? 64) + 1, z: spawn.z })
 
     // From Arx spawn — prospect site for smallTestHome (meadow / plains)
     const smallTestHomeLocation = await runProspection(
@@ -184,7 +184,7 @@ async function runArxFirstLoad() {
         return
     }
 
-    ssDP(world, 'smallTestHomeLocation', smallTestHomeLocation)
+    sDP(world, 'smallTestHomeLocation', smallTestHomeLocation)
 
     const buildAnchor = {
         x: Math.floor(smallTestHomeLocation.x),

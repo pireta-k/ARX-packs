@@ -3,7 +3,7 @@
 import { queueCommand } from './commandQueue'
 import { checkForItem } from './items/checkForItem'
 import { checkForTrait } from './traits/traitsOperations'
-import { iDP, ssDP } from './arxLib/DPOperations'
+import { iDP, sDP } from './arxLib/DPOperations'
 
 // Увеличиваем прогресс навыка на inputValue, учитывая срезание прогресса от уровня
 export function increaseSkillProgress(player, skill, inputValue) {
@@ -73,7 +73,7 @@ export function calculateXPMultiplier(player) {
     if (checkForTrait(player, 'lazy')) { increaseMultiplier -= 0.1 }
 
     // Отправляем increaseMultiplier в DP
-    ssDP(player, 'xpMultiplier', increaseMultiplier)
+    sDP(player, 'xpMultiplier', increaseMultiplier)
 
     // Возврат
     return increaseMultiplier
@@ -88,7 +88,7 @@ export function increaseSkillLevel(player, skill) {
         }
 
         // Изменяем properties игрока
-        ssDP(player, `skill:${skill}_progress`, 0)
+        sDP(player, `skill:${skill}_progress`, 0)
         iDP(player, `skill:${skill}_level`)
         // Отчитываемся в чат
         queueCommand(player, `playsound player.skill.levelUp @s ~ ~ ~`)
@@ -155,7 +155,7 @@ export function wipeSkills(player) {
     wipeSkillsProgress(player)
 
     for (const skill in registeredSkills) {
-        ssDP(player, `skill:${skill}_level`, 0)
+        sDP(player, `skill:${skill}_level`, 0)
     }
 }
 
@@ -163,7 +163,7 @@ export function wipeSkills(player) {
 export function wipeSkillsProgress(player) {
 
     for (const skill in registeredSkills) {
-        ssDP(player, `skill:${skill}_progress`, 0)
+        sDP(player, `skill:${skill}_progress`, 0)
     }
 }
 

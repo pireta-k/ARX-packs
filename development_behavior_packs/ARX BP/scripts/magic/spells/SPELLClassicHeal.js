@@ -1,9 +1,9 @@
-import { ssDP } from "../../arxLib/DPOperations"
+import { sDP } from "../../arxLib/DPOperations"
 
 // Реген
 export function classicHeal(entity, spellData, time, power) {
 
-    ssDP(spellData.initiator, 'hasEverCastedSanYanamoHoro', true)
+    sDP(spellData.initiator, 'hasEverCastedSanYanamoHoro', true)
 
     entity.runCommand('particle arx:classicHeal ~ ~1 ~')
     entity.runCommand(`effect @s regeneration ${time} ${power}`)

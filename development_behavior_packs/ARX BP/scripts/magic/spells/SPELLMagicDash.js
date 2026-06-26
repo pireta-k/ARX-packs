@@ -1,4 +1,4 @@
-import { iDP, ssDP } from '../../arxLib/DPOperations'
+import { iDP, sDP, gDP } from '../../arxLib/DPOperations'
 import { setScore } from '../../arxLib/scoresOperations'
 import { system } from "@minecraft/server"
 import { sl } from '../../lang/fetchLocalization'
@@ -7,8 +7,8 @@ import { sl } from '../../lang/fetchLocalization'
 export function magicDash(player, ticks, ghostDash = false) {
     if (gDP(player, 'weighLoading') <= 7) { // Допуск по весу
         player.runCommand('particle arx:magic_dash ~ ~1.3 ~ ')
-        ssDP(player, 'dash', ticks)
-        dash(player)
+        sDP(player, 'dash', ticks)
+        dash(player, ghostDash)
 
     } else { // Недопуск по весу
         player.addTag('block_mp_withdraw')
@@ -23,7 +23,7 @@ function dash(player, ghostDash = false) {
 
     const isJumping = player.inputInfo.getButtonState('Sneak')
 
-    if (ghostDash) player.addEffect('invisibility', 10, { showParticles: false })
+    if (ghostDash) player.addEffect('invisibility', 40, { showParticles: false })
 
     if (isJumping === 'Released') {
         const viewDirection = player.getViewDirection()
@@ -31,7 +31,7 @@ function dash(player, ghostDash = false) {
     } else {
         player.applyKnockback({ x: 0, z: 0 }, -0.7)
         player.addEffect('slow_falling', 40, { showParticles: false })
-        if (!player.isOnGround) ssDP(player, 'dash', 1)
+        if (!player.isOnGround) sDP(player, 'dash', 1)
     }
     player.dimension.spawnParticle('arx:magic_dash', player.getHeadLocation())
 

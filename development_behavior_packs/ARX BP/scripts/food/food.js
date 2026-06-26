@@ -1,5 +1,5 @@
 import { acquireTrait, checkForTrait } from "../traits/traitsOperations"
-import { ssDP, iDP, gDP } from "../arxLib/DPOperations"
+import { sDP, iDP, gDP } from "../arxLib/DPOperations"
 import { sl, fl } from '../lang/fetchLocalization'
 
 // All registered food
@@ -295,7 +295,7 @@ export function onFoodConsume(player, itemStack) {
     iDP(player, 'stress', -happinessBonus)
 
     // Set CD for happiness gain
-    ssDP(player, 'foodCD', 3 * 60)
+    sDP(player, 'foodCD', 3 * 60)
 }
 
 function notifyAboutFoodTastiness(player, happinessBonus) {

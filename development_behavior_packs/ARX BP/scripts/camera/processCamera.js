@@ -1,6 +1,6 @@
 import { system, world } from "@minecraft/server"
 import { timeline } from './launchCameraUI'
-import { ssDP, iDP } from "../arxLib/DPOperations";
+import { sDP, iDP } from "../arxLib/DPOperations";
 
 // Обработка камеры
 system.runInterval(() => {
@@ -20,7 +20,7 @@ system.runInterval(() => {
 
                 // Если больше нет таймкодов (количество обработанных таймокодов равно количеству созданных игроком таймкодов)
                 if (player.getDynamicProperty('camera:numOfProcessedTimecodes') === playerTimeLine.length) {
-                    ssDP(player, 'camera:activeCamera', false)
+                    sDP(player, 'camera:activeCamera', false)
                     player.runCommand('camera @s clear')
                 }
                 // Если таймкоды остались
@@ -32,7 +32,7 @@ system.runInterval(() => {
                     player.runCommand(`camera @s set minecraft:free ease ${currentTimecode.lengthSec} ${currentTimecode.interpolation} pos ${currentTimecode.position.x} ${currentTimecode.position.y} ${currentTimecode.position.z} rot ${pitch} ${yaw}`)
 
                     // Выставляем кд
-                    ssDP(player, 'camera:tickCountdownToNextTimecode', currentTimecode.lengthSec * 20)
+                    sDP(player, 'camera:tickCountdownToNextTimecode', currentTimecode.lengthSec * 20)
                 }
 
                 // Увеличиваем счетчик обработанных таймкодов

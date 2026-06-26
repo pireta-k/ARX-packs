@@ -1,6 +1,6 @@
 import { system, EntityComponentTypes, EquipmentSlot } from "@minecraft/server"
 import { ActionFormData } from "@minecraft/server-ui"
-import { gDP, ssDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/DPOperations"
 import { getItem } from "./getItem"
 import { fl } from "../lang/fetchLocalization"
 
@@ -42,7 +42,7 @@ function getWeaponAbilities(item) {
     const raw = gDP(item, 'abilities', []) || []
     const abilities = [...new Set(raw.filter(id => WEAPON_SKILLS[id] && !WEAPON_SKILLS[id].instant))]
     if (JSON.stringify(raw) !== JSON.stringify(abilities)) {
-        ssDP(item, 'abilities', abilities)
+        sDP(item, 'abilities', abilities)
     }
     return abilities
 }
@@ -211,7 +211,7 @@ function getValidPendingOffers(item) {
 
 function rollAndStorePendingOffers(item) {
     const offers = pickTwoRandomSkills(getWeaponAbilities(item))
-    ssDP(item, 'pendingOffers', offers)
+    sDP(item, 'pendingOffers', offers)
     return offers
 }
 
@@ -220,7 +220,7 @@ function ensurePendingOffers(item) {
     const offers = getValidPendingOffers(item)
     if (offers.length > 0) {
         if (JSON.stringify(offers) !== JSON.stringify(gDP(item, 'pendingOffers', []))) {
-            ssDP(item, 'pendingOffers', offers)
+            sDP(item, 'pendingOffers', offers)
         }
         return offers
     }
@@ -228,7 +228,7 @@ function ensurePendingOffers(item) {
 }
 
 function clearPendingOffers(item) {
-    ssDP(item, 'pendingOffers', undefined)
+    sDP(item, 'pendingOffers', undefined)
 }
 
 function showWeaponSkillForm(player, item, offers) {
@@ -265,7 +265,7 @@ function applySkillChoice(player, item, selectionIndex, offers) {
     } else {
         const abilities = [...getWeaponAbilities(item)]
         if (!abilities.includes(skillId)) abilities.push(skillId)
-        ssDP(item, 'abilities', abilities)
+        sDP(item, 'abilities', abilities)
     }
 
     let remainingPicks = gDP(item, 'pendingUpgrades', 0) - 1
@@ -278,8 +278,8 @@ function applySkillChoice(player, item, selectionIndex, offers) {
         clearPendingOffers(item)
     }
 
-    ssDP(item, 'pendingUpgrades', remainingPicks)
-    ssDP(item, 'upgradePending', remainingPicks > 0)
+    sDP(item, 'pendingUpgrades', remainingPicks)
+    sDP(item, 'upgradePending', remainingPicks > 0)
     refreshWeaponLore(item, undefined, player)
     writeItemToMainhand(player, item)
 
@@ -312,8 +312,8 @@ function enqueueSkillPicks(player, item, slot, levelsGained) {
         return
     }
 
-    ssDP(item, 'pendingUpgrades', remainingPicks)
-    ssDP(item, 'upgradePending', true)
+    sDP(item, 'pendingUpgrades', remainingPicks)
+    sDP(item, 'upgradePending', true)
     refreshWeaponLore(item, undefined, player)
     writeItemToSlot(player, item, slot)
     notifyWeaponUpgradeAvailable(player, remainingPicks)
@@ -329,8 +329,8 @@ export function addWeaponXp(player, item, amount, slot) {
     const newXp = oldXp + amount
     const newLevel = getLevelFromXp(newXp)
 
-    ssDP(item, 'xp', newXp)
-    ssDP(item, 'level', newLevel)
+    sDP(item, 'xp', newXp)
+    sDP(item, 'level', newLevel)
 
     const levelsGained = newLevel - oldLevel
     if (levelsGained > 0) {
@@ -373,8 +373,8 @@ export function openWeaponSkillPick(player) {
 
     const offers = ensurePendingOffers(item)
     if (!offers.length) {
-        ssDP(item, 'pendingUpgrades', 0)
-        ssDP(item, 'upgradePending', false)
+        sDP(item, 'pendingUpgrades', 0)
+        sDP(item, 'upgradePending', false)
         clearPendingOffers(item)
         refreshWeaponLore(item, undefined, player)
         writeItemToMainhand(player, item)
@@ -393,13 +393,13 @@ export function registerWeaponIfNeeded(player, item, slot) {
     if (!isWeapon(item) || isRegisteredWeapon(item)) return
 
     const crafterName = gDP(player, 'name', 'Unknown')
-    ssDP(item, 'madeBy', crafterName)
-    ssDP(item, 'everHolded', true)
-    ssDP(item, 'xp', 0)
-    ssDP(item, 'level', 0)
-    ssDP(item, 'abilities', [])
-    ssDP(item, 'pendingUpgrades', 0)
-    ssDP(item, 'upgradePending', false)
+    sDP(item, 'madeBy', crafterName)
+    sDP(item, 'everHolded', true)
+    sDP(item, 'xp', 0)
+    sDP(item, 'level', 0)
+    sDP(item, 'abilities', [])
+    sDP(item, 'pendingUpgrades', 0)
+    sDP(item, 'upgradePending', false)
     clearPendingOffers(item)
     refreshWeaponLore(item, crafterName, player)
     writeItemToSlot(player, item, slot)

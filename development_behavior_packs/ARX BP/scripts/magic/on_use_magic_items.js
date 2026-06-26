@@ -12,11 +12,11 @@ import { increaseSkillProgress } from "../skillsOperations";
 
 import { manageCD } from "../manageCD";
 import { queueCommand } from "../commandQueue";
-import { gDP, iDP, ssDP } from "../arxLib/DPOperations";
+import { gDP, iDP, sDP } from "../arxLib/DPOperations";
 import { spellRegistry } from "./spells/_spellRegistry";
 import { getItem } from '../items/getItem'
 import { channelRomanNums } from "./channelRomanNums";
-import { sl } from "../lang/fetchLocalization";
+import { fl, sl } from "../lang/fetchLocalization";
 import { checkForItem } from "../items/checkForItem";
 import { grantWeaponXpFromMana } from "../items/weaponSkills";
 
@@ -101,11 +101,11 @@ export function cipherRuneSequence(player, runeName, runeTags) {
 
     // Устанавливаем напрямую данные о рунах в DynamicProperty
 
-    ssDP(player, dynamicPropertyName, runeCiphers[runeName] + gDP(player, dynamicPropertyName))
+    sDP(player, dynamicPropertyName, runeCiphers[runeName] + gDP(player, dynamicPropertyName))
 
     // Срезаем длину строки, если она более 100 символов
     if (gDP(player, dynamicPropertyName).length > 100) {
-        ssDP(player, dynamicPropertyName, gDP(player, dynamicPropertyName).substring(0, 100))
+        sDP(player, dynamicPropertyName, gDP(player, dynamicPropertyName).substring(0, 100))
     }
 
     // Сообщаем игроку о введенной руне
@@ -186,19 +186,18 @@ export function useStaff(player, forceChannel = undefined) {
             // Активируем заклинание, и получаем от него ответ, что оно сделало или не сделало
             const spellResponce = castJSSpell(player, spell, spellData)
 
-            // Ставим это заклинание, как известное
-            const knownDpellDP = `ksb:${spellRegistry[spell].cipher}`
-            const isAlreadyKnown = player.getDynamicProperty(knownDpellDP)
-            if (!isAlreadyKnown) {
-                sl(player, 'magic.spell.discovered', [spell])
-                player.runCommand('playsound random.orb @s ~ ~ ~')
-                ssDP(player, knownDpellDP, true)
-            }
-
             // Если заклинание успешно использовано
             switch (spellResponce) {
                 case 'ok':
                     withdrawMP(player, spellCostReq, spellCostMult, spellData)
+                    // Ставим это заклинание, как известное
+                    const knownDpellDP = `ksb:${spellRegistry[spell].cipher}`
+                    const isAlreadyKnown = player.getDynamicProperty(knownDpellDP)
+                    if (!isAlreadyKnown) {
+                        player.sendMessage(' ' + fl(player, 'magic.spell.discovered', [spell]))
+                        player.runCommand('playsound random.orb @s ~ ~ ~')
+                        sDP(player, knownDpellDP, true)
+                    }
                     break
 
                 case 'noValidEntity':
@@ -210,7 +209,7 @@ export function useStaff(player, forceChannel = undefined) {
                     break
 
                 case 'noValidTarget':
-                    if (spellRegistry[spell].validTargets.includes(1)) {
+                    if (spellRegistry[spell].rayCast !== false) {
                         sl(player, 'magic.spell.only_self')
                     } else sl(player, 'magic.spell.cannot_self')
 

@@ -26,10 +26,11 @@ import './camera/processCamera'
 import './sb/structureBuilder'
 import './blocksHistory'
 import './update'
+import './vanillaPrototypes'
 
 import { registerPlayerVars } from "./registerPlayerVars"
 import { checkForItem } from "./items/checkForItem"
-import { gDP, iDP, ssDP } from "./arxLib/DPOperations"
+import { gDP, iDP, sDP } from "./arxLib/DPOperations"
 import { checkForTrait } from "./traits/traitsOperations"
 import { getPlayersInRadius } from "./getPlayersInRadius"
 import { getItem } from "./items/getItem"
@@ -55,11 +56,11 @@ world.afterEvents.playerButtonInput.subscribe((event) => {
     if (button === 'Jump') {
         // Кнопку нажали
         if (state === 'Pressed') {
-            ssDP(player, 'pressedJumpButton', true)
+            sDP(player, 'pressedJumpButton', true)
         }
         // Кнопку отпустили
         else {
-            ssDP(player, 'pressedJumpButton', false)
+            sDP(player, 'pressedJumpButton', false)
         }
     }
     else if (button === 'Sneak') {
@@ -99,11 +100,11 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
     player.runCommand("function javascript/scores_autoreg")
 
     // Restart music
-    ssDP(player, 'musicLocation', undefined)
+    sDP(player, 'musicLocation', undefined)
 
-    ssDP(player, 'camera:activeCamera', false)
-    ssDP(player, 'camera:tickCountdownToNextTimecode', 0)
-    ssDP(player, 'camera:numOfProcessedTimecodes', 0)
+    sDP(player, 'camera:activeCamera', false)
+    sDP(player, 'camera:tickCountdownToNextTimecode', 0)
+    sDP(player, 'camera:numOfProcessedTimecodes', 0)
 
     registerPlayerVars(player)
 
@@ -132,12 +133,8 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
             item.keepOnDeath = true
             player.getComponent("inventory").container.setItem(8, item)
         }
-        // Set unique id
-        {
-            ssDP(player, 'id', md5(player.name) + Math.random() * 1000000)
-        }
 
-        ssDP(player, 'hasEverPlayedArx', true)
+        sDP(player, 'hasEverPlayedArx', true)
     }
 });
 
@@ -160,8 +157,8 @@ world.afterEvents.entitySpawn.subscribe((spawnEvent) => {
         entity.remove()
     }
 
-    if (entity.typeId === 'arx:wandering_flame_of_mines') ssDP(entity, 'dynamicLightPower', 9)
-    if (entity.typeId === 'arx:wandering_flame_of_night') ssDP(entity, 'dynamicLightPower', 12)
+    if (entity.typeId === 'arx:wandering_flame_of_mines') sDP(entity, 'dynamicLightPower', 9)
+    if (entity.typeId === 'arx:wandering_flame_of_night') sDP(entity, 'dynamicLightPower', 12)
 })
 
 export function generateGrass(vector3, dimension) {
@@ -258,7 +255,7 @@ world.afterEvents.entityHitEntity.subscribe((hitEvent) => {
                 const damageAmount = Math.max(damager.getDynamicProperty('basicStrength') ?? 0, minimalDamage)
                 damaged.applyDamage(damageAmount, { cause: "ramAttack", damagingEntity: damager })
                 damaged.addEffect('slowness', 20, { amplifier: 1, showParticles: false })
-                ssDP(damaged, 'blockingResistanceCD', 1)
+                sDP(damaged, 'blockingResistanceCD', 1)
                 iDP(damaged, 'attackCD', 50)
             }
             else {
@@ -303,14 +300,14 @@ world.afterEvents.entityHitEntity.subscribe((hitEvent) => {
             if (damaged.getDynamicProperty('blockingResistanceCD') > 12) {
                 iDP(damaged, 'blockingResistanceCD', -12)
             } else {
-                ssDP(damaged, 'blockingResistanceCD', 1)
+                sDP(damaged, 'blockingResistanceCD', 1)
             }
             if (damaged.getDynamicProperty('prohibit_damage') > 12) {
                 iDP(damaged, 'prohibit_damage', -12)
             } else {
-                ssDP(damaged, 'prohibit_damage', 1)
+                sDP(damaged, 'prohibit_damage', 1)
             }
-            ssDP(damaged, 'blockingPlayerWasAttacked', 25)
+            sDP(damaged, 'blockingPlayerWasAttacked', 25)
             increaseSkillProgress(damaged, 'blocking', 20)
         }
     }
@@ -648,11 +645,11 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
 
         // Сообщаем о том, что произошло с игроком, если это его первый нокаут
         if (player.getDynamicProperty('hasEverBeenKnocked') !== true) {
-            ssDP(player, 'hasEverBeenKnocked', true)
+            sDP(player, 'hasEverBeenKnocked', true)
             player.sendMessage('[§aГид§f] > §cВы в нокауте§f. Ничего страшного, это не смерть. Вы полежите около минуты и снова очнётесь. §aВаши вещи§f лежат рядом с вами в деревянном ящике (если они у вас вообще были).')
         }
 
-        ssDP(player, 'blockingResistanceCD', 0)
+        sDP(player, 'blockingResistanceCD', 0)
 
         // Спавним гроб
         player.runCommand("summon arx:grave ^ ^ ^")
@@ -661,8 +658,8 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
         player.runCommand(`give @s arx:slot_blocker 35 0 {"item_lock": { "mode": "lock_in_slot" } }`)
 
         // Чистим данные о маги-фонарях
-        ssDP(player, 'allowMagilight', 0)
-        ssDP(player, 'allowArchilight', 0)
+        sDP(player, 'allowMagilight', 0)
+        sDP(player, 'allowArchilight', 0)
 
         // Выставляем данные о ноке
         player.runCommand('event entity @s arx:property_is_knockout_set_true')
@@ -690,7 +687,7 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
         iDP(player, 'stress', 4000)
 
         // Выставляем откат нокаута
-        ssDP(player, 'respawnDelay', 40 - player.getDynamicProperty('skill:fortitude_level') * 2)
+        sDP(player, 'respawnDelay', 40 - player.getDynamicProperty('skill:fortitude_level') * 2)
 
         // Если мы должны умереть по рп
         if (getScore(player, 'knockout_row_sounter') >= 2) {
@@ -702,11 +699,11 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
             player.runCommand('inputpermission set @s movement enabled')
             player.runCommand('inputpermission set @s camera enabled')
 
-            ssDP(player, 'freezing', 0)
-            ssDP(player, 'respawnDelay', 0)
+            sDP(player, 'freezing', 0)
+            sDP(player, 'respawnDelay', 0)
 
             setScore(player, "knockout_row_sounter", 0)
-            ssDP(player, 'wetness', 0)
+            sDP(player, 'wetness', 0)
 
             if (player.getProperty('arx:is_ghost') === true) { // Если призрак
 
@@ -724,7 +721,7 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
                 player.clearDynamicProperties()
                 registerPlayerVars(player)
 
-                ssDP(player, 'verify', true)
+                sDP(player, 'verify', true)
 
             } else { // Если не призрак
 
@@ -734,7 +731,7 @@ world.afterEvents.entityDie.subscribe((dieEvent) => {
                 executeCommandDelayed(player, 'effect @s invisibility 60 0 true')
                 executeCommandDelayed(player, 'spreadplayers ~ ~ 0 20 @s')
                 executeCommandDelayed(player, 'clear @s arx:slot_blocker')
-                ssDP(player, 'ghostUltimateResistance', 180)
+                sDP(player, 'ghostUltimateResistance', 180)
 
                 player.runCommand(`tellraw @s { "rawtext": [ { "text": "§c! §f§сВы убиты и обращены в §cПРИЗРАКА!§f.\n§c! §fВы §cСОВСЕМ НЕДОЛГО§f неуязвимы к солнцу и воде!\n§c! §fВы невидимы на протяжении минуты." } ] }`)
                 player.setProperty('arx:is_ghost', true)

@@ -1,6 +1,6 @@
 import { world, system, BlockPermutation } from "@minecraft/server"
 import { checkForItem } from "../items/checkForItem"
-import { gDP, ssDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/DPOperations"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
 import { sleep } from "../arxLib/time"
@@ -37,7 +37,7 @@ export function setSBPoint(p, pointNum, loc) {
     // Get color
     const color = pointNum === 1 ? '§a' : '§c'
     // Set DP
-    ssDP(p, `sb:point${pointNum}`, locAdapted)
+    sDP(p, `sb:point${pointNum}`, locAdapted)
     // Send message
     p.sendMessage(`Saved ${color}Point ${pointNum}`)
 }
@@ -675,7 +675,7 @@ export async function onUseSBHammer(p) {
                                     break
                                 }
 
-                                ssDP(p, dpName, acss)
+                                sDP(p, dpName, acss)
                                 p.sendMessage(`§bACSS saved in DP (${dpName}), length: ${acss.length} symbols`)
                                 break
                             }

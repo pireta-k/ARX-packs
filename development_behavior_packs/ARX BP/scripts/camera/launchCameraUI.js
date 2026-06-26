@@ -1,7 +1,7 @@
 import { ActionFormData } from "@minecraft/server-ui"
 import { editTimeline } from './editTimeline'
 import { indicateTimecodes } from './indicateTimecodes'
-import { ssDP } from "../arxLib/DPOperations"
+import { sDP } from "../arxLib/DPOperations"
 
 // Переменная, хранящая все таймлайны камеры всех игроков
 export let timeline = {}
@@ -31,9 +31,9 @@ export function launchCameraUI(player) {
                 } else if (timeline[player.name].length === 1) {
                     player.runCommand(`tellraw @s { "rawtext": [ { "text": "§cУ вас установлен только стартовый таймкод. Для работы камеры необходимо минимум два таймкода." } ] }`)
                 } else {
-                    ssDP(player, 'camera:activeCamera', true)
-                    ssDP(player, 'camera:numOfProcessedTimecodes', 0)
-                    ssDP(player, 'camera:tickCountdownToNextTimecode', 0)
+                    sDP(player, 'camera:activeCamera', true)
+                    sDP(player, 'camera:numOfProcessedTimecodes', 0)
+                    sDP(player, 'camera:tickCountdownToNextTimecode', 0)
                 }
             } else if (response.selection === 2) {
                 if (timeline[player.name].length === 0) {

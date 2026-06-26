@@ -4,67 +4,70 @@ import { getEntityFamilies } from '../_main';
 import { system, MolangVariableMap } from "@minecraft/server"
 import { spellRegistry } from './spells/_spellRegistry';
 import { checkForItem } from '../items/checkForItem';
-import { gDP, ssDP } from '../arxLib/DPOperations';
+import { gDP, sDP } from '../arxLib/DPOperations';
 import { rayCast } from './rayCast';
 
 // Создает и возвращает объект spellData, хранящий в себе всё, что может пригодиться в обработке заклинания
 export function prepareSpellData(player, runeSequence) {
-    let spellData = {}
+    // Vars
+    const spellData = {}
+    const spellObj = spellRegistry[runeSequence]
+    const isRay = spellObj.rayCast !== false
+    let spellDistance = undefined
 
-    // Определяем дальность действия заклинания
-    let spellDistance = defineCastDistance(player)
-    spellData['spellDistance'] = spellDistance
+    // === BASIC DATA ===
+
+    // Initiator
+    spellData.initiator = player
 
     // Определяем, по площади ли заклинание? Если оно содержит руну area, то по площади
     const isAreaSpell = runeSequence.includes("area")
-    const rayCastResult = isAreaSpell ? undefined : rayCast(player, spellDistance)
-    const rayTarget = rayCastResult?.target
-    const castingOnSelf = rayTarget?.typeId === 'minecraft:player' && rayTarget?.name === player.name
-    const targetRaw = isAreaSpell ? 2 : (castingOnSelf ? 1 : 2)
+    spellData.isAreaSpell = isAreaSpell
 
-    // Определяем инициатора
-    spellData['initiator'] = player
-
-    // Определяем ближайшего игрока (БЛИЖАЙШЕГО! НЕ ОБЯЗАТЕЛЬНО ЦЕЛЬ ЗАКЛИНАНИЯ!)
-    spellData['nearestPlayer'] = getNearestPlayer(player, spellDistance)
-
-    // Определяем, используем ли мы закл на себя? (для быстрых запросов)
-    spellData['castingOnSelf'] = castingOnSelf
-
-    // Определяем цель
-    spellData['targetRaw'] = targetRaw
-
-    // По площади ли заклинание?
-    spellData['isAreaSpell'] = isAreaSpell
-    spellData['rayCast'] = rayCastResult
-    spellData['areaRayPaths'] = []
-
-    // Определяем объекты целей
-    let targets = []
-    // Default spell
-    if (!isAreaSpell) {
-        if (rayTarget) targets = [rayTarget]
+    // === RAY === 
+    if (isRay) {
+        // Range
+        let spellDistance = defineCastDistance(player)
+        spellData.spellDistance = spellDistance
+        const rayCastResult = isAreaSpell ? undefined : rayCast(player, spellDistance)
+        spellData.rayTarget = rayCastResult?.target
+        spellData.rayCast = rayCastResult
+        spellData.areaRayPaths = []
     }
-    // Area spell
-    else {
-        const areaTargetData = getAreaTargets(player, spellDistance)
-        targets = areaTargetData.targets
-        spellData['areaRayPaths'] = areaTargetData.paths
-        spellData['castingOnSelf'] = targets.some(entity => entity.typeId === 'minecraft:player' && entity.name === player.name)
+
+    // === TARGETS ====
+    {
+        // Определяем объекты целей
+        let targets = []
+
+        // AREA spell
+        if (isAreaSpell) {
+            const areaTargetData = getAreaTargets(player, spellDistance)
+            targets = areaTargetData.targets
+            spellData['areaRayPaths'] = areaTargetData.paths
+        }
+        // RAY spell
+        else if (isRay) {
+            targets = spellData.rayTarget ? [spellData.rayTarget] : []
+        }
+        // ON-SELF spell
+        else {
+            targets = [player]
+        }
+
+        // Записываем в массив
+        spellData['targets'] = targets
+
+        // Создаем только если цель одна
+        spellData['singleTarget'] = targets.length === 1 ? targets[0] : undefined
     }
-    // Записываем в массив
-    spellData['targets'] = targets
 
-    // Создаем только если цель одна
-    spellData['singleTarget'] = targets.length === 1 ? targets[0] : undefined
-
-    // Всё составили, возвращаем
     return spellData
 }
 
 // Find the max distance a spell be casted on
 export function defineCastDistance(p) {
-    let distance = 10 // Basic
+    let distance = 12 // Basic
 
     // Rings
     if (checkForItem(p, 'Offhand', 'arx:ring_aluminum_aquamarine')) distance += 1
@@ -80,10 +83,10 @@ export function defineCastDistance(p) {
     if (checkForItem(p, 'Offhand', 'arx:ring_lamenite_aquamarine')) distance += 6
     if (checkForItem(p, 'Feet', 'arx:ring_lamenite_aquamarine')) distance += 6
 
-    // Навык «Дистанция заклинаний»: +1 блок за уровень
+    // Навык Дистанция заклинаний: +1 блок за уровень
     distance += gDP(p, 'skill:mp_range_level', 0)
 
-    ssDP(p, 'spellDistance', distance)
+    sDP(p, 'spellDistance', distance)
     return distance
 }
 
@@ -106,11 +109,6 @@ export function castJSSpell(player, runeSequence, spellData = undefined) {
 
     if (spellData.targets.length === 0) return 'noValidEntity'
 
-    // Проверка: поддерживает ли заклинание выбранную цель?
-    if (spell.validTargets !== undefined && !spell.validTargets.includes(spellData.targetRaw)) {
-        return 'noValidTarget'
-    }
-
     // Вызов обработчика конкретного заклинания с нужными данными для каждой сущности
     let successfulCastsCounter = 0
     let wasWrongEntityType = false
@@ -124,7 +122,7 @@ export function castJSSpell(player, runeSequence, spellData = undefined) {
         }
 
         // Активируем заклинание
-        spell.handler(entity, spellData)
+        const responce = spell.handler(entity, spellData)
         spellData.successfulTargets.push(entity)
         successfulCastsCounter++
     }

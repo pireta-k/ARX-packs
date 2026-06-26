@@ -1,7 +1,7 @@
 // Imports
 import { ruLocalization } from './ru'
 import { enLocalization } from './en'
-import { ssDP } from '../arxLib/DPOperations'
+import { sDP } from '../arxLib/DPOperations'
 
 // Vars
 export const defaultLanguage = 'en'
@@ -74,6 +74,15 @@ export function slfg(player, textId, insertions = []) {
     player.sendMessage('[§aGuide§f] > ' + fl(player, textId, insertions))
 }
 
+// Check existance of a lang key
+// Returns bool
+export function checkLocalization(key, language = defaultLanguage) {
+    if (!Object.keys(langMap).includes(language)) {
+        console.error(`checkLocalization(): non-existent language <${language}> given`)
+    }
+    return key in langMap[language]
+}
+
 // Returns player's language as 'en' or 'ru' etc.
 // Returns default as fallback
 export function getPlayerLanguage(player) {
@@ -83,7 +92,7 @@ export function getPlayerLanguage(player) {
 
 export function setPlayerLanguage(player, lang) {
     if (Object.keys(langMap).includes(lang)) {
-        ssDP(player, 'language', lang)
+        sDP(player, 'language', lang)
     }
     else {
         console.warn(`Attempt to set non-existent lang ${lang} to player`)
