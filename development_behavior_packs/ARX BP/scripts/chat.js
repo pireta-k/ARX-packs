@@ -298,15 +298,6 @@ export function parceChatCommand(player, trimmedMessage) {
             }
         }
 
-        else if (trimmedMessage.startsWith("!!")) {
-            if (player.getDynamicProperty('respawnDelay') === 0) {
-                emote(player, trimmedMessage)
-            }
-            else {
-                player.sendMessage(`§cВы не можете использовать эмоции, пока вы без сознания.`)
-            }
-        }
-
         else {
             player.sendMessage(`§cТакой команды Аркса не существует.\nВведите §f!§c, чтобы посмотреть доступные.`)
         }

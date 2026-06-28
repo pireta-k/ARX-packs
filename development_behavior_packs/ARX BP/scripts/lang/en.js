@@ -363,4 +363,10 @@ export const enLocalization = {
     "spell.impetus": 'заклинание небольшого урона',
     "spell.impetus magna": 'заклинание хорошего урона',
     "spell.impetus magna magna": 'заклинание мощного урона',
+
+    "emote.cannot_cus_knocked": 'You cannot use emotes while unconscious.',
+    "emote.cannot_cus_moving": 'To start the animation, stand still in one place.',
+    "emote.cannot_cus_riding": 'To start the animation, dismount from whatever you are riding.',
+    "emote.cannot_cus_flying": 'To start the animation, stop flying.',
+
 }

@@ -256,4 +256,9 @@ export const ruLocalization = {
     "spell.impetus": 'заклинание небольшого урона',
     "spell.impetus magna": 'заклинание хорошего урона',
     "spell.impetus magna magna": 'заклинание мощного урона',
+
+    "emote.cannot_cus_knocked": 'Вы не можете использовать эмоции, пока вы без сознания.',
+    "emote.cannot_cus_moving": 'Чтобы запустить анимацию, встаньте на одном месте.',
+    "emote.cannot_cus_riding": 'Чтобы запустить анимацию, слезьте с того, на чем сидите.',
+    "emote.cannot_cus_flying": 'Чтобы запустить анимацию, прекратите летать.',
 }

@@ -41,6 +41,7 @@ import { isAdmin, getAdmins, getHoster } from './arxLib/admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { showLanguageForm } from "./lang/form"
 import { setSBPoint } from "./sb/structureBuilder"
+import { emote, emotionsList } from './emote'
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -185,6 +186,22 @@ export function generateGrass(vector3, dimension) {
     const coords = `${vector3.x} ${vector3.y} ${vector3.z}`
     dimension.runCommand(`fill ${coords} ${coords} ${blockToPaste}`)
 }
+
+// Intercept damage
+world.beforeEvents.entityHurt.subscribe((event) => {
+    let dmg = event.damage
+    let e = event.hurtEntity
+
+    // A player was damaged
+    if (e.typeId === 'minecraft:player') {
+        if (!e.gDP('hasRegisteredCharacter')) {
+            event.cancel = true
+        }
+    }
+
+    // Apply result damage
+    event.damage = dmg
+})
 
 // Удары сущностей
 world.afterEvents.entityHitEntity.subscribe((hitEvent) => {
@@ -616,7 +633,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
             name: 'arx:sb',
             description: 'Structure Builder functions',
             permissionLevel: CommandPermissionLevel.GameDirectors,
-            cheatsRequired: false,
+            cheatsRequired: true,
             mandatoryParameters: [
                 {
                     name: 'arx:sbOptions',
@@ -632,6 +649,70 @@ system.beforeEvents.startup.subscribe(initEvent => {
             else if (arg0 === "p2") {
                 setSBPoint(p, 2, p.location)
             }
+            return { status: CustomCommandStatus.Success }
+        }
+    )
+    // sDP
+    const sdpOptions0 = ccr.registerEnum('arx:sdpOptions0', ['me', 'world'])
+    const sdpOptions1 = ccr.registerEnum('arx:sdpOptions1', ['number', 'bool', 'string'])
+    ccr.registerCommand(
+        {
+            name: 'arx:sdp',
+            description: 'Set Dynamic Property',
+            permissionLevel: CommandPermissionLevel.GameDirectors,
+            cheatsRequired: true,
+            mandatoryParameters: [
+                { // target
+                    name: 'arx:sdpOptions0',
+                    type: CustomCommandParamType.Enum
+                },
+                { // data type
+                    name: 'arx:sdpOptions1',
+                    type: CustomCommandParamType.Enum
+                },
+                { // dp name
+                    name: 'arx:dpName',
+                    type: CustomCommandParamType.String
+                },
+                { // value
+                    name: 'arx:value',
+                    type: CustomCommandParamType.String
+                }
+            ]
+        },
+        (origin, arg0, arg1, arg2, arg3) => {
+            const p = origin.initiator ?? origin.sourceEntity
+            let entityToSetDP = arg1 === 'world' ? world : p
+
+            if (arg1 === 'number') arg3 = Number(arg3)
+            if (arg1 === 'bool') {
+                if (arg3.toLowerCase() === 'true') arg3 = true
+                else arg3 = false
+            }
+            sDP(entityToSetDP, arg2, arg3)
+
+            return { status: CustomCommandStatus.Success }
+        }
+    )
+    // Emote
+    const emotionsEnum = ccr.registerEnum('arx:emotionsEnum', emotionsList)
+    ccr.registerCommand(
+        {
+            name: 'arx:emote',
+            description: 'Run emotion',
+            permissionLevel: CommandPermissionLevel.Any,
+            cheatsRequired: false,
+            mandatoryParameters: [
+                {
+                    name: 'arx:emotionsEnum',
+                    type: CustomCommandParamType.Enum
+                }
+            ]
+        },
+        (origin, arg0) => {
+            const p = origin.initiator ?? origin.sourceEntity
+            // Run emotion
+            emote(p, arg0)
             return { status: CustomCommandStatus.Success }
         }
     )
