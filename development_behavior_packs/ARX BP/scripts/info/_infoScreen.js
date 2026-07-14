@@ -76,7 +76,7 @@ export function infoScreen(player) {
             exe: () => infoAboutStatistics(player)
         },
         camera: {
-            condition: () => gDP(world, 'allowArxCameras'),
+            condition: () => gDP(world, 'allowArxCameras') && isAdmin(player),
             icon: 'textures/ui/info/camera',
             exe: () => launchCameraUI(player)
         },

@@ -1,4 +1,4 @@
-import { fl } from "./lang/fetchLocalization";
+import { fl, sl } from "./lang/fetchLocalization";
 import { system } from "@minecraft/server"
 
 // Emotions
@@ -9,22 +9,22 @@ export function emote(p, emotion) {
 
     // Knocked
     if (p.gDP('respawnDelay') > 0) {
-        p.sendMessage(`§c` + fl(p, 'emote.cannot_cus_knocked'))
+        sl(p, 'emote.cannot_cus_knocked', [], '§c')
         return
     }
     // Moving
     if (p.getTags().includes("is_moving")) {
-        p.sendMessage("§c" + fl(p, 'emote.cannot_cus_moving'))
+        sl(p, 'emote.cannot_cus_moving', [], '§c')
         return
     }
     // Riding
     if (p.getTags().includes("is_riding")) {
-        p.sendMessage("§c" + fl(p, 'emote.cannot_cus_riding'))
+        sl(p, 'emote.cannot_cus_riding', [], '§c')
         return
     }
     // Flying
     if (!p.getTags().includes("on_ground")) {
-        p.sendMessage("§c" + fl(p, 'emote.cannot_cus_flying'))
+        sl(p, 'emote.cannot_cus_flying', [], '§c')
         return
     }
 

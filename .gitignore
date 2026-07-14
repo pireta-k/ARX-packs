@@ -17,7 +17,11 @@
 development_behavior_packs/*
 development_resource_packs/*
 
-# Allow only Arx folders
+# Allow obsidian project
+!arx-obsidian/
+!arx-obsidian/**
+
+# Allow Arx folders
 !development_behavior_packs/ARX BP/
 !development_behavior_packs/ARX BP/**
 !development_resource_packs/ARX RP/

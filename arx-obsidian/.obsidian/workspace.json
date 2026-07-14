@@ -4,17 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "2a8627757b8a91fd",
+        "id": "4363b6f97f2418d7",
         "type": "tabs",
         "children": [
           {
-            "id": "ca1ec00eb51bc817",
+            "id": "2fe0879a9ff703a8",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Arx Ultima/Arx Ultima 1.x stable release planning.md",
-                "mode": "source",
+                "file": "Arx Ultima 1.x stable release planning.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
@@ -183,9 +183,28 @@
       "bases:Create new base": false
     }
   },
-  "active": "ca1ec00eb51bc817",
+  "active": "2fe0879a9ff703a8",
   "lastOpenFiles": [
-    "Arx Ultima/Доделать механику опыта оружия.md",
-    "Arx Ultima/Arx Ultima 1.x stable release planning.md"
+    "Blocks/💛 Moderate.md",
+    "Arx Ultima 1.x stable release planning.md",
+    "Details/Полностью переделать нокаут через перехват урона.md",
+    "Blocks/❤️ Crucial.md",
+    "Details/Добавить больше эмбиэнт-партиклов.md",
+    "Details/Проверить работу статистики.md",
+    "Details/Баг опции камеры.md",
+    "Blocks/💙 Optional.md",
+    "Details/Улучшить чатовые сообщения.md",
+    "Details/Иногда при смерти в шахтах, игрок возрождается на поверхности.md",
+    "Details/Механика ветра.md",
+    "Details/Переработать руны.md",
+    "Details/Пофиксить анимацию размера груди.md",
+    "Blocks/💚 Done.md",
+    "Details/Доработать зарытое сокровище.md",
+    "Details/Ошибка возврата в лобби.md",
+    "Blocks",
+    "Details/Вылет при взаимодействии с другим игроком.md",
+    "Details/Сделать траву более разообразной.md",
+    "Details/Переделать крафт шахмат.md",
+    "Details/Доделать механику опыта оружия.md"
   ]
 }

@@ -83,24 +83,6 @@ export const coreFramework = {
             }
         }
     },
-    // Spawnpoint
-    spawnpoint: {
-        tickSpeed: 1,
-        operations: (data) => {
-            for (const player of data.players) {
-                if (player.getDynamicProperty('respawnDelay') > 0) {
-                    player.runCommand('spawnpoint @s -10000 4 -10000')
-                }
-                else {
-                    const headBlockId = player.dimension?.getBlock(player.getHeadLocation())?.typeId
-                    if (!headBlockId) continue
-                    if (headBlockId === 'minecraft:air' || headBlockId.startsWith('arx:dynamic_light_block_')) {
-                        player.runCommand('spawnpoint @s ~ ~ ~')
-                    }
-                }
-            }
-        }
-    },
     // Grass generator
     grassGenerator: {
         condition: () => gDP(world, 'generateGrass'),
@@ -979,90 +961,6 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 weighAnalysis(player)
-            }
-        }
-    },
-    // Strength calculation
-    strengthCalc: {
-        tickSpeed: 2,
-        operations: (data) => {
-            for (const player of data.players) {
-                let basicStrength = 0.5
-
-                // Кольца
-                if (checkForItem(player, "Feet", "arx:ring_gold_ruby")) { basicStrength += 1 }
-                if (checkForItem(player, "Offhand", "arx:ring_gold_ruby")) { basicStrength += 1 }
-                if (checkForItem(player, "Feet", "arx:ring_naginitis_ruby")) { basicStrength += 2 }
-                if (checkForItem(player, "Offhand", "arx:ring_naginitis_ruby")) { basicStrength += 2 }
-                if (checkForItem(player, "Feet", "arx:ring_caryite_ruby")) { basicStrength += 3 }
-                if (checkForItem(player, "Offhand", "arx:ring_caryite_ruby")) { basicStrength += 3 }
-                if (checkForItem(player, "Feet", "arx:ring_toliriite_ruby")) { basicStrength += 4 }
-                if (checkForItem(player, "Offhand", "arx:ring_toliriite_ruby")) { basicStrength += 4 }
-                if (checkForItem(player, "Feet", "arx:ring_lamenite_ruby")) { basicStrength += 5 }
-                if (checkForItem(player, "Offhand", "arx:ring_lamenite_ruby")) { basicStrength += 5 }
-
-                if (checkForItem(player, "Legs", "arx:durasteel_bracers")) { basicStrength += 1 }
-
-                if (checkForItem(player, "Legs", "arx:amul_bloody_circle")) { basicStrength += 0.5 }
-                if (checkForItem(player, "Legs", "arx:amul_essence_of_vicious_demon")) { basicStrength += 3 }
-
-                // Прокач
-                basicStrength += (player.getDynamicProperty('skill:strength_level') / 2)
-
-                // Черты
-                if (checkForTrait(player, 'loner')) {
-                    const playersNearLoner = getPlayersInRadius(player, 8)
-                    if (playersNearLoner.length > 0) { basicStrength -= 0.5 }
-                    else { basicStrength += 0.5 }
-                }
-
-                // Нокаут
-                if (player.getProperty('arx:is_knocked') == true) { basicStrength -= 999 }
-
-                // Нет перса
-                if (player.getDynamicProperty('hasRegisteredCharacter') === false) { basicStrength -= 999 }
-
-                // Бонус для призака алой ночью
-                if (player.getDynamicProperty('ghostBoostByScarletMoon')) basicStrength += 3
-
-                // Увеличение от бонуса фиоликса
-                if (player.getDynamicProperty('statsBonusByFiolix') > 0) { basicStrength += 2 }
-
-                // От рюкзаков
-                if (checkForItem(player, "Legs", "arx:big_bag")) { basicStrength -= 8 }
-                if (checkForItem(player, "Legs", "arx:default_bag")) { basicStrength -= 4 }
-                if (checkForItem(player, "Legs", "arx:mini_bag")) { basicStrength -= 1 }
-
-                // Штраф от увядания призрака
-                basicStrength -= player.getDynamicProperty("ghostWitheringLevel")
-
-                // Воздействие стресса
-                switch (player.getDynamicProperty('stressLevel')) {
-                    case 4: basicStrength -= checkForTrait(player, 'conscious') ? 3 : 4; break
-                    case 3: basicStrength -= 2; break
-                    case 2: basicStrength -= 1; break
-                    case -2: basicStrength += 1; break
-                    case -3: basicStrength += 2; break
-                    case -4: basicStrength += 3; break
-                }
-
-                // Штрафовое срезание от перегруза
-                if (player?.getDynamicProperty('overLoading') > 0) { basicStrength -= (player?.getDynamicProperty('overLoading') * 3) }
-
-                // Срезание от кольца гладиатора
-                if ((checkForItem(player, 'Feet', 'arx:ring_aluminum_amethyst') || checkForItem(player, 'Offhand', 'arx:ring_aluminum_amethyst')) && basicStrength > 1) basicStrength = 1
-
-                // Штраф от запрета атаки
-                if (player?.getDynamicProperty("prohibit_damage") > 0) { basicStrength -= 999 }
-
-                // Штрафовое срезание от отката
-                basicStrength -= Math.ceil(player.getDynamicProperty("attackCD") / 20) * 4
-
-                // Выставляем силу
-                basicStrength < -30 ? player.runCommand(`event entity @s arx:setBasicStrength_-30`) : player.runCommand(`event entity @s arx:setBasicStrength_${basicStrength}`)
-
-                // Записывание в DP
-                sDP(player, 'basicStrength', basicStrength)
             }
         }
     },

@@ -767,6 +767,18 @@
         "arx:xp_shard": {
             "textures": "textures/items/other/xp_shard.png"
         },
+        "arx:defensio": {
+            "textures": "textures/items/runes/defensio.png"
+        },
+        "arx:ignis": {
+            "textures": "textures/items/runes/ignis.png"
+        },
+        "arx:nakamata": {
+            "textures": "textures/items/runes/nakamata.png"
+        },
+        "arx:rattum": {
+            "textures": "textures/items/runes/rattum.png"
+        },
         "arx:snow_bars_scarf": {
             "textures": "textures/items/scarfs/snow_bars_scarf.png"
         },
@@ -1657,12 +1669,6 @@
         },
         "arx:phantom_icon": {
             "textures": "textures/items/runes/special/phantom_icon.png"
-        },
-        "arx:rune_nakamata": {
-            "textures": "textures/items/runes/special/rune_nakamata.png"
-        },
-        "arx:rune_ratatao": {
-            "textures": "textures/items/runes/special/rune_ratatao.png"
         },
         "arx:teleportation_rune": {
             "textures": "textures/items/runes/special/teleportation_rune.png"

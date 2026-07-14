@@ -14,7 +14,6 @@ export const runeCiphers = {
     "ignis": "AG", // Огонь
     "cura": "AI", // Лечение
     "laffaeti": "AM", // Левитация
-    "signum": "AO", // Метка, обозначение
     "visus": "AU", // Зрение
     "impetus": "AV", // Физический урон 
     "defensio": "AW", // Защита
@@ -23,13 +22,18 @@ export const runeCiphers = {
     "mutatio": "BC", // Превращение
     "aqua": "BD", // Water
     "aura": "AR", // Air, wind
-    "rattum": "BG", // Rat
     "nodus": "ND", // Chain, connection
+    "terra": "TR", // Stone, terrain
+    "fulmen": "FL", // Electricity
+
+    // Lumens' runes (works like main runes)
+    "rattum": "RT", // Rattex's rune
+    "nakamata": "NK", // Nakassi's rune
 
     // Руны пре-модификации (Опционально). Могут стоять перед руной. Не являются самостоятельной руной
     "non": "NO", // Logical inversion
 
-    // Руны пост-модификации (опционально). Стоят всегда в конце заклинания. Модифицируют его значение. Используются в указаном ниже порядке, но возможны исключения
+    // Руны пост-модификации (опционально). Стоят всегда в конце заклинания. Модифицируют его значение
     "magna": "AP", // Усиление
     "minima": "AN", // Ослабление
     "durata": "AS", // Длительность

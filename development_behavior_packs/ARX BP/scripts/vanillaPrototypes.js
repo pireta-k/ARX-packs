@@ -1,5 +1,5 @@
 // This file edits vanilla prototyes
-import { system, world, World, Entity, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus } from "@minecraft/server"
+import { System, World, Entity, Player, ItemStack } from "@minecraft/server"
 import { sDP, iDP, gDP } from "./arxLib/DPOperations"
 
 function editVanillaPrototypes() {

@@ -111,6 +111,7 @@ export const enLocalization = {
     'info.devs.lead': 'Arx Lead Developer',
     'info.devs.music': 'In-game music',
     'info.devs.thanks': 'Special thanks',
+    'info.devs.links': 'Links',
 
     'info.title': 'Arx menu',
     'info.option.character': 'Character',

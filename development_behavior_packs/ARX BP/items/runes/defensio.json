@@ -1,0 +1,26 @@
+{
+    "format_version": "1.21.0",
+    "minecraft:item": {
+        "components": {
+            "minecraft:icon": "arx:defensio",
+            "minecraft:max_stack_size": 1,
+            "minecraft:tags": {
+                "tags": [
+                    "special_rune",
+                    "rune:defensio",
+                    "is_rune"
+                ]
+            },
+            "minecraft:cooldown": {
+                "category": "rune",
+                "duration": 1
+            }
+        },
+        "description": {
+            "identifier": "arx:defensio",
+            "menu_category": {
+                "category": "items"
+            }
+        }
+    }
+}

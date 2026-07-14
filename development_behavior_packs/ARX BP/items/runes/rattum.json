@@ -2,19 +2,12 @@
     "format_version": "1.21.0",
     "minecraft:item": {
         "components": {
-            "minecraft:durability": {
-                "max_durability": 200
-            },
-            "minecraft:enchantable": {
-                "slot": "elytra",
-                "value": 10
-            },
-            "minecraft:icon": "arx:rune_nakamata",
+            "minecraft:icon": "arx:rattum",
             "minecraft:max_stack_size": 1,
             "minecraft:tags": {
                 "tags": [
                     "special_rune",
-                    "rune:nakamata",
+                    "rune:rattum",
                     "is_rune"
                 ]
             },
@@ -24,7 +17,7 @@
             }
         },
         "description": {
-            "identifier": "arx:rune_nakamata",
+            "identifier": "arx:rattum",
             "menu_category": {
                 "category": "items"
             }

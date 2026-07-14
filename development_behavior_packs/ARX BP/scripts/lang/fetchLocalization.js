@@ -11,11 +11,10 @@ export const langMap = {
 }
 const insertionsLimit = 64
 
-/** Fetch Localization.
- * This functions takes a player and textId as input and returns requested text as output 
- * @param {Player} player 
- * @param {String} textId id of desired text. Looks like game.title.something
- * @param {Array} [insertions=[]] Insertions are words from array that we should insert in text. In raw text, they're marked as $0$, $1$ and so on. $ is special symbol for parcer, and num is an index of insertion in array. 
+/** Fetch Localization. This functions takes a player and textId as input and returns requested text as output.
+ * @param {player} player - Player
+ * @param {string} textId - id of desired text. Looks like game.title.something
+ * @param {array} [insertions=[]] - Insertions are words from array that we should insert in text. In raw text, they're marked as $0$, $1$ and so on. $ is special symbol for parcer, and num is an index of insertion in array. 
  * @returns {string}
 */
 export function fl(player, textId, insertions = []) {
@@ -56,10 +55,15 @@ export function fl(player, textId, insertions = []) {
     return returnText
 }
 
-// Send localization
-// This function is a convenient way to shortly use fl() and permanently send the text to the player as a message.
-export function sl(player, textId, insertions = []) {
-    player.sendMessage(fl(player, textId, insertions))
+/**
+ * Send localization. This function is a convenient way to shortly use fl() and permanently send the text to the player as a message.
+ * @param {player} player - Player
+ * @param {string} textId - Localization key
+ * @param {array} insertions - Insertions, same as in fl()
+ * @param {string} style - a style for localization, like '§a§o'
+ */
+export function sl(player, textId, insertions = [], style = '') {
+    player.sendMessage(style + fl(player, textId, insertions))
 }
 
 // Send chat-like message from system

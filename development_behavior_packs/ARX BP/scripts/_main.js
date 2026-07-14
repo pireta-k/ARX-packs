@@ -187,19 +187,123 @@ export function generateGrass(vector3, dimension) {
     dimension.runCommand(`fill ${coords} ${coords} ${blockToPaste}`)
 }
 
+function calculateStrength(player) {
+    let basicStrength = 0.5
+
+    // Кольца
+    if (checkForItem(player, "Feet", "arx:ring_gold_ruby")) { basicStrength += 1 }
+    if (checkForItem(player, "Offhand", "arx:ring_gold_ruby")) { basicStrength += 1 }
+    if (checkForItem(player, "Feet", "arx:ring_naginitis_ruby")) { basicStrength += 2 }
+    if (checkForItem(player, "Offhand", "arx:ring_naginitis_ruby")) { basicStrength += 2 }
+    if (checkForItem(player, "Feet", "arx:ring_caryite_ruby")) { basicStrength += 3 }
+    if (checkForItem(player, "Offhand", "arx:ring_caryite_ruby")) { basicStrength += 3 }
+    if (checkForItem(player, "Feet", "arx:ring_toliriite_ruby")) { basicStrength += 4 }
+    if (checkForItem(player, "Offhand", "arx:ring_toliriite_ruby")) { basicStrength += 4 }
+    if (checkForItem(player, "Feet", "arx:ring_lamenite_ruby")) { basicStrength += 5 }
+    if (checkForItem(player, "Offhand", "arx:ring_lamenite_ruby")) { basicStrength += 5 }
+
+    if (checkForItem(player, "Legs", "arx:durasteel_bracers")) { basicStrength += 1 }
+
+    if (checkForItem(player, "Legs", "arx:amul_bloody_circle")) { basicStrength += 0.5 }
+    if (checkForItem(player, "Legs", "arx:amul_essence_of_vicious_demon")) { basicStrength += 3 }
+
+    // Прокач
+    basicStrength += (player.getDynamicProperty('skill:strength_level') / 2)
+
+    // Черты
+    if (checkForTrait(player, 'loner')) {
+        const playersNearLoner = getPlayersInRadius(player, 8)
+        if (playersNearLoner.length > 0) { basicStrength -= 0.5 }
+        else { basicStrength += 0.5 }
+    }
+
+    // Нокаут
+    if (player.getProperty('arx:is_knocked') == true) { basicStrength -= 999 }
+
+    // Нет перса
+    if (player.getDynamicProperty('hasRegisteredCharacter') === false) { basicStrength -= 999 }
+
+    // Бонус для призака алой ночью
+    if (player.getDynamicProperty('ghostBoostByScarletMoon')) basicStrength += 3
+
+    // Увеличение от бонуса фиоликса
+    if (player.getDynamicProperty('statsBonusByFiolix') > 0) { basicStrength += 2 }
+
+    // От рюкзаков
+    if (checkForItem(player, "Legs", "arx:big_bag")) { basicStrength -= 8 }
+    if (checkForItem(player, "Legs", "arx:default_bag")) { basicStrength -= 4 }
+    if (checkForItem(player, "Legs", "arx:mini_bag")) { basicStrength -= 1 }
+
+    // Штраф от увядания призрака
+    basicStrength -= player.getDynamicProperty("ghostWitheringLevel")
+
+    // Воздействие стресса
+    switch (player.getDynamicProperty('stressLevel')) {
+        case 4: basicStrength -= checkForTrait(player, 'conscious') ? 3 : 4; break
+        case 3: basicStrength -= 2; break
+        case 2: basicStrength -= 1; break
+        case -2: basicStrength += 1; break
+        case -3: basicStrength += 2; break
+        case -4: basicStrength += 3; break
+    }
+
+    // Штрафовое срезание от перегруза
+    if (player?.getDynamicProperty('overLoading') > 0) { basicStrength -= (player?.getDynamicProperty('overLoading') * 3) }
+
+    // Срезание от кольца гладиатора
+    if ((checkForItem(player, 'Feet', 'arx:ring_aluminum_amethyst') || checkForItem(player, 'Offhand', 'arx:ring_aluminum_amethyst')) && basicStrength > 1) basicStrength = 1
+
+    // Штраф от запрета атаки
+    if (player?.getDynamicProperty("prohibit_damage") > 0) { basicStrength -= 99999 }
+
+    // Штрафовое срезание от отката
+    basicStrength -= Math.ceil(player.getDynamicProperty("attackCD") / 20) * 4
+
+    // Записывание в DP
+    sDP(player, 'basicStrength', basicStrength)
+
+    return basicStrength
+}
+
 // Intercept damage
 world.beforeEvents.entityHurt.subscribe((event) => {
+    // === Vars ===
     let dmg = event.damage
-    let e = event.hurtEntity
+    const e = event.hurtEntity
+    const damager = event.damageSource.damagingEntity
+    const cause = event.damageSource.cause
+
+    // === Edit damage ===
+    if (damager?.typeId === 'minecraft:player') {
+        dmg += calculateStrength(damager)
+    }
+
+    // === Additional logic ===
+    // e.getComponent('minecraft:health')?.currentValue returns hp AFTER the entity has taken damage.
+    const healthAfter = e.getComponent('minecraft:health')?.currentValue
+    const healthBefore = healthAfter !== undefined ? healthAfter + dmg : undefined
+    // Is the hit killing the entity?
+    const fatal = healthAfter !== undefined && (healthAfter <= 0)
+
+    console.warn(healthBefore, healthAfter, fatal)
 
     // A player was damaged
     if (e.typeId === 'minecraft:player') {
+        // Not registered
         if (!e.gDP('hasRegisteredCharacter')) {
+            event.cancel = true
+        }
+        // RP death 
+        else if (false) {
+            // TO-DO
+        }
+        // Fatal
+        else if (fatal) {
             event.cancel = true
         }
     }
 
-    // Apply result damage
+    // === Apply result damage ===
     event.damage = dmg
 })
 
@@ -597,21 +701,6 @@ system.beforeEvents.startup.subscribe(initEvent => {
     // === Custom commands ===
     const ccr = initEvent.customCommandRegistry
 
-    // Test
-    ccr.registerCommand(
-        {
-            name: 'arx:test',
-            description: 'Just a test func',
-            permissionLevel: CommandPermissionLevel.Any,
-            cheatsRequired: false,
-        },
-        origin => {
-            const player = origin.initiator ?? origin.sourceEntity
-            const item = getItem(player, 'mainhand')
-            console.warn(gDP(item, 'level'))
-            return { status: CustomCommandStatus.Success }
-        }
-    )
     // Weapon upgrade
     ccr.registerCommand(
         {
@@ -713,6 +802,63 @@ system.beforeEvents.startup.subscribe(initEvent => {
             const p = origin.initiator ?? origin.sourceEntity
             // Run emotion
             emote(p, arg0)
+            return { status: CustomCommandStatus.Success }
+        }
+    )
+    // Ftp (Fast teleportation)
+    const ftpOptions = ccr.registerEnum('arx:ftpOptions', ['spawn', 'lobby', 'save', 'load'])
+    ccr.registerCommand(
+        {
+            name: 'arx:ftp',
+            description: 'Fast teleportation (for specific Arx locations)',
+            permissionLevel: CommandPermissionLevel.Admin,
+            cheatsRequired: false,
+            mandatoryParameters: [
+                {
+                    name: 'arx:ftpOptions',
+                    type: CustomCommandParamType.Enum
+                }
+            ]
+        },
+        (origin, arg0) => {
+            const p = origin.initiator ?? origin.sourceEntity
+            // Action
+            switch (arg0) {
+
+                case 'spawn':
+                    const spawn = world.gDP('worldSpawnPoint')
+                    if (spawn) {
+                        system.run(() => {
+                            p.teleport(spawn, { dimension: world.getDimension('minecraft:overworld') })
+                        })
+                    } else {
+                        p.sendMessage('§cCannot do it beacuse Arx spawn do not exist')
+                    }
+
+                    break
+
+                case 'lobby':
+                    system.run(() => {
+                        p.teleport({ x: -9999.5, y: 4, z: -9999.5 }, { dimension: world.getDimension('minecraft:overworld') })
+                    })
+                    break
+
+                case 'save':
+                    p.sDP('ftpSaved', { location: p.location, dimensionId: p.dimension.id })
+                    p.sendMessage('Location is saved')
+                    break
+
+                case 'load':
+                    const saved = p.gDP('ftpSaved')
+                    if (saved) {
+                        system.run(() => {
+                            p.teleport(saved.location, { dimension: world.getDimension(saved.dimensionId) })
+                        })
+                    } else {
+                        p.sendMessage('§cNo location is saved')
+                    }
+                    break
+            }
             return { status: CustomCommandStatus.Success }
         }
     )

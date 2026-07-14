@@ -2,7 +2,7 @@ export const ruLocalization = {
     'lobby.statue_of_sinriada': 'Статуя высокой женщины. Табличка в её ногах слишком испорчена, вы не можете разобрать написанное',
 
     'lobby.registration.notStableRelease.title': "§cВНИМАНИЕ",
-    'lobby.registration.notStableRelease.alpha': `Это §cALPHA§f версия Arx Ultima.\nОна ещё сильно недоработана и нестабильна, и не рекомендуется для игры.`,
+    'lobby.registration.notStableRelease.alpha': `Это §cALPHA§f версия Arx Ultima.\nОна сильно недоработана и нестабильна, и не рекомендуется для игры.`,
     'lobby.registration.notStableRelease.beta': `Это §bBETA§f версия Arx Ultima.\nОна может быть несколько нестабильна, однако она подходит для игры.`,
     'lobby.registration.notStableRelease.special': `Это §eспециальная§f версия Arx Ultima.\nОна содержит некоторые особые модификации и отличается от оригинального Arx. Если вы не получили эту версию напрямую от разработчиков, то рекомедуется скачать последний релиз Arx.`,
     'lobby.registration.notStableRelease.confirm': "Я понимаю, продолжить",
