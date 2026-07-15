@@ -4,39 +4,34 @@
 export const runeCiphers = {
 
     // Main runes 
-    "maledictio": "AA", // Curse
-    "invocatio": "BA", // Summon
-    "dispersio": "AQ", // Dispersion
-    "scire": "AH", // Query
-    "arcus": "AB", // Лук / стрела
-    "illusio": "AE", // Иллюзия / Ментальное искажение
-    "venenatio": "AF", // Отравление
-    "ignis": "AG", // Огонь
-    "cura": "AI", // Лечение
-    "laffaeti": "AM", // Левитация
-    "visus": "AU", // Зрение
-    "impetus": "AV", // Физический урон 
-    "defensio": "AW", // Защита
-    "mobilitas": "AY", // Подвижность
-    "translatio": "BB", // Телепортация
-    "mutatio": "BC", // Превращение
-    "aqua": "BD", // Water
-    "aura": "AR", // Air, wind
-    "nodus": "ND", // Chain, connection
-    "terra": "TR", // Stone, terrain
-    "fulmen": "FL", // Electricity
-
-    // Lumens' runes (works like main runes)
-    "rattum": "RT", // Rattex's rune
-    "nakamata": "NK", // Nakassi's rune
+    "maledictio": "AA", // Curse. Affuon's rune
+    "invocatio": "BA", // Summon. Sukimo's rune
+    "dispersio": "AQ", // Dispersion. Ordu's rune
+    "arcus": "AB", // Bow / arrow. Nakassi's rune
+    "illusio": "AE", // Illusion. Elletera's rune
+    "venenatio": "AF", // Poisoning. Flora's rune
+    "ignis": "AG", // Flame. Flurri's rune
+    "cura": "AI", // Cure. Horo's rune
+    "visus": "AU", // Vision. Yanamia's rune
+    "impetus": "AV", // Physical damage. Kontata's rune
+    "defensio": "AW", // Protection. Sandio's rune
+    "mobilitas": "AY", // Mobility. Sinriada's rune
+    "translatio": "BB", // Teleportation. Trafana's rune
+    "mutatio": "BC", // Transformation. Tracursia's rune
+    "aqua": "BD", // Water. Watashi's rune
+    "aura": "AR", // Air, wind. Aria's rune
+    "nodus": "ND", // Chain, connection. Noxera's rune
+    "terra": "TR", // Stone, terrain. Carbon's rune
+    "fulmen": "FL", // Electricity. Shakrex's rune
+    "rattum": "RT", // Rat. Rattex's rune
 
     // Руны пре-модификации (Опционально). Могут стоять перед руной. Не являются самостоятельной руной
-    "non": "NO", // Logical inversion
+    "non": "NO", // Logical inversion. Dinaronos's rune
 
     // Руны пост-модификации (опционально). Стоят всегда в конце заклинания. Модифицируют его значение
-    "magna": "AP", // Усиление
-    "minima": "AN", // Ослабление
-    "durata": "AS", // Длительность
-    "area": "AD", // Действие по площади
-    "alternus": "AL", // Альетрнативное действие
+    "magna": "AP", // Strengthen the spell. Megger's rune
+    "minima": "AN", // Weaken the spell. Lowie's rune
+    "durata": "AS", // Lengthen spell's effect. Sakiifori's rune
+    "area": "AD", // Area effect. Disortari's rune
+    "alternus": "AL", // Alternative action. Kotoka's rune
 }

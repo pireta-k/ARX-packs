@@ -4,7 +4,6 @@
 // IMPORTS
 
 // Spells
-import { dinHijo } from './SPELLDinHijo'
 import { magicDash } from './SPELLMagicDash'
 import { speedBoost } from './SPELLSpeedBoost'
 import { classicHeal } from './SPELLClassicHeal'
@@ -38,29 +37,6 @@ import { checkLocalization, sl } from '../../lang/fetchLocalization'
  * - handler: функция, принимающая player, spellData (с информацией о заклинании)
  */
 export let spellRegistry = {
-    // Get ready spells (old Din Hijo)
-    'scire': {
-        mpCost: 5,
-        color: '#535ec1',
-        description: 'заклинание запроса заклинания (4 канала)',
-        onlyOnPlayers: true,
-        handler: (player, spellData) => { dinHijo(player, 4, spellData) }
-    },
-    'scire magna': {
-        mpCost: 10,
-        color: '#535ec1',
-        description: 'заклинание запроса заклинания (7 каналов)',
-        onlyOnPlayers: true,
-        handler: (player, spellData) => { dinHijo(player, 7, spellData) }
-    },
-    'scire magna magna': {
-        mpCost: 20,
-        color: '#535ec1',
-        description: 'заклинание запроса заклинания (10 каналов)',
-        onlyOnPlayers: true,
-        handler: (player, spellData) => { dinHijo(player, 10, spellData) }
-    },
-
     // Dash
     "mobilitas arcus": {
         mpCost: 8,

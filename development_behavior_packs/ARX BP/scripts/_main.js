@@ -650,8 +650,14 @@ system.beforeEvents.startup.subscribe(initEvent => {
                     break
 
                 default:
+                    const blockId = event.block.typeId
+                    // Baits
+                    if (blockId.startsWith("arx:bait_")) {
+                        event.block.setType('air')
+                    }
+
                     // Блок - светящийся блок
-                    if (event.block.type.id.startsWith("arx:dynamic_light_block")) {
+                    if (blockId.startsWith("arx:dynamic_light_block")) {
                         // Получаем сущности рядом
                         const entities = event.block.dimension.getEntities({ location: event.block.location, maxDistance: 2 })
                         // Если никого нет, сразу ставим воздух
@@ -661,7 +667,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
                             let allowBlockToStay = false
                             for (const entity of entities) {
                                 const dynamicLightPower = entity.getDynamicProperty('dynamicLightPower')
-                                const currentBlockLightPower = event.block.type.id.slice(24)
+                                const currentBlockLightPower = blockId.slice(24)
                                 if (dynamicLightPower == currentBlockLightPower) allowBlockToStay = true
                             }
                             if (!allowBlockToStay) event.block.setType('minecraft:air')

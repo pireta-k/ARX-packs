@@ -1,0 +1,33 @@
+{
+    "format_version": "1.21.30",
+    "minecraft:block": {
+        "description": {
+            "identifier": "arx:bait_eve"
+        },
+        "components": {
+
+            "minecraft:loot": "loot_tables/blocks/empty.json",
+            "minecraft:collision_box": false,
+            "minecraft:selection_box": false,
+
+            "minecraft:material_instances": {
+                "*": {
+                    "render_method": "alpha_test",
+                    "texture": "arx_invisible"
+                }
+            },
+            "minecraft:geometry": "geometry.none",
+
+            "minecraft:custom_components": [
+                "arx:onTick"
+            ],
+            "minecraft:tick": {
+                "interval_range": [
+                    1000,
+                    1000
+                ],
+                "looping": true
+            }
+        }
+    }
+}

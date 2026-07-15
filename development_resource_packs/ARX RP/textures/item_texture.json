@@ -767,17 +767,92 @@
         "arx:xp_shard": {
             "textures": "textures/items/other/xp_shard.png"
         },
+        "arx:alternus": {
+            "textures": "textures/items/runes/alternus.png"
+        },
+        "arx:aqua": {
+            "textures": "textures/items/runes/aqua.png"
+        },
+        "arx:arcus": {
+            "textures": "textures/items/runes/arcus.png"
+        },
+        "arx:area": {
+            "textures": "textures/items/runes/area.png"
+        },
+        "arx:aura": {
+            "textures": "textures/items/runes/aura.png"
+        },
+        "arx:cura": {
+            "textures": "textures/items/runes/cura.png"
+        },
         "arx:defensio": {
             "textures": "textures/items/runes/defensio.png"
+        },
+        "arx:dispersio": {
+            "textures": "textures/items/runes/dispersio.png"
+        },
+        "arx:durata": {
+            "textures": "textures/items/runes/durata.png"
+        },
+        "arx:fulmen": {
+            "textures": "textures/items/runes/fulmen.png"
         },
         "arx:ignis": {
             "textures": "textures/items/runes/ignis.png"
         },
-        "arx:nakamata": {
-            "textures": "textures/items/runes/nakamata.png"
+        "arx:illusio": {
+            "textures": "textures/items/runes/illusio.png"
+        },
+        "arx:impetus": {
+            "textures": "textures/items/runes/impetus.png"
+        },
+        "arx:invocatio": {
+            "textures": "textures/items/runes/invocatio.png"
+        },
+        "arx:levitatio": {
+            "textures": "textures/items/runes/levitatio.png"
+        },
+        "arx:magna": {
+            "textures": "textures/items/runes/magna.png"
+        },
+        "arx:maledictio": {
+            "textures": "textures/items/runes/maledictio.png"
+        },
+        "arx:minima": {
+            "textures": "textures/items/runes/minima.png"
+        },
+        "arx:mobilitas": {
+            "textures": "textures/items/runes/mobilitas.png"
+        },
+        "arx:mutatio": {
+            "textures": "textures/items/runes/mutatio.png"
+        },
+        "arx:nodus": {
+            "textures": "textures/items/runes/nodus.png"
+        },
+        "arx:non": {
+            "textures": "textures/items/runes/non.png"
         },
         "arx:rattum": {
             "textures": "textures/items/runes/rattum.png"
+        },
+        "arx:scire": {
+            "textures": "textures/items/runes/scire.png"
+        },
+        "arx:terra": {
+            "textures": "textures/items/runes/terra.png"
+        },
+        "arx:translatio": {
+            "textures": "textures/items/runes/translatio.png"
+        },
+        "arx:venenatio": {
+            "textures": "textures/items/runes/venenatio.png"
+        },
+        "arx:vice": {
+            "textures": "textures/items/runes/vice.png"
+        },
+        "arx:visus": {
+            "textures": "textures/items/runes/visus.png"
         },
         "arx:snow_bars_scarf": {
             "textures": "textures/items/scarfs/snow_bars_scarf.png"

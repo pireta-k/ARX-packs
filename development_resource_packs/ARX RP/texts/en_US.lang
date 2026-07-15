@@ -763,9 +763,6 @@ item.arx:cup=§r§fЧашка §7[Common]
 
 item.arx:small_stone=§r§fНебольшой камень §7[Common]
 
-item.arx:rune_nakamata=§r§fnakamata §c[Mythical+]
-item.arx:rune_ratatao=§r§fratatao §e[Legendary]
-
 
 item.arx:elder_cross_rune=§r§fДревняя руна-крест §c[Mythical]
 item.arx:scroll_of_reborning=§r§fСвиток перерождения §d[Divine]\n§o§7Призрак может перевоплотиться назад в живого,\nиспользовав этот свиток
@@ -1589,4 +1586,36 @@ item.arx:cult_nasty_gift_harakiri_sword=§r§fПодарок от культа �
 
 item.arx:towel=§r§fПолотенце §b[Rare]\n§o§7Позволяет избавиться от намокания.\nЭффективнее работает без верхней одежды
 
-item.arx:structurebuilder_hammer=§r§fStructureBuilder Hammer §q[Out-game]
+## SB
+item.arx:structurebuilder_hammer=§r§fStructureBuilder Hammer §q[Creative]
+tile.arx:acss_anchor.name=ACSS anchor §q[Creative]
+
+## Runes
+item.arx:rune_maledictio=§r§fMaledictio §e[Rune]
+item.arx:rune_invocatio=§r§fInvocatio §e[Rune]
+item.arx:rune_dispersio=§r§fDispersio §e[Rune]
+item.arx:rune_scire=§r§fScire §e[Rune]
+item.arx:rune_arcus=§r§fArcus §e[Rune]
+item.arx:rune_illusio=§r§fIllusio §e[Rune]
+item.arx:rune_venenatio=§r§fVenenatio §e[Rune]
+item.arx:rune_ignis=§r§fIgnis §e[Rune]
+item.arx:rune_cura=§r§fCura §e[Rune]
+item.arx:rune_levitatio=§r§fLevitatio §e[Rune]
+item.arx:rune_visus=§r§fVisus §e[Rune]
+item.arx:rune_impetus=§r§fImpetus §e[Rune]
+item.arx:rune_defensio=§r§fDefensio §e[Rune]
+item.arx:rune_mobilitas=§r§fMobilitas §e[Rune]
+item.arx:rune_translatio=§r§fTranslatio §e[Rune]
+item.arx:rune_mutatio=§r§fMutatio §e[Rune]
+item.arx:rune_aqua=§r§fAqua §e[Rune]
+item.arx:rune_aura=§r§fAura §e[Rune]
+item.arx:rune_nodus=§r§fNodus §e[Rune]
+item.arx:rune_terra=§r§fTerra §e[Rune]
+item.arx:rune_fulmen=§r§fFulmen §e[Rune]
+item.arx:rune_rattum=§r§fRattum §e[Rune]
+item.arx:rune_non=§r§fNon §e[Rune]
+item.arx:rune_magna=§r§fMagna §e[Rune]
+item.arx:rune_minima=§r§fMinima §e[Rune]
+item.arx:rune_durata=§r§fDurata §e[Rune]
+item.arx:rune_area=§r§fArea §e[Rune]
+item.arx:rune_alternus=§r§fAlternus §e[Rune]

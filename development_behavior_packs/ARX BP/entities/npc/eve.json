@@ -1,5 +1,5 @@
 {
-	"format_version": "1.20.0",
+	"format_version": "1.21.30",
 	"minecraft:entity": {
 		"description": {
 			"identifier": "arx:eve",
@@ -8,6 +8,33 @@
 		},
 		"components": {
 			"minecraft:movement.basic": {},
+			"minecraft:jump.static": {},
+			"minecraft:can_climb": {},
+			"minecraft:movement": {
+				"value": 0.25
+			},
+			"minecraft:navigation.walk": {
+				"avoid_damage_blocks": true,
+				"avoid_water": true,
+				"can_open_doors": true,
+				"can_pass_doors": true
+			},
+			"minecraft:behavior.move_to_block": {
+				"priority": 0,
+				"search_range": 16,
+				"search_height": 8,
+				"goal_radius": 0.3,
+				"target_selection_method": "nearest",
+				"target_blocks": [
+					"arx:bait_eve"
+				],
+				"target_offset": [
+					0,
+					0,
+					0
+				],
+				"tick_interval": 5
+			},
 			"minecraft:knockback_resistance": {
 				"value": 1
 			},

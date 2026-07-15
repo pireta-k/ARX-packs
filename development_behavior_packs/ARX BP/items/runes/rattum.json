@@ -17,7 +17,7 @@
             }
         },
         "description": {
-            "identifier": "arx:rattum",
+            "identifier": "arx:rune_rattum",
             "menu_category": {
                 "category": "items"
             }
