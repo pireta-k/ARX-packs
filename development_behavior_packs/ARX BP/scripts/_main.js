@@ -4,6 +4,8 @@
 import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus } from "@minecraft/server"
 import { ActionFormData } from "@minecraft/server-ui"
 
+import './vanillaPrototypes'
+
 // Imports - Arx functions 
 import { getScore, incScore, setScore } from './arxLib/scoresOperations'
 import { increaseSkillProgress, wipeSkillsProgress } from './skillsOperations'
@@ -26,7 +28,6 @@ import './camera/processCamera'
 import './sb/structureBuilder'
 import './blocksHistory'
 import './update'
-import './vanillaPrototypes'
 
 import { registerPlayerVars } from "./registerPlayerVars"
 import { checkForItem } from "./items/checkForItem"

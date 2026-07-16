@@ -1,6 +1,8 @@
 // SPOILERS WARNING!!! If you play Arx, I highly don't recommend you to read this file
 
-// Это список рун и их шифровок, с помощью которых определяется заклинание
+/** Это список рун и их шифровок, с помощью которых определяется заклинание
+ * @type {Record<String, String>}
+ */ 
 export const runeCiphers = {
 
     // Main runes 

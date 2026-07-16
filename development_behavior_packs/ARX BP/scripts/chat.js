@@ -1,5 +1,5 @@
 // Imports
-import { world, EntityComponentTypes, EquipmentSlot } from "@minecraft/server"
+import { world, EntityComponentTypes, EquipmentSlot, system } from "@minecraft/server"
 import { emote } from './emote'
 import { getScore } from './arxLib/scoresOperations'
 import { getSkillsData } from './skillsOperations'
@@ -15,7 +15,7 @@ import { sDP } from "./arxLib/DPOperations"
 import { isAdmin, getAdmins } from './arxLib/admin'
 
 // Обработка чата before
-world.beforeEvents.chatSend.subscribe((eventData) => {
+world.beforeEvents.chatSend.subscribe(async (eventData) => {
 
     eventData.cancel = true // Предотвращаем отправку сообщения в чат
 
@@ -29,7 +29,7 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
     }
 });
 
-export function parceChatCommand(player, trimmedMessage) {
+export async function parceChatCommand(player, trimmedMessage) {
     if (trimmedMessage.startsWith("!")) { // Если это команда Аркса
         // command содержит в себе список из последовательности введенных слов в команде
         const command = trimmedMessage.split(/\s+/)
@@ -63,9 +63,15 @@ export function parceChatCommand(player, trimmedMessage) {
             if (isAdmin(player)) {
                 const codeToEval = trimmedMessage.slice(5);
                 try {
-                    const result = eval(codeToEval);
-                    // Send result to player
-                    player.sendMessage(`§aResult§f: ${result}`)
+                    const rayEntity = player.getEntitiesFromViewDirection()[0]?.entity
+                    const me = player
+                    let result
+                    await system.run(() => {
+                        const abc = 'aboba'
+                        result = eval(codeToEval)
+                        // Send a result to the player
+                        player.sendMessage(`§aResult§f: ${result}`)
+                    })
                 } catch (error) {
                     player.sendMessage(`§cEval error§f: ${error}`)
                 }

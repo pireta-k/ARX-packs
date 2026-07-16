@@ -19,24 +19,11 @@
 				"can_open_doors": true,
 				"can_pass_doors": true
 			},
-			"minecraft:behavior.move_to_block": {
-				"priority": 0,
-				"search_range": 16,
-				"search_height": 8,
-				"goal_radius": 0.3,
-				"target_selection_method": "nearest",
-				"target_blocks": [
-					"arx:bait_eve"
-				],
-				"target_offset": [
-					0,
-					0,
-					0
-				],
-				"tick_interval": 5
-			},
 			"minecraft:knockback_resistance": {
 				"value": 1
+			},
+			"minecraft:behavior.open_door": {
+				"close_door_after": true
 			},
 			"minecraft:type_family": {
 				"family": [
@@ -84,6 +71,50 @@
 						"on_interact": {}
 					}
 				]
+			}
+		},
+		"component_groups": {
+			"arx:bait_sensor": {
+				"minecraft:behavior.move_to_block": {
+					"priority": 0,
+					"search_range": 42,
+					"search_height": 8,
+					"goal_radius": 0.3,
+					"target_selection_method": "nearest",
+					"target_blocks": [
+						"arx:bait_eve"
+					],
+					"target_offset": [
+						0,
+						0,
+						0
+					],
+					"tick_interval": 5,
+					"on_reach": {
+						"event": "arx:on_reach_bait"
+					}
+				}
+			}
+		},
+		"events": {
+			"arx:on_reach_bait": {
+				"queue_command": {
+					"command": [
+						"tag @s add bait_reached"
+					]
+				},
+				"remove": {
+					"component_groups": [
+						"arx:bait_sensor"
+					]
+				}
+			},
+			"arx:add_bait_sensor": {
+				"add": {
+					"component_groups": [
+						"arx:bait_sensor"
+					]
+				}
 			}
 		}
 	}

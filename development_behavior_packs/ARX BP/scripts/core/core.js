@@ -32,19 +32,28 @@ import { msgFromGuide, parceChatCommand } from "../chat"
 import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
 
-/** Core framework 
-tickspeed (in ticks) - run this function every Tickspeed ticks
-
-operations () => func - code to execute
-
-OPTIONAL condition () => func - condition to run this part
-
-TO-DO
+/** TO-DO
 OPTIONAL overclock: {    <- If this key exists, can overclock, else cannot 
     importance: number, default 0.5 - importance of this part
     type: default | onlyOverclock | oblyDownclock
 }
 */
+
+/**
+ * @typedef CoreBlockRunData
+ * @property {import('@minecraft/server').Player[]} players
+ */
+
+/**
+ * @typedef CoreBlock
+ * @property {Number} tickSpeed
+ * @property {(data: CoreBlockRunData) => Void} [condition]
+ * @property {(data: CoreBlockRunData) => Void} operations
+ */
+
+/**
+ * @type {Record<String, CoreBlock>}
+ */
 export const coreFramework = {
     // Mcfunction core blocks
     mcf20: {
@@ -1505,7 +1514,7 @@ world.afterEvents.worldLoad.subscribe(async () => {
         // Ping checker
         let startTime = 0
         let endTime = 0
-        
+
 
         // Wait for world to be ready
         let worldIsLoaded = false
@@ -1557,7 +1566,7 @@ world.afterEvents.worldLoad.subscribe(async () => {
                     endTime = new Date()
 
                     // Save ping
-                    corePing[key] = endTime - startTime 
+                    corePing[key] = endTime - startTime
                 }
             }
         }, 1)
