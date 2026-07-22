@@ -87,7 +87,6 @@ export function arxSettings(p) {
     if (chatPrefixes === 'shortEN') chatPrefixesDefaultDropdownPos = 1
 
     const canSeeServerSpeedInInfoBookDefaultTogglePos = p.getDynamicProperty('myRule:canSeeServerSpeedInInfoBook')
-    const cinematographicModeDefaultTogglePos = p.getDynamicProperty('myRule:cinematographicMode')
     const devModeDefaultTogglePos = p.getDynamicProperty('myRule:devMode')
 
     const form = new ModalFormData()
@@ -97,7 +96,6 @@ export function arxSettings(p) {
     form.dropdown('Отображение §cотката атаки', ['Секунды, целые числа', 'Секунды, десятичные дроби', 'Такты (сек/20)', 'Линия', '§cНе отображать'], { defaultValueIndex: showAttackCDModeDefaultDropdownPos })
     form.dropdown('Префиксы §aчатов', ['Полные §f[§aЛокал.§f]', 'Сокращённые §f[§aЛ§f]'], { defaultValueIndex: chatPrefixesDefaultDropdownPos })
     form.toggle("Отображение производительности в <Инфо>", { defaultValue: canSeeServerSpeedInInfoBookDefaultTogglePos })
-    form.toggle("Кинематографический режим", { defaultValue: cinematographicModeDefaultTogglePos, tooltip: 'Вы сможете вызывать меню управления камерой, использовав предмет <Инфо> на присяде. Необходимы права оператора для вызова меню камеры.' })
     if (isAdmin) {
         form.toggle("Режим разработчика", { defaultValue: devModeDefaultTogglePos, tooltip: 'Вы сможете видеть технические данные.' })
     }
@@ -124,8 +122,7 @@ export function arxSettings(p) {
 
             sDP(p, 'myRule:canSeeServerSpeedInInfoBook', response.formValues[3])
 
-            sDP(p, 'myRule:cinematographicMode', response.formValues[4])
-            sDP(p, 'myRule:devMode', response.formValues[5])
+            sDP(p, 'myRule:devMode', response.formValues[4])
         }
     })
 }

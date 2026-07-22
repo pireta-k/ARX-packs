@@ -1,6 +1,6 @@
 // A library that helps user with operations with time
 
-import { system } from "@minecraft/server";
+import { system, world } from "@minecraft/server";
 
 /** Sleep for specified number of ticks.
  * ASYNC function.
@@ -49,4 +49,9 @@ class Stopwatch {
     }
 
     static getIds() { return this.#records.keys(); }
+}
+
+// Функция для определения дня/ночи
+export function isDay() {
+    return world.getTimeOfDay() < 12550 || world.getTimeOfDay() > 23500
 }

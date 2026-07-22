@@ -23,7 +23,13 @@ export async function registerCharacter(player) {
         const formNo = new ActionFormData()
             .title(fl(player, 'lobby.registration.cannot_registrate.title'))
             .body(fl(player, 'lobby.registration.cannot_registrate.already_has_a_character', [player.getDynamicProperty('name')]))
+            .button(fl(player, 'lobby.registration.cannot_registrate.return_to_spawn_button'))
             .show(player)
+            .then((r) => {
+                if (r.selection === 0) {
+                    player.teleport(gDP(world, 'worldSpawnPoint'), { dimension: world.getDimension('minecraft:overworld'), checkForBlocks: false, keepVelocity: false })
+                }
+            })
     }
     // Player isn't verified
     else if (world.getDynamicProperty('requireUserVerification') && player.getDynamicProperty('verify') === false) {

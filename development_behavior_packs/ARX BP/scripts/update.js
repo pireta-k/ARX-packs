@@ -134,7 +134,7 @@ async function runArxFirstLoad() {
     // Arx default settings
     sDP(world, 'generateGrass', true)
     sDP(world, 'anticheat', true)
-    sDP(world, 'allowArxCameras', true)
+    sDP(world, 'allowArxCameras', false)
     sDP(world, 'enableWorldBorder', false)
     sDP(world, 'worldBorderRange', 5000)
     sDP(world, 'enableAmbienceCore', true)

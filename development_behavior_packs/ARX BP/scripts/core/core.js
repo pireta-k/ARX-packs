@@ -19,11 +19,11 @@ import { sendToActionBar, actionBarCoreTick } from './actionBarCore'
 import { syncHud, updateStressHud, clearHud } from './hud'
 import { ambienceCoreTick } from './ambience_core'
 import { dynamicLightCoreTick } from './dynamicLightCore'
-import { musicCoreTick } from './music_core'
+import { isInBiomeWithTag, musicCoreTick } from './music_core'
 import { achievementsCoreTick } from './achievements'
 import { sl } from "../lang/fetchLocalization"
 import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
-import { sleep } from "../arxLib/time"
+import { isDay, sleep } from "../arxLib/time"
 
 // Other core parts
 import { getNearestPlayer } from "../getNearestPlayer"
@@ -31,6 +31,7 @@ import { queueCommand } from "../commandQueue"
 import { msgFromGuide, parceChatCommand } from "../chat"
 import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
+import { playSound } from "../arxLib/audio"
 
 /** TO-DO
 OPTIONAL overclock: {    <- If this key exists, can overclock, else cannot 
@@ -169,19 +170,24 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 // Если мы притворяемся нокнутыми, но начали двигаться
-                if (player.getProperty('arx:is_knocked') === true && player.getDynamicProperty('respawnDelay') === 0 && player.hasTag('is_moving') && !player.hasTag('is_riding')) {
+                if (player.getProperty('arx:is_knocked') && player.getDynamicProperty('respawnDelay') === 0 && player.isMoving && !player.isRiding) {
                     player.runCommand('event entity @s arx:property_is_knockout_set_0')
                 }
 
                 // Если игрока тащат, и скидывают
-                if (player.hasTag('has_riders') && player.hasTag('is_sneaking')) {
+                if (player.hasRiders && player.isSneaking) {
                     const carriedPlayer = getNearestPlayer(player)
                     // Если игрок не нокнут, а просто поднят
-                    if (carriedPlayer.hasTag('is_riding') && carriedPlayer.getProperty('arx:is_knocked') === true && carriedPlayer.getDynamicProperty('respawnDelay') === 0) {
+                    if (carriedPlayer.isRiding && carriedPlayer.getProperty('arx:is_knocked') && carriedPlayer.getDynamicProperty('respawnDelay') === 0) {
                         carriedPlayer.runCommand('event entity @s arx:property_is_knockout_set_0')
                     }
-                    player.runCommand('execute as @p[tag=is_riding, has_property={arx:is_knocked=false}] run inputpermission set @s movement enabled')
-                    player.runCommand('ride @s evict_riders')
+                    if (carriedPlayer && carriedPlayer.isRiding && carriedPlayer.getProperty('arx:is_knocked') === false) {
+                        carriedPlayer.runCommand('inputpermission set @s movement enabled');
+                    }
+                    const rideable = player.getComponent('minecraft:rideable');
+                    if (rideable) {
+                        rideable.evictRiders();
+                    }
                 }
             }
         }
@@ -192,12 +198,7 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 // Основное намокание задается через DP wetness
-                const inRain = player.hasTag('in_water') && !player.hasTag('in_block_water')
-                let isBoatNearby = false
-                for (const entity of player.dimension.getEntities({ maxDistance: 1 })) {
-                    if (getEntityFamilies(entity).includes('boat')) isBoatNearby = true
-                }
-                const inBoat = player.hasTag('is_riding') && isBoatNearby
+                const inBoat = player.ridingOn?.typeId === 'minecraft:boat'
 
                 // Зонт или амулет ненамокания 
                 const holdingUmbrella = checkForItem(player, 'mainhand', 'arx:umbrella_golden_silk') || checkForItem(player, 'mainhand', 'arx:umbrella_silk') || checkForItem(player, 'mainhand', 'arx:umbrella_skin') || checkForItem(player, 'mainhand', 'arx:umbrella_small_silk')
@@ -209,9 +210,9 @@ export const coreFramework = {
                 // Намокаем или сохнем, зависимо от ситуации
                 let wetness = player.getDynamicProperty('wetness') ?? 0
                 // В воде
-                if (player.hasTag('in_block_water') && !inBoat) wetness += 10
+                if (player.isInWater && !inBoat) wetness += 10
                 // Под дождём
-                else if (inRain && !antiRainAmul && !holdingUmbrella && !player.hasTag('underground') && !player.getDynamicProperty('someoneCoversWithUmbrella')) wetness += 1
+                else if (player.isInRain && !antiRainAmul && !holdingUmbrella && !player.isUnderground && !player.getDynamicProperty('someoneCoversWithUmbrella')) wetness += 1
                 // Высыхание в аду
                 else if (player.dimension.id === 'minecraft:nether') wetness -= 4
                 // Высыхание
@@ -336,7 +337,7 @@ export const coreFramework = {
         tickSpeed: 5,
         operations: (data) => {
             for (const player of data.players) {
-                if (player.hasTag('is_moving') && player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator') {
+                if (player.isMoving && player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator') {
                     iDP(player, "statistics:distance", 1.04 * (player.getDynamicProperty('speedPower') / 100))
                 }
             }
@@ -347,11 +348,11 @@ export const coreFramework = {
         tickSpeed: 16,
         operations: (data) => {
             for (const player of data.players) {
-                const currentHP = player.getComponent('health').currentValue
-                if (currentHP <= 10 && currentHP > 0) {
-                    const loudness = 1 / currentHP
+                const wellness = player.wellness
+                if (wellness < 0.5) {
+                    const loudness = 0.1 / wellness
                     const pitch = 0.9 + (1.1 - 0.9) * Math.random()
-                    const rotationPower = 0.4 / currentHP
+                    const rotationPower = 0.02 / wellness
 
                     player.runCommand(`playsound heartbeat.default @s ~ ~ ~ ${loudness} ${pitch}`)
                     player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
@@ -447,13 +448,13 @@ export const coreFramework = {
                     }
 
                     // Чилл в водичке
-                    if (checkForTrait(player, 'water_lover') && player.hasTag('in_block_water')) { stress -= 3 }
+                    if (checkForTrait(player, 'water_lover') && player.isInWater) { stress -= 3 }
                     // Депрессия в водичке
-                    if (checkForTrait(player, 'aquaphobe') && player.hasTag('in_block_water')) { stress += 3 }
+                    if (checkForTrait(player, 'aquaphobe') && player.isInWater) { stress += 3 }
 
                     // Стресс при низком здоровье
-                    if (player.hasTag('very_low_hp')) { stress += 25 }
-                    else if (player.hasTag('low_hp')) { stress += 8 }
+                    if (player.wellness < 0.25) stress += 25
+                    else if (player.wellness < 0.5) stress += 8
 
                     // Падение стресса к нейтральным значениям
                     const decreaseValue = checkForTrait(player, 'kind') ? stress / 750 : stress / 1000
@@ -484,7 +485,7 @@ export const coreFramework = {
                     }
 
                     // Черта страх темноты
-                    if (checkForTrait(player, 'nodarkness') && player.hasTag('low_bright')) {
+                    if (checkForTrait(player, 'nodarkness') && player.lightLevel < 6) {
                         iDP(player, 'stress', 5)
                     }
 
@@ -574,7 +575,7 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 // If the player moves, set CD before animation to max value (= killingTimeAnimDelay)
-                if (player.hasTag('is_moving')) sDP(player, 'KACD', killingTimeAnimDelay) // KACD == Killing Animation Cool Down
+                if (player.isMoving) sDP(player, 'KACD', killingTimeAnimDelay) // KACD == Killing Animation Cool Down
                 // Else (player isn't moving)
                 else {
                     iDP(player, 'KACD', -1)
@@ -617,10 +618,6 @@ export const coreFramework = {
                 else if (player.location.y < 55) {
                     player.runCommand(`fog @s push arx:mine_fog "mines"`)
                 }
-                // Алая ночь
-                else if (player.hasTag('scarlet_night') && getScore(player, 'is_day') == 0) {
-                    player.runCommand(`fog @s push arx:scarlet_night_fog "scarlet_night"`)
-                }
 
                 // Прибор ночного зрения
                 else if (player.hasTag('electrical_engineering_available') && checkForItem(player, 'Head', 'arx:night_vision_device')) {
@@ -636,11 +633,11 @@ export const coreFramework = {
                 }
 
                 // Поверхность, ночь (рядом с источником света)
-                else if (player.hasTag('in_surface') && getScore(player, 'is_day') == 0 && getScore(player, 'no_dark_fog') == 0 && player.hasTag('low_bright') && !player.getProperty('arx:is_ghost')) {
+                else if (player.location.y > 54 && !isDay() && getScore(player, 'no_dark_fog') == 0 && player.lightLevel < 6) {
                     player.runCommand(`fog @s push arx:overworld_night_fog "night"`)
                 }
                 // Поверхность, ночь (далеко от источника света)
-                else if (player.hasTag('in_surface') && getScore(player, 'is_day') == 0 && getScore(player, 'no_dark_fog') == 0 && !player.hasTag('low_bright') && !player.getProperty('arx:is_ghost')) {
+                else if (player.location.y > 54 && !isDay() && getScore(player, 'no_dark_fog') == 0 && !player.lightLevel < 6) {
                     player.runCommand(`fog @s push arx:overworld_night_bright_fog "nightbright"`)
                 }
             }
@@ -663,9 +660,9 @@ export const coreFramework = {
                     if (player.hasTag('heating_by_heater_block_activate')) { blockFreezing = true }
 
                     // Увеличение холода
-                    if (player.getTags().includes('in_snow_biome') && !blockFreezing) { freezing += 1 }
+                    if (isInBiomeWithTag(player, ['frozen', 'cold'], 'any') && !blockFreezing) { freezing += 1 }
                     // Увеличение жары
-                    else if (player.getTags().includes('in_nether') && player.getDynamicProperty('heatingBlockByPotion') == 0 && player.getDynamicProperty('heatingBlockByScroll') == 0) { freezing -= 1 }
+                    else if (player.dimension.id === 'minecraft:nether' && player.getDynamicProperty('heatingBlockByPotion') == 0 && player.getDynamicProperty('heatingBlockByScroll') == 0) { freezing -= 1 }
                     // Уменьшение значений
                     else if (freezing > 12) { freezing -= 10 }
                     else if (freezing > 0) { freezing -= 1 }
@@ -725,7 +722,7 @@ export const coreFramework = {
                 if (player.getDynamicProperty('respawnDelay') < player.getDynamicProperty('respawnDelayLastPass') && player.getDynamicProperty('respawnDelay') === 0) {
                     // Разблокировываем движение
                     player.runCommand('inputpermission set @s camera enabled')
-                    if (!player.hasTag('is_riding')) { player.runCommand('inputpermission set @s movement enabled') }
+                    if (!player.isRiding) { player.runCommand('inputpermission set @s movement enabled') }
 
                     // Говорим фразу
                     {
@@ -758,7 +755,7 @@ export const coreFramework = {
                 }
 
                 // Обработка ресанья от лица игрока, который сам ресает игрока
-                if (player.getProperty('arx:is_knocked') === false, player.hasTag('is_sneaking')) {
+                if (player.getProperty('arx:is_knocked') === false, player.isSneaking) {
 
                     // Определяем скорость ресанья
                     let reviveSpeedValue = 1
@@ -771,7 +768,7 @@ export const coreFramework = {
 
                     // Ресаем
                     for (const nearbyPlayer of nearbyPlayers) {
-                        if (nearbyPlayer.getProperty('arx:is_knocked') === true && !nearbyPlayer.hasTag('is_riding')) {
+                        if (nearbyPlayer.getProperty('arx:is_knocked') === true && !nearbyPlayer.isRiding) {
 
                             const is_loaded = await isPlayerCompletelyLoaded(nearbyPlayer)
 
@@ -813,7 +810,7 @@ export const coreFramework = {
                         // Проверяем, есть ли хотя бы один тот, кто ресает
                         let someoneWhoIsHelpingMe = false
                         for (const nearbyPlayer of nearbyPlayers) {
-                            if (nearbyPlayer.getProperty('arx:is_knocked') === false, nearbyPlayer.hasTag('is_sneaking')) {
+                            if (nearbyPlayer.getProperty('arx:is_knocked') === false, nearbyPlayer.isSneaking) {
                                 someoneWhoIsHelpingMe = true
                             }
                         }
@@ -857,10 +854,10 @@ export const coreFramework = {
                 const hitDirection = { x: 0, y: 0, z: 0 }
                 molang.setVector3('variable.direction', hitDirection)
 
-                if (player.getTags().includes('low_hp') && Math.random() > 0.6) {
+                if (player.wellness < 0.5 && Math.random() > 0.6) {
                     player.dimension.spawnParticle('arx:blood_drop_bright', particleLoc, molang)
                 }
-                if (player.getTags().includes('very_low_hp')) {
+                if (player.wellness < 0.25) {
                     player.dimension.spawnParticle('arx:blood_drop_bright', particleLoc, molang)
                 }
             }
@@ -872,17 +869,17 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 // Fortitude
-                if (player.hasTag('very_low_hp')) {
-                    increaseSkillProgress(player, 'fortitude', 10)
-                } else if (player.hasTag('low_hp')) {
-                    increaseSkillProgress(player, 'fortitude', 5)
+                if (player.wellness < 0.25) {
+                    increaseSkillProgress(player, 'fortitude', 8)
+                } else if (player.wellness < 0.5) {
+                    increaseSkillProgress(player, 'fortitude', 3)
                 }
                 // Прокачка навыков, связанных с движением
-                if (player.hasTag("is_moving") && !player.hasTag('is_riding')) {
+                if (player.isMoving && !player.isRiding) {
                     if (player.getDynamicProperty('overLoading') > 0) {
                         increaseSkillProgress(player, "endurance", 1)
                     }
-                    else if (player.hasTag('in_block_water')) {
+                    else if (player.isInWater) {
                         increaseSkillProgress(player, 'swimming', 10)
                     }
                     else {
@@ -1182,7 +1179,7 @@ export const coreFramework = {
                 speedPower += Math.round((player.getDynamicProperty("height") - 150) / 9) || 0
 
                 // Увеличение от навыка плавания
-                if (player.hasTag('in_block_water')) {
+                if (player.isInWater) {
                     speedPower += player.getDynamicProperty('skill:swimming_level') * 5 || 0
                 }
 
@@ -1225,12 +1222,12 @@ export const coreFramework = {
                 speedPower -= (Math.abs(player.getDynamicProperty('freezing')) / 2)
 
                 // Срезание от темноты
-                if (player.hasTag("low_bright")) { speedPower -= 15 }
+                if (player.lightLevel < 6) { speedPower -= 15 }
 
                 // Если значение отрицательное
                 if (speedPower < 0) { speedPower = 0 }
 
-                if (player.hasTag('is_sprinting')) { speedPower += 25 }
+                if (player.isSprinting) { speedPower += 25 }
 
                 // Скорость - реализация
                 if (speedPower && player.getDynamicProperty("speedPower") != speedPower) {
@@ -1359,7 +1356,7 @@ export const coreFramework = {
                 if (player.getDynamicProperty('ghostBoostByScarletMoon')) rangedAttackAccuracy += 3
 
                 // Штраф от темноты
-                if (player.hasTag("low_bright")) { rangedAttackAccuracy -= 3 }
+                if (player.lightLevel < 6) rangedAttackAccuracy -= 3
 
                 // Штраф от увядания призрака
                 rangedAttackAccuracy -= player.getDynamicProperty("ghostWitheringLevel")
@@ -1496,6 +1493,35 @@ export const coreFramework = {
     achievements: {
         tickSpeed: 30,
         operations: achievementsCoreTick,
+    },
+
+    // Remove tag "is_emoting_via_arx_command"
+    animationTagListener: {
+        tickSpeed: 2,
+        operations: (data) => {
+            for (const p of data.players) {
+                if (p.hasTag('is_emoting_via_arx_command') && p.isMoving) {
+                    p.removeTag('is_emoting_via_arx_command')
+                }
+            }
+        },
+    },
+
+    despawnNightMobs: {
+        tickSpeed: 60,
+        condition: () => isDay(),
+        operations: () => {
+            const d = world.getDimension('minecraft:overworld')
+            for (const entity of d.getEntities()) {
+                if (getEntityFamilies(entity).includes('despawn_as_ghost')) {
+                    for (let i = 0; i < 3; i++) {
+                        d.spawnParticle('arx:rat_ghost_despawn', { x: entity.location.x, y: entity.location.y + 1.5, z: entity.location.z })
+                        playSound('undemon', d, entity.location)
+                        entity.triggerEvent('arx:despawn_as_ghost')
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1557,7 +1583,7 @@ world.afterEvents.worldLoad.subscribe(async () => {
                             coreBlock.operations(data)
                         }
                         catch (err) {
-                            console.error(`${errorName}, block [${key}]: ${err}`)
+                            console.error(`${errorName}, block [${key}]: ${err.stack}${err}`)
                             coreErrorCounts[key] = (coreErrorCounts[key] ?? 0) + 1
                         }
                     }
@@ -1574,8 +1600,7 @@ world.afterEvents.worldLoad.subscribe(async () => {
     catch (error) {
         console.error(`${errorName}: CRITICAL - Cannot launch core system: ${error}`)
     }
-}
-)
+})
 // =====================
 // =====================
 // =====================

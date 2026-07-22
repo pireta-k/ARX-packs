@@ -9,7 +9,7 @@ export function obj2str(obj) {
 }
 
 /** Transforms vector from XYZ to XZ
- * @param {Vector3} vectorXYZ 
+ * @param {import("@minecraft/server").Vector3} vectorXYZ 
  * @returns 
  */
 export function vectorXYZ2XZ(vectorXYZ) {

@@ -56,11 +56,12 @@ export function weighAnalysis(player) {
 
     let weighLoading = getScore(player, 'weighLoading')
     // От переносимого игрока
-    if (player.hasTag('has_riders')) {
+    if (player.hasRiders) {
+        // Player's butt weight
         weighLoading += 3
-        // Передаем вес от носимого игрока
-        const carriedPlayer = getNearestPlayer(player)
-        if (carriedPlayer?.hasTag('is_riding')) {
+        // Grant a weight from a carried player
+        const carriedPlayer = player.riders[0]
+        if (carriedPlayer) {
             weighLoading += getScore(carriedPlayer, "weighLoading")
         }
     }

@@ -6,13 +6,13 @@ export function animate_killing_time(player) {
 
     let allowAnimation = true
 
-    if ((item?.getTags().includes('is_weapon')) ||
-        (item?.getTags().includes('is_umbrella')) ||
-        (killingTimeBanItems.includes(item?.typeId)) ||
-        (player.getProperty('arx:is_knocked') === true) ||
-        (player.hasTag('is_emoting_via_arx_command') === true) ||
-        (player.hasTag('is_riding') === true) ||
-        (player.hasTag('has_riders') === true)) allowAnimation = false
+    if (item?.getTags().includes('is_weapon') ||
+        item?.getTags().includes('is_umbrella') ||
+        killingTimeBanItems.includes(item?.typeId) ||
+        player.getProperty('arx:is_knocked') ||
+        player.hasTag('is_emoting_via_arx_command') ||
+        player.isRiding ||
+        player.hasRiders) allowAnimation = false
 
     if (allowAnimation) {
         const animVar = Math.floor(Math.random() * 3)

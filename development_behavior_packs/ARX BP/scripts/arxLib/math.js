@@ -20,7 +20,7 @@ class LocationRange {
 
     getCenter() { return Vector.getArithmeticMean(this.from, this.to); }
 
-    getSize() { return { x: Math.abs(this.from.x-this.to.x), y: Math.abs(this.from.y-this.to.y), z: Math.abs(this.from.z-this.to.z) }; }
+    getSize() { return { x: Math.abs(this.from.x - this.to.x), y: Math.abs(this.from.y - this.to.y), z: Math.abs(this.from.z - this.to.z) }; }
     getHalfSize() { return Vector.multiply(this.getSize(), 0.5); }
 
     minMax() {
@@ -33,20 +33,20 @@ class LocationRange {
 class Geo {
     /** @param {Number} rotation */
     static normalizeRotation(rotation, step = 90, max = 360) {
-        if (!max) return Math.round(rotation / step)*step;
-        return (max + ((Math.round(rotation / step)*step)%max))%max;
+        if (!max) return Math.round(rotation / step) * step;
+        return (max + ((Math.round(rotation / step) * step) % max)) % max;
     }
 
     /** @param {import("@minecraft/server").Vector3} from @param {import("@minecraft/server").Vector3} to @returns {Number} */
     static distance(from, to) {
         const dx = ((from.x || 0) - (to.x || 0)), dy = ((from.y || 0) - (to.y || 0)), dz = ((from.z || 0) - (to.z || 0));
-        return Math.sqrt(dx*dx + dy*dy + dz*dz);
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 
     /** @param {import("@minecraft/server").Vector3} from @param {import("@minecraft/server").Vector3} to @returns {Number} */
     static distanceSquared(from, to) {
         const dx = (from.x - to.x), dy = (from.y - to.y), dz = (from.z - to.z);
-        return dx*dx + dy*dy + dz*dz;
+        return dx * dx + dy * dy + dz * dz;
     }
 
     /** @param {import("@minecraft/server").VectorXZ} from @param {import("@minecraft/server").VectorXZ} to @returns {Number} */
@@ -78,7 +78,7 @@ class Geo {
 
         const ceff = Math.min(1, Math.max(0, (
             (vectorFromToPoint.x * vectorLine.x + vectorFromToPoint.y * vectorLine.y + vectorFromToPoint.z * vectorLine.z) /
-            (vectorLine.x**2 + vectorLine.y**2 + vectorLine.z**2)
+            (vectorLine.x ** 2 + vectorLine.y ** 2 + vectorLine.z ** 2)
         )));
 
         return Vector.super(line.from, vectorLine, ceff);
@@ -124,7 +124,7 @@ class Geo {
         const vectorAbs = Vector.abs(vector);
         const vectorSign = Vector.sign(vector);
 
-        return Vector.sum(center, { x: Math.min(size.x, vectorAbs.x*distance)*vectorSign.x, y: Math.min(size.y, vectorAbs.y*distance)*vectorSign.y, z: Math.min(size.z, vectorAbs.z*distance)*vectorSign.z });
+        return Vector.sum(center, { x: Math.min(size.x, vectorAbs.x * distance) * vectorSign.x, y: Math.min(size.y, vectorAbs.y * distance) * vectorSign.y, z: Math.min(size.z, vectorAbs.z * distance) * vectorSign.z });
     }
 
     /** 
@@ -139,11 +139,11 @@ class Geo {
         const px = point.x;
         const pz = point.z;
         const len = polygon.length;
-        
+
         for (let i = 0, j = len - 1; i < len; j = i++) {
             const xi = polygon[i].x, zi = polygon[i].z;
             const xj = polygon[j].x, zj = polygon[j].z;
-            
+
             if (
                 (zi > pz) !== (zj > pz) &&
                 px < ((xj - xi) * (pz - zi)) / (zj - zi + 1e-10) + xi
@@ -170,7 +170,7 @@ class Geo {
             const s = Math.sin((ix * 374761 + iz * 668265 + options.seed * 1013)) * 43758.5453;
             return { x: Math.cos(s), z: Math.sin(s) };
         }
-        
+
         x *= options.frequency;
         z *= options.frequency;
 
@@ -205,11 +205,11 @@ class Geo {
     /** @param {import("@minecraft/server").Vector3} from @param {import("@minecraft/server").Vector3} to @returns {import("@minecraft/server").Vector3} */
     static getDirection3D(from, to) {
         const dx = ((to.x || 0) - (from.x || 0)), dy = ((to.y || 0) - (from.y || 0)), dz = ((to.z || 0) - (from.z || 0));
-        const distance = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
         return {
-            x: dx/distance,
-            y: dy/distance,
-            z: dz/distance
+            x: dx / distance,
+            y: dy / distance,
+            z: dz / distance
         };
     }
 
@@ -225,9 +225,9 @@ class Geo {
 
         for (let i = 0; i <= distance; i += step) {
             yield {
-                x: from.x + i*direction.x,
-                y: from.y + i*direction.y,
-                z: from.z + i*direction.z
+                x: from.x + i * direction.x,
+                y: from.y + i * direction.y,
+                z: from.z + i * direction.z
             }
         }
     }
@@ -272,7 +272,7 @@ class Geo {
     /** @param {import('@minecraft/server').Vector3} center @param {Number} radius @returns {import('@minecraft/server').ListBlockVolume} */
     static sphereVolume(center, radius) {
         const base = this.#spheres.get(radius.toFixed(2)) || this.#spheres.set(radius.toFixed(2), Array.from(this.sphereGen(Offset.none[0], radius))).get(radius.toFixed(2));
-        
+
         const volume = new ListBlockVolume(base);
         volume.translate(center);
         return volume;
@@ -298,7 +298,7 @@ class Geo {
         return locations;
     }
 
-     /** @param {import("@minecraft/server").Vector3} fromOrCenter @param {import("@minecraft/server").Vector3 | Number} toOrRadius @returns {import("@minecraft/server").BlockLocationIterator} */
+    /** @param {import("@minecraft/server").Vector3} fromOrCenter @param {import("@minecraft/server").Vector3 | Number} toOrRadius @returns {import("@minecraft/server").BlockLocationIterator} */
     static mcCube(fromOrCenter, toOrRadius) {
         const from = typeof toOrRadius == 'number' ? {
             x: fromOrCenter.x - toOrRadius,
@@ -355,7 +355,7 @@ class Geo {
         }, {
             x: center.x + radius + 1, y: center.y + height, z: center.z + radius + 1
         })) {
-            if  (Geo.horizontalDistance(center, location) <= radius) {
+            if (Geo.horizontalDistance(center, location) <= radius) {
                 locations.push(location)
 
                 if (callback) {
@@ -372,7 +372,7 @@ class Geo {
 class Vector {
     /** @param {import('@minecraft/server').Vector3[]} vectors */
     static getArithmeticMean(...vectors) {
-        return vectors.reduce((acc, cur) => { return { x: acc.x + cur.x/vectors.length, y: acc.y + cur.y/vectors.length, z: acc.z + cur.z/vectors.length, } }, { x: 0, y: 0, z: 0 });
+        return vectors.reduce((acc, cur) => { return { x: acc.x + cur.x / vectors.length, y: acc.y + cur.y / vectors.length, z: acc.z + cur.z / vectors.length, } }, { x: 0, y: 0, z: 0 });
     }
 
     /** @param {import('@minecraft/server').Vector3} vector1 @param {import('@minecraft/server').Vector3} vector2 */
@@ -438,7 +438,7 @@ class Vector {
     static round(vector, fractionDigits = 0) {
         /** @type {import('@minecraft/server').Vector3} */
         const newVector = {};
-        for (const axis of ['x','y','z','distance']) if (vector[axis] != undefined) {
+        for (const axis of ['x', 'y', 'z', 'distance']) if (vector[axis] != undefined) {
             if (fractionDigits < 1) newVector[axis] = Math.round(vector[axis]);
             else newVector[axis] = Number(vector[axis].toFixed(fractionDigits));
         }
@@ -462,7 +462,7 @@ class Vector {
     /** @param {import('@minecraft/server').Vector3} vector */
     static toString(vector, fractionDigits = 2) {
         vector = this.round(vector, fractionDigits);
-        return ['x','y','z','distance'].filter(axis => vector[axis] != undefined).map(axis => axis + ': ' + vector[axis]).join(', ');
+        return ['x', 'y', 'z', 'distance'].filter(axis => vector[axis] != undefined).map(axis => axis + ': ' + vector[axis]).join(', ');
     }
 
     /** @param {import('@minecraft/server').Vector3} from @param {import('@minecraft/server').Vector3} to */
@@ -494,7 +494,7 @@ class Vector {
     /** @param {import('@minecraft/server').Vector3} vector @param {import('@minecraft/server').Vector2} angles */
     static rotate(vector, angles = {}, withDistance = false) {
         const rotated = this.getFromAngles(this.sum(this.toAngles(vector), { x: angles.x || 0, y: angles.y || 0 }));
-        
+
         if (withDistance) return this.multiply(rotated, Geo.distance(vector, {}));
         else return rotated;
     }
@@ -503,9 +503,9 @@ class Vector {
     static get(vector) {
         const distance = Geo.distance({}, vector);
         return {
-            x: (vector.x||0)/(distance || 1),
-            y: (vector.y||0)/(distance || 1),
-            z: (vector.z||0)/(distance || 1),
+            x: (vector.x || 0) / (distance || 1),
+            y: (vector.y || 0) / (distance || 1),
+            z: (vector.z || 0) / (distance || 1),
             distance: distance
         };
     }
@@ -514,114 +514,123 @@ class Vector {
     static normalize(vector) {
         const distance = Geo.distance({}, vector);
         return {
-            x: (vector.x||0)/(distance || 1),
-            y: (vector.y||0)/(distance || 1),
-            z: (vector.z||0)/(distance || 1)
+            x: (vector.x || 0) / (distance || 1),
+            y: (vector.y || 0) / (distance || 1),
+            z: (vector.z || 0) / (distance || 1)
         };
+    }
+
+    /**
+     * Add to vector's Y value a number (1 by default)
+     * @param {import('@minecraft/server').Vector3} vector 
+     * @param {Number} [number] 
+     */
+    static upLift(vector, number = 1) {
+        return { x: vector.x, y: vector.y + number, z: vector.z }
     }
 }
 
 class Direction {
-	/** @param {import("@minecraft/server").Vector3} directionOrFrom @param {import("@minecraft/server").Vector3} to */
-	constructor(directionOrFrom = {}, to = undefined, withDistance = false) {
-		this.#direction = to ? Geo.getDirection3D(directionOrFrom, to) : Vector.normalize(directionOrFrom)
-		if (withDistance) this.setDistance(Geo.distance(directionOrFrom, to))
-	}
-	#direction
+    /** @param {import("@minecraft/server").Vector3} directionOrFrom @param {import("@minecraft/server").Vector3} to */
+    constructor(directionOrFrom = {}, to = undefined, withDistance = false) {
+        this.#direction = to ? Geo.getDirection3D(directionOrFrom, to) : Vector.normalize(directionOrFrom)
+        if (withDistance) this.setDistance(Geo.distance(directionOrFrom, to))
+    }
+    #direction
 
-	/** @type {import("@minecraft/server").Vector3} */
-	get direction() { return this.#direction }
+    /** @type {import("@minecraft/server").Vector3} */
+    get direction() { return this.#direction }
 
-	get x() { return this.direction.x }
-	get y() { return this.direction.y }
-	get z() { return this.direction.z }
+    get x() { return this.direction.x }
+    get y() { return this.direction.y }
+    get z() { return this.direction.z }
 
-	get distance() { return Geo.distance(this.#direction, {x:0, y:0, z: 0}) }
-	set distance(dist) { this.#direction = Vector.multiply(this.#direction, (dist || Math.sqrt(3))/this.distance) }
+    get distance() { return Geo.distance(this.#direction, { x: 0, y: 0, z: 0 }) }
+    set distance(dist) { this.#direction = Vector.multiply(this.#direction, (dist || Math.sqrt(3)) / this.distance) }
 
-	/** @param {import("@minecraft/server").Vector3} offset */
-	toLine(step = 1, offset = {}) { return Geo.line(offset, Vector.sum(offset, this.direction), step); }
+    /** @param {import("@minecraft/server").Vector3} offset */
+    toLine(step = 1, offset = {}) { return Geo.line(offset, Vector.sum(offset, this.direction), step); }
 
-	/**
-	 * @param {Number} dist 
-	 * @returns {Direction}
-	 */
-	setDistance(dist) {
-		this.distance = dist
-		return this
-	}
+    /**
+     * @param {Number} dist 
+     * @returns {Direction}
+     */
+    setDistance(dist) {
+        this.distance = dist
+        return this
+    }
 
-	/**
-	 * @param {import('@minecraft/server').Entity} entity 
-	 * @returns {Direction}
-	 */
-	knockback(entity) {
-		entity.applyKnockback(this.x/this.distance, this.z/this.distance, this.distance, this.y)
-		return this
-	}
+    /**
+     * @param {import('@minecraft/server').Entity} entity 
+     * @returns {Direction}
+     */
+    knockback(entity) {
+        entity.applyKnockback(this.x / this.distance, this.z / this.distance, this.distance, this.y)
+        return this
+    }
 
-	/**
-	 * @param {import('@minecraft/server').Entity} entity 
-	 * @returns {Direction}
-	 */
-	impulse(entity) {
-		entity.applyImpulse(this.#direction)
-		return this
-	}
+    /**
+     * @param {import('@minecraft/server').Entity} entity 
+     * @returns {Direction}
+     */
+    impulse(entity) {
+        entity.applyImpulse(this.#direction)
+        return this
+    }
 
-	round() {
-		this.#direction = {
-			x: Math.round(this.#direction.x),
-			y: Math.round(this.#direction.y),
-			z: Math.round(this.#direction.z)
-		}
-	}
+    round() {
+        this.#direction = {
+            x: Math.round(this.#direction.x),
+            y: Math.round(this.#direction.y),
+            z: Math.round(this.#direction.z)
+        }
+    }
 
-	getFaceDirection(convertThis = false) {
-		let axis = ['x','y','z'].find(axis => ['x','y','z'].every(axis2 => Math.abs(this.#direction[axis2]) <= Math.abs(this.#direction[axis])))
-		let value = this.#direction[axis] >= 0 ? 1 : -1
-		
-		if (convertThis) {
-			this.#direction = { x: 0, z: 0, y: 0 }
-			this.#direction[axis] = value
-			return this
-		}
+    getFaceDirection(convertThis = false) {
+        let axis = ['x', 'y', 'z'].find(axis => ['x', 'y', 'z'].every(axis2 => Math.abs(this.#direction[axis2]) <= Math.abs(this.#direction[axis])))
+        let value = this.#direction[axis] >= 0 ? 1 : -1
 
-		if (axis == 'x') {
-			if (value == -1) return 'West';
-			return 'East'
-		} else if (axis == 'y') {
-			if (value == -1) return 'Up';
-			return 'Down'
-		} else if (axis == 'z') {
-			if (value == -1) return 'South';
-			return 'North'
-		}
-	}
+        if (convertThis) {
+            this.#direction = { x: 0, z: 0, y: 0 }
+            this.#direction[axis] = value
+            return this
+        }
 
-	/** @param {import("@minecraft/server").Vector3 | Direction} direction */
-	sumWith(direction) {
-		this.#direction = Vector.multiply(Vector.sum(direction, this), 0.5)
-		return this
-	}
+        if (axis == 'x') {
+            if (value == -1) return 'West';
+            return 'East'
+        } else if (axis == 'y') {
+            if (value == -1) return 'Up';
+            return 'Down'
+        } else if (axis == 'z') {
+            if (value == -1) return 'South';
+            return 'North'
+        }
+    }
 
-	run(func, step = 1, offset = {}) {
-		for (let i = 0; i < this.distance; i += step) {
-			func(Vector.super(offset, this, i/this.distance))
-		}
-	}
+    /** @param {import("@minecraft/server").Vector3 | Direction} direction */
+    sumWith(direction) {
+        this.#direction = Vector.multiply(Vector.sum(direction, this), 0.5)
+        return this
+    }
 
-	/** @param {import('@minecraft/server').Direction} direction */
-	static fromFaceDirection(direction) {
-		return new Direction({
-			"down": { x: 0, y: -1, z: 0 },
-			"east": { x: 1, y: 0, z: 0 },
-			"north": { x: 0, y: 0, z: 1 },
-			"south": { x: 0, y: 0, z: -1 },
-			"up": { x: 0, y: 1, z: 0 },
-			"west": { x: -1, y: 0, z: 0 }
-		}[direction.toLowerCase()]);
-	}
+    run(func, step = 1, offset = {}) {
+        for (let i = 0; i < this.distance; i += step) {
+            func(Vector.super(offset, this, i / this.distance))
+        }
+    }
+
+    /** @param {import('@minecraft/server').Direction} direction */
+    static fromFaceDirection(direction) {
+        return new Direction({
+            "down": { x: 0, y: -1, z: 0 },
+            "east": { x: 1, y: 0, z: 0 },
+            "north": { x: 0, y: 0, z: 1 },
+            "south": { x: 0, y: 0, z: -1 },
+            "up": { x: 0, y: 1, z: 0 },
+            "west": { x: -1, y: 0, z: 0 }
+        }[direction.toLowerCase()]);
+    }
 }
 
 class LocalPlane {
@@ -648,7 +657,7 @@ class LocalPlane {
         let ry = upz * this.forward.x - upx * this.forward.z;
         let rz = upx * this.forward.y - upy * this.forward.x;
 
-        const rLen = rx*rx + ry*ry + rz*rz;
+        const rLen = rx * rx + ry * ry + rz * rz;
 
         if (rLen < 1e-12) {
             this.right = { x: 1, y: 0, z: 0 };
@@ -733,7 +742,7 @@ class LocalPlane2 {
         let ry = upz * fx - upx * fz;
         let rz = upx * fy - upy * fx;
 
-        const rLen = rx*rx + ry*ry + rz*rz;
+        const rLen = rx * rx + ry * ry + rz * rz;
 
         if (rLen < 1e-12) {
             rx = 1; ry = 0; rz = 0;

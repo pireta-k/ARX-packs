@@ -28,6 +28,7 @@ import './camera/processCamera'
 import './sb/structureBuilder'
 import './blocksHistory'
 import './update'
+import './arxLib/weather'
 
 import { registerPlayerVars } from "./registerPlayerVars"
 import { checkForItem } from "./items/checkForItem"
@@ -1161,13 +1162,13 @@ function processAttack(player, playSound = true) {
         if (weapon.getTags().includes("is_dagger")) {
             iDP(player, 'attackCD', 20)
             if (playSound) player.runCommand('playsound knife_use @a ~ ~ ~')
-            if (player.hasTag('on_ground')) playRandomAnimation(player, ['animation.attack.dagger.a', 'animation.attack.dagger.b'])
+            if (player.isOnGround) playRandomAnimation(player, ['animation.attack.dagger.a', 'animation.attack.dagger.b'])
             else playRandomAnimation(player, ['animation.attack.dagger.c'])
         }
         else if (weapon.getTags().includes("is_default_sword")) {
             iDP(player, 'attackCD', 30)
             if (playSound) player.runCommand('playsound knife_use @a ~ ~ ~')
-            if (player.hasTag('is_moving')) playRandomAnimation(player, ['animation.attack.default.fast_moving'])
+            if (player.isMoving) playRandomAnimation(player, ['animation.attack.default.fast_moving'])
             else playRandomAnimation(player, ['animation.attack.default.a', 'animation.attack.default.b', 'animation.attack.default.c'])
         }
         else if (weapon.getTags().includes("is_heavy_sword")) {
@@ -1265,3 +1266,4 @@ world.beforeEvents.entityRemove.subscribe(async (event) => {
 world.afterEvents.itemCompleteUse.subscribe((event) => {
     onConsume(event.source, event.itemStack)
 })
+

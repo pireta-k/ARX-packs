@@ -30,10 +30,6 @@
 # Звуки от Газгольдера Истрибитора
     execute as @e[type=arx:gasgolder_istribitor] at @s run playsound gasgolder_istribitor_saw @a ~ ~ ~ 
 
-# Заклинание метки
-    execute at @a[scores={mark=1..}] run particle minecraft:endrod ~ ~1 ~ 
-    scoreboard players add @a[scores={mark=1..}] mark -1
-
 # Снятие тегов, которые выдаются блоками по радиусу
     # Запретители магии измененного движения
         # Контроль выпадающего такта
@@ -57,64 +53,11 @@
     scoreboard players add @a[scores={spell_of_small_head=1..}] spell_of_small_head -1 
     playanimation @a[scores={spell_of_small_head=1..}] animation.player.invisible_head
 
-    # effect @a[hasitem={item=arx:amul_photoresonance, location=slot.armor.legs}, tag=high_bright] night_vision 11 0 true
-
     effect @a[hasitem={item=arx:amul_ruby, location=slot.armor.legs}, scores={freezing=!..-1001}] fire_resistance 1 0 true
 
 # Обнаружение и автофикс некоторых ошибок
     execute as @a[tag=self] run tellraw @a[scores={verify=2}] { "rawtext": [ { "text": "§4Обнаружена ошибка у @s core>>tags>>self" } ] }
     tag @a remove self
 
-# Деспавним крыс днём
-    execute if entity @a[scores={verify=2, is_day=1}] at @e[family=despawn_as_ghost] run particle arx:rat_ghost_despawn ~ ~1.5 ~
-    execute if entity @a[scores={verify=2, is_day=1}] at @e[family=despawn_as_ghost] run particle arx:rat_ghost_despawn ~ ~1.5 ~
-    execute if entity @a[scores={verify=2, is_day=1}] at @e[family=despawn_as_ghost] run particle arx:rat_ghost_despawn ~ ~1.5 ~
-
-    execute if entity @a[scores={verify=2, is_day=1}] at @e[family=despawn_as_ghost] run playsound undemon @a ~ ~ ~
-
-    execute if entity @a[scores={verify=2, is_day=1}] run event entity @e[family=despawn_as_ghost] arx:despawn_as_ghost
-
 # Эффекты брони
-    camera @a[hasitem={item=arx:blindness_bandage, location=slot.armor.head}] fade time 0 2 0 color 30 30 30 
-
-# Анализ биомов
-    tag @a remove BIOME_birch
-    event entity @a arx:test_biome_birch
-    tag @a remove BIOME_jungle
-    event entity @a arx:test_biome_jungle
-    tag @a remove BIOME_ocean
-    event entity @a arx:test_biome_ocean
-    event entity @a arx:test_biome_river
-    tag @a remove BIOME_forest
-    event entity @a arx:test_biome_forest
-    event entity @a arx:test_biome_flower_forest
-    tag @a remove BIOME_desert
-    event entity @a arx:test_biome_desert
-    tag @a remove BIOME_mesa
-    event entity @a arx:test_biome_mesa
-    tag @a remove BIOME_plains
-    event entity @a arx:test_biome_plains
-    tag @a remove BIOME_savanna
-    event entity @a arx:test_biome_savanna
-    tag @a remove BIOME_swamp
-    event entity @a arx:test_biome_swamp
-    tag @a remove BIOME_mangrove_swamp
-    event entity @a arx:test_biome_mangrove_swamp
-    tag @a remove BIOME_beach
-    event entity @a arx:test_biome_beach
-    tag @a remove BIOME_mountain
-    event entity @a arx:test_biome_mountain
-    tag @a remove BIOME_ice
-    event entity @a arx:test_biome_ice
-    event entity @a arx:test_biome_cold
-    tag @a remove BIOME_roofed
-    event entity @a arx:test_biome_roofed
-    tag @a remove BIOME_taiga
-    event entity @a arx:test_biome_taiga
-
-    #Удаление лишних тегов
-        tag @a[tag=BIOME_birch, tag=BIOME_forest] remove BIOME_forest
-        tag @a[tag=BIOME_roofed, tag=BIOME_forest] remove BIOME_forest
-        tag @a[tag=BIOME_taiga, tag=BIOME_forest] remove BIOME_forest
-        tag @a[tag=BIOME_beach] add BIOME_ocean
-        tag @a[tag=BIOME_ocean] remove BIOME_beach
+    camera @a[hasitem={item=arx:blindness_bandage, location=slot.armor.head}] fade time 0 2 0 color 30 30 30

@@ -5,8 +5,9 @@ export const enLocalization = {
     'lobby.new_player_auto_gamemode_change': "Player $0$ §ajust entered Arx for the first time§f! Their gamemode was Creative, and it was automatically switched to Survival",
 
     'lobby.registration.cannot_registrate.title': "§cCannot registrate",
-    'lobby.registration.cannot_registrate.already_has_a_character': "You already have your character, $0$.",
+    'lobby.registration.cannot_registrate.already_has_a_character': "You shouldn't be here after completing registration, so this is likely a bug. You can return to the spawn point from here.",
     'lobby.registration.cannot_registrate.arx_is_setting_up': "Arx is still setting up. Please wait for it to finish.",
+    'lobby.registration.cannot_registrate.return_to_spawn_button': "Return to the spawn in the overworld",
 
     'lobby.registration.lang.title': "Language",
     'lobby.registration.lang.body': "Pick your language",

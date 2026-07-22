@@ -4,6 +4,7 @@
 import { world } from "@minecraft/server"
 import { sDP } from "../arxLib/DPOperations"
 import { checkForItem } from "../items/checkForItem"
+import { isDay } from "../arxLib/time"
 
 const musicOptions = { fade: 2, loop: true }
 
@@ -268,7 +269,7 @@ function isInBiome(player, biome) {
 }
 
 // Get tags of a player's biome. tag — строка или массив тегов; mode — 'any' (хотя бы один) или 'all' (все)
-function isInBiomeWithTag(player, tag, mode = 'any') {
+export function isInBiomeWithTag(player, tag, mode = 'any') {
     const d = player.dimension
     if (!d.isChunkLoaded(player.location)) return false
 
@@ -278,14 +279,6 @@ function isInBiomeWithTag(player, tag, mode = 'any') {
     if (mode === 'all') return required.every(t => biomeTags.includes(t))
     return required.some(t => biomeTags.includes(t))
 }
-
-
-
-// Функция для определения дня/ночи
-function isDay() {
-    return world.getTimeOfDay() < 12550 || world.getTimeOfDay() > 23500
-}
-
 
 
 // Находится ли игрок в указанном кубе (координаты передаются как массивы [x, y, z])

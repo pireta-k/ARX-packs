@@ -23,27 +23,7 @@
     execute as @r[scores={verify=2, debug_verify=2..}] run tellraw @a[scores={verify=2}] { "rawtext": [ { "text": "§4Обнаржуена §cкритическая §4ошибка системы core>>>scores>>>too_many_players_with_verification_2" } ] }
     execute as @r[scores={debug_verify=..0}] run tellraw @a { "rawtext": [ { "text": "§4Обнаржуена §cкритическая §4ошибка системы core>>>scores>>>no_players_with_verification_2" } ] }
     
-# Код для специального анимирования от предметов, на которых можно сидеть
-    # Пуфик поджопник
-        execute as @a[tag=is_riding] at @s if entity @e[r=1, type=arx:ottoman] run playanimation @s animation.player.ottoman
-
-    # Кровати
-        execute as @a[tag=is_riding] at @s if entity @e[r=1, type=arx:bed_straw] run playanimation @s animation.player.sleep_on_custom_bed
-
-# Твикер нажатия на блоки
-    scoreboard players add @a[scores={restrict_block_interact=1..}] restrict_block_interact -1
-
-# Деспавним всех приговоренных алой ночью / обычной ночью
-    execute if entity @a[scores={is_day=0}] run event entity @e[tag=force_to_despawn] arx:despawn_forced
-
 # Рандом
     scoreboard players random @a custom_random 0 1000
     scoreboard players random @a custom_random_b 0 1000
     scoreboard players random @a custom_random_c 0 1000
-
-# Определение состояний игрока
-    tag @a remove in_hot_deep
-    tag @a[y=-60, dy=49, tag=!in_nether] add in_hot_deep
-
-    tag @a remove in_surface
-    tag @a[y=54, dy=65, tag=!in_nether] add in_surface

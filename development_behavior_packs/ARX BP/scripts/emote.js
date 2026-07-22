@@ -13,17 +13,17 @@ export function emote(p, emotion) {
         return
     }
     // Moving
-    if (p.getTags().includes("is_moving")) {
+    if (p.isMoving) {
         sl(p, 'emote.cannot_cus_moving', [], '§c')
         return
     }
     // Riding
-    if (p.getTags().includes("is_riding")) {
+    if (p.isRiding) {
         sl(p, 'emote.cannot_cus_riding', [], '§c')
         return
     }
     // Flying
-    if (!p.getTags().includes("on_ground")) {
+    if (!p.isOnGround) {
         sl(p, 'emote.cannot_cus_flying', [], '§c')
         return
     }

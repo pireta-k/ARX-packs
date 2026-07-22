@@ -11,10 +11,6 @@ export function dispelMagic(entity, targetData) {
             sDP(entity, spellDP, 1)
             dispelledAnything = true
         }
-        if (getScore(entity, 'mark') > 0) {
-            setScore(entity, 'mark', 0)
-            dispelledAnything = true
-        }
     }
     // Партиклы и звуки
     if (dispelledAnything) {

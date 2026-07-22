@@ -431,14 +431,6 @@ export let spellRegistry = {
         handler: (player) => { classicTossing(player, 10) }
     },
 
-    "signum": {
-        mpCost: 10,
-        color: '#5b3016',
-        description: 'заклинание метки',
-        rayCast: false,
-        handler: (player) => { setScore(player, 'mark', 60) }
-    },
-
     "rattum illusio minima": {
         mpCost: 30,
         color: '#6e20d4',

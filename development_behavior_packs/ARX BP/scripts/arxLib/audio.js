@@ -1,9 +1,11 @@
+import { Dimension } from "@minecraft/server"
+
 /**
  * Play a sound with optional pitch and volume variations.
  * 
- * @param {string|number} soundId - Identifier of the sound to play.
- * @param {object} d - Dimension
- * @param {object} location - The location where the sound should be played. Vector3.
+ * @param {string} soundId - Identifier of the sound to play.
+ * @param {Dimension} d - Dimension
+ * @param {import("@minecraft/server").Vector3} location - The location where the sound should be played. Vector3.
  * @param {number} [pitch=1] - Base pitch of the sound. A value of 1 plays at normal pitch.
  * @param {number} [pitchSpread=0] - Maximum random deviation added to the pitch. The actual pitch will be `pitch ± pitchSpread/2`.
  * @param {number} [volume=1] - Base volume of the sound. A value of 1 plays at full volume.

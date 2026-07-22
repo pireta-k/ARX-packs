@@ -261,8 +261,8 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Полотенце
         case "arx:towel":
             if (manageCD(player, false)) {
-                if (!player.hasTag('is_moving')) {
-                    if (!player.hasTag('in_block_water')) {
+                if (!player.isMoving) {
+                    if (!player.isInWater) {
                         manageCD(player)
                         const currentWet = player.getDynamicProperty('wetness')
                         const valueWet = checkForItem(player, 'chest', undefined) ? 1200 : 300

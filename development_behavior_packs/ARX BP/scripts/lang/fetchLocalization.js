@@ -11,13 +11,18 @@ export const langMap = {
 }
 const insertionsLimit = 64
 
+/**
+ * @typedef {'sendString' | 'sendFalse'} LangErrorBehaviour
+ */
+
 /** Fetch Localization. This functions takes a player and textId as input and returns requested text as output.
  * @param {player} player - Player
  * @param {string} textId - id of desired text. Looks like game.title.something
  * @param {array} [insertions=[]] - Insertions are words from array that we should insert in text. In raw text, they're marked as $0$, $1$ and so on. $ is special symbol for parcer, and num is an index of insertion in array. 
+ * @param {LangErrorBehaviour} [errorBehaviour] 
  * @returns {string}
 */
-export function fl(player, textId, insertions = []) {
+export function fl(player, textId, insertions = [], errorBehaviour = 'sendString') {
 
     // Wrong usage
     if (!player) {
@@ -36,7 +41,10 @@ export function fl(player, textId, insertions = []) {
     // If we haven't found text and we don't use the default lang, try to use default lang.
     if (langId != defaultLanguage && !returnText) returnText = langMap[defaultLanguage][textId]
 
-    if (!returnText) returnText = `§cNo localization for ${textId} in ${langId}§f`
+    if (!returnText) {
+        if (errorBehaviour = 'sendString') return `§cNo localization for ${textId} in ${langId}§f`
+        else return false
+    }
 
     // Replace insertions with real text
     if (insertions.length > 0) { // If there are any insertions

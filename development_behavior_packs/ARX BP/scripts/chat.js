@@ -1,5 +1,5 @@
 // Imports
-import { world, EntityComponentTypes, EquipmentSlot, system } from "@minecraft/server"
+import { world, EntityComponentTypes, EquipmentSlot, system, Entity } from "@minecraft/server"
 import { emote } from './emote'
 import { getScore } from './arxLib/scoresOperations'
 import { getSkillsData } from './skillsOperations'
@@ -11,8 +11,45 @@ import { runeCiphers } from './magic/rune_cipher_list'
 import { cipherRuneSequence } from './magic/on_use_magic_items'
 
 import { acquireTrait, checkForTrait, clearTraits } from './traits/traitsOperations'
-import { sDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/DPOperations"
 import { isAdmin, getAdmins } from './arxLib/admin'
+import { Weather } from "./arxLib/weather"
+
+/**
+ * @typedef ChatMessageOptions
+ * @property {Entity} sourceEntity
+ * @property {String} [forceSourceName]
+ * @property {'local' | 'global' | 'shout' | 'whisper'} type
+ * @property {String} content
+ */
+
+/**
+ * Arx Message class
+ */
+class ChatMessage {
+    /** @param {ChatMessageOptions} options */
+    constructor(options) {
+        this.sourceEntity = options.sourceEntity
+        this.type = options.type
+        this.content = options.content
+
+        switch (options.clearDistance) {
+            case 'local':
+                this.clearDistance = 8; break
+            case 'global':
+                this.clearDistance = Infinity; break
+            case 'shout':
+                this.clearDistance = 20; break
+            case 'whisper':
+                this.clearDistance = 2; break
+        }
+
+        this.fullDistance = this.clearDistance * 2
+
+        this.targetEntities =
+            this.sourceName = options.forceSourceName ?? options.sourceEntity?.gDP('name') ?? options.sourceEntity.fl()
+    }
+}
 
 // Обработка чата before
 world.beforeEvents.chatSend.subscribe(async (eventData) => {

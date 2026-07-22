@@ -1,4 +1,6 @@
-class Weather {
+import { world } from '@minecraft/server';
+
+export class Weather {
     static #weatherMap = new WeakMap();
     constructor(dimension) {
         this.#dimension = dimension;
@@ -12,7 +14,7 @@ class Weather {
     get dimension() { return this.#dimension; }
 
     isRaining() {
-        return ['Rain','Thunder'].includes(this.id);
+        return ['Rain', 'Thunder'].includes(this.id);
     }
 
     /**
