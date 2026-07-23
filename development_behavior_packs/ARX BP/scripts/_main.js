@@ -44,6 +44,8 @@ import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { showLanguageForm } from "./lang/form"
 import { setSBPoint } from "./sb/structureBuilder"
 import { emote, emotionsList } from './emote'
+import { Rob } from "./rob"
+import { Knockout } from "./knockout"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -145,9 +147,6 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
 world.afterEvents.entitySpawn.subscribe((spawnEvent) => {
     const entity = spawnEvent.entity
 
-    if (entity.typeId === 'arx:grave') {
-        entity.nameTag = 'Hit to break'
-    }
     if (entity.typeId === 'arx:hungry_rat' || entity.typeId === 'arx:larva') {
         if (isEntityInCube(entity, [-2274, 13, 1773], [-2205, 45, 1839]) || isEntityInCube(entity, [-2225, 24, 1839], [-2255, 30, 1868])) {
             entity.remove()
@@ -225,9 +224,6 @@ function calculateStrength(player) {
     // Нет перса
     if (player.getDynamicProperty('hasRegisteredCharacter') === false) { basicStrength -= 999 }
 
-    // Бонус для призака алой ночью
-    if (player.getDynamicProperty('ghostBoostByScarletMoon')) basicStrength += 3
-
     // Увеличение от бонуса фиоликса
     if (player.getDynamicProperty('statsBonusByFiolix') > 0) { basicStrength += 2 }
 
@@ -235,9 +231,6 @@ function calculateStrength(player) {
     if (checkForItem(player, "Legs", "arx:big_bag")) { basicStrength -= 8 }
     if (checkForItem(player, "Legs", "arx:default_bag")) { basicStrength -= 4 }
     if (checkForItem(player, "Legs", "arx:mini_bag")) { basicStrength -= 1 }
-
-    // Штраф от увядания призрака
-    basicStrength -= player.getDynamicProperty("ghostWitheringLevel")
 
     // Воздействие стресса
     switch (player.getDynamicProperty('stressLevel')) {
@@ -295,13 +288,10 @@ world.beforeEvents.entityHurt.subscribe((event) => {
         if (!e.gDP('hasRegisteredCharacter')) {
             event.cancel = true
         }
-        // RP death 
-        else if (false) {
-            // TO-DO
-        }
         // Fatal
         else if (fatal) {
             event.cancel = true
+            Knockout.enter(e)
         }
     }
 
@@ -324,10 +314,6 @@ world.afterEvents.entityHitEntity.subscribe((hitEvent) => {
             } else {
                 damaged.kill()
             }
-        }
-        // По гробу
-        if (damaged.typeId === 'arx:grave' && damager.getProperty('arx:is_knocked') === false) {
-            damaged.runCommand('kill @s')
         }
 
         // Lobby character creation
@@ -451,7 +437,7 @@ world.afterEvents.playerBreakBlock.subscribe((breakEvent) => {
 // Функция поднятия игрока. Не имеет встроенных проверок, только выполняет задачу
 function pickUpPlayer(initiator, playerToPickUp) {
     playerToPickUp.runCommand(`ride @s start_riding "${initiator?.name}" teleport_rider`)
-    playerToPickUp.runCommand('event entity @s arx:property_is_knockout_set_true')
+    playerToPickUp.runCommand('event entity @s arx:enter_knockout')
     initiator.runCommand('playanimation @s animation.player.pick_up_knocked_player')
 }
 
@@ -473,24 +459,40 @@ export function getDistanceBetween(entity1, entity2) {
 
 // Взаимодействие с сущностями на пкм
 world.afterEvents.playerInteractWithEntity.subscribe(async (interactEvent) => {
+    // Interaction with a plater
     if (interactEvent.target?.typeId == "minecraft:player") {
 
         const target = interactEvent.target // Взятый игрок
         const self = interactEvent.player // Поднимающий игрок
+        const distance = getDistanceBetween(target, self)
 
-        // Поднимаем игрока
-        if (getDistanceBetween(target, self) < 1) {
-            if (await isPlayerCompletelyLoaded(target)) {
-                const mainhandItem = getItem(target, 'mainhand')
+        if (distance < 2) {
+            const form = new ActionFormData()
+                .title('Player interaction')
+                .button('Pick up')
+                .button('Rob')
+                .show(self).then(async (r) => {
+                    if (!r.canceled) {
+                        // Pick up
+                        if (r.selection === 0) {
+                            if (await isPlayerCompletelyLoaded(target)) {
+                                const mainhandItem = getItem(target, 'mainhand')
 
-                if (!mainhandItem?.getTags().includes('is_weapon')) pickUpPlayer(self, target)
-                else {
-                    self.sendMessage(`Can't pick up a player if he is holding a weapon`)
-                }
-            }
-            else {
-                self.sendMessage(`${target.getDynamicProperty('name')} is not fully loaded yet...`)
-            }
+                                if (!mainhandItem?.getTags().includes('is_weapon')) pickUpPlayer(self, target)
+                                else {
+                                    self.sendMessage(`Can't pick up a player when he is holding a weapon`)
+                                }
+                            }
+                            else {
+                                self.sendMessage(`${target.getDynamicProperty('name')} is not fully loaded yet...`)
+                            }
+                        }
+                        // Rob
+                        else if (r.selection === 1) {
+                            Rob.openUI(self, target)
+                        }
+                    }
+                })
         }
     }
     // Создание персонажа в лобби
@@ -872,111 +874,6 @@ system.beforeEvents.startup.subscribe(initEvent => {
     )
 })
 
-// Смерти сущностей
-world.afterEvents.entityDie.subscribe((dieEvent) => {
-    // Если умер игрок
-    if (dieEvent.deadEntity.typeId === "minecraft:player") {
-        const player = dieEvent.deadEntity
-
-        // Сообщаем о том, что произошло с игроком, если это его первый нокаут
-        if (player.getDynamicProperty('hasEverBeenKnocked') !== true) {
-            sDP(player, 'hasEverBeenKnocked', true)
-            player.sendMessage('[§aГид§f] > §cВы в нокауте§f. Ничего страшного, это не смерть. Вы полежите около минуты и снова очнётесь. §aВаши вещи§f лежат рядом с вами в деревянном ящике (если они у вас вообще были).')
-        }
-
-        sDP(player, 'blockingResistanceCD', 0)
-
-        // Спавним гроб
-        player.runCommand("summon arx:grave ^ ^ ^")
-
-        // Set slot blockers
-        player.runCommand(`give @s arx:slot_blocker 35 0 {"item_lock": { "mode": "lock_in_slot" } }`)
-
-        // Чистим данные о маги-фонарях
-        sDP(player, 'allowMagilight', 0)
-        sDP(player, 'allowArchilight', 0)
-
-        // Выставляем данные о ноке
-        player.runCommand('event entity @s arx:property_is_knockout_set_true')
-
-        // Очищаем прогресс навыков
-        wipeSkillsProgress(player)
-
-        if (player.getProperty('arx:is_ghost') == true) {
-            iDP(player, 'ghostWithering', 3000)
-        }
-
-        // Выставляем вариант анимации нокаута
-        player.setProperty('arx:is_knocked_anim_var', Math.floor(Math.random() * 2))
-
-        // Увеличиваем счетчик ряда беспрерывных нокаутов (2 = смерть по рп, и 3 если есть кристалл второй жизни)
-        player.runCommand('scoreboard players add @s knockout_row_sounter 1')
-
-        // Сбрасываем камеру
-        player.runCommand('camera @s clear')
-
-        // Плюсуем счётчик нокаутов
-        player.runCommand('scoreboard players add @s count_death 1')
-
-        // Стрессуем
-        iDP(player, 'stress', 4000)
-
-        // Выставляем откат нокаута
-        sDP(player, 'respawnDelay', 40 - player.getDynamicProperty('skill:fortitude_level') * 2)
-
-        // Если мы должны умереть по рп
-        if (getScore(player, 'knockout_row_sounter') >= 2) {
-
-            player.runCommand('effect @s clear')
-            player.runCommand('playsound mob.rat_eliminator.spawn @s ~ ~ ~')
-            player.runCommand('event entity @s arx:property_is_knockout_set_0')
-
-            player.runCommand('inputpermission set @s movement enabled')
-            player.runCommand('inputpermission set @s camera enabled')
-
-            sDP(player, 'freezing', 0)
-            sDP(player, 'respawnDelay', 0)
-
-            setScore(player, "knockout_row_sounter", 0)
-            sDP(player, 'wetness', 0)
-
-            if (player.getProperty('arx:is_ghost') === true) { // Если призрак
-
-                console.warn(`Смерть призрака ${player.name}`)
-
-                player.runCommand('title @s title §c= Вы окончательно погибли =')
-                player.runCommand(`tellraw @s { "rawtext": [ { "text": "§cТак и закончилась эта история. Вы погибли навсегда." } ] }`)
-                player.setProperty('arx:is_ghost', false)
-                player.setProperty('arx:bust_size', 0)
-                executeCommandDelayed(player, 'function knockout_system/data_wipe/_wipe_main')
-                executeCommandDelayed(player, 'clear @s')
-                executeCommandDelayed(player, 'function tp/1_lobby')
-
-                // Сносим переменные DP
-                player.clearDynamicProperties()
-                registerPlayerVars(player)
-
-                sDP(player, 'verify', true)
-
-            } else { // Если не призрак
-
-                console.warn(`Смерть непризначного ${player.name}`)
-
-                player.runCommand('title @s title §c= Вы обращены в призрака =')
-                executeCommandDelayed(player, 'effect @s invisibility 60 0 true')
-                executeCommandDelayed(player, 'spreadplayers ~ ~ 0 20 @s')
-                executeCommandDelayed(player, 'clear @s arx:slot_blocker')
-                sDP(player, 'ghostUltimateResistance', 180)
-
-                player.runCommand(`tellraw @s { "rawtext": [ { "text": "§c! §f§сВы убиты и обращены в §cПРИЗРАКА!§f.\n§c! §fВы §cСОВСЕМ НЕДОЛГО§f неуязвимы к солнцу и воде!\n§c! §fВы невидимы на протяжении минуты." } ] }`)
-                player.setProperty('arx:is_ghost', true)
-
-            }
-
-        }
-    }
-})
-
 // Попадание сняряда по сущности
 world.afterEvents.projectileHitEntity.subscribe((hitEvent) => {
     const damagedEntity = hitEvent.getEntityHit().entity
@@ -1075,13 +972,7 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
 
             if (bloodIntencity > 100) { bloodIntencity = 100 }
 
-
-            if (player.getProperty('arx:is_ghost') === false) {
-                bleed(damaged, bloodIntencity, damager)
-            }
-            else {
-                player.runCommand("particle arx:ghost_blood ~ ~1.8 ~")
-            }
+            bleed(damaged, bloodIntencity, damager)
         }
         // Стресс
         {
@@ -1248,22 +1139,7 @@ world.afterEvents.playerGameModeChange.subscribe((event) => {
     if (event.toGameMode !== 'Survival') world.getDimension('minecraft:overworld').runCommand(`tellraw @a[scores={verify=2}] { "rawtext": [ { "text": "§f[§dСистема§f] ${event.player.name} gamemode -> §a${event.toGameMode}" } ] }`)
 })
 
-// Entity removing
-world.beforeEvents.entityRemove.subscribe(async (event) => {
-    const entity = event.removedEntity
-    const altitude = entity.location.y
-    // If it is grave and it is NOT on 16px-height block
-    if (entity.typeId == 'arx:grave' && !Number.isInteger(altitude)) {
-        const loc = entity.location
-        const d = entity.dimension
-        system.runTimeout(() => {
-            d.runCommand(`execute positioned ${loc.x} ${loc.y} ${loc.z} as @e[type=item, r=3] at @s run tp @s ${loc.x} ${loc.y} ${loc.z}`)
-        }, 1)
-    }
-})
-
 // Food catch
 world.afterEvents.itemCompleteUse.subscribe((event) => {
     onConsume(event.source, event.itemStack)
 })
-

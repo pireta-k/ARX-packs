@@ -399,29 +399,6 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
             player.runCommand('playsound elemental_use @a ~ ~ ~')
             break
 
-        case "arx:scroll_of_reborning":
-            if (player.getProperty('arx:is_ghost') == true) {
-
-                player.runCommand('effect @s clear')
-
-                sDP(player, 'ghostWithering', 0)
-                sDP(player, 'ghostWitheringLevel', 0)
-                sDP(player, 'ghostUltimateResistance', 0)
-                sDP(player, 'ghostBoostByScarletMoon', false)
-
-                player.setProperty('arx:is_ghost', false)
-                player.runCommand('clear @s arx:scroll_of_reborning 0 1')
-
-                player.runCommand(`tellraw @s { "rawtext": [ { "text": "§aВы перевоплощаетесь!" } ] }`)
-                player.runCommand('playsound stop_being_ghost @a ~ ~ ~')
-                player.runCommand('effect @s slowness 5 255 true')
-
-                player.runCommand('camera @s fade time 0.5 4 1 color 230 255 230')
-            } else {
-                player.runCommand(`tellraw @s { "rawtext": [ { "text": "§cМне сейчас это не нужно, я не призрак." } ] }`)
-            }
-            break
-
         case "arx:scroll_of_barrier_breaking":
             let cubeSize = 10;
             // Получаем координаты игрока
@@ -548,23 +525,6 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
             player.sendMessage('Все черты §aсброшены!')
             player.runCommand('clear @s arx:wipe_traits 0 1')
             player.runCommand('playsound elemental_use @a ~ ~ ~')
-            break
-
-        case "arx:harakiri_sword":
-            const form1 = new ActionFormData()
-                .title("Харакири")
-                .body('§l§cПРОЧИТАЙТЕ ВНИМАТЕЛЬНО!!!\n\n§r§fВы погибните навсегда. Если вы человек, вы станете призраком. Если вы призрак, вы умрёте навсегда.')
-                .button("Убиться")
-                .button("Пока не стоит")
-
-                .show(player)
-                .then((response) => {
-                    if (response.selection === 0) { // Муж
-                        setScore(player, 'knockout_row_sounter', 10)
-                        player.runCommand('kill @s')
-                    }
-                })
-            break
             break
 
         // Сравнение НЕ через ID предмета

@@ -25,12 +25,5 @@ function getBodyText(player) {
         bodyText += `\nРазмер груди: §a${player.getProperty('arx:bust_size')}`
     }
 
-    if (player.getProperty("arx:is_ghost") === true) {
-        bodyText += "\n\n§fВы - §cпризрак§f"
-    }
-    if (player.getDynamicProperty('ghostWitheringLevel') > 0 || player.getProperty("arx:is_ghost") === true) {
-        bodyText += `\nУвядание: §4${player.getDynamicProperty('ghostWitheringLevel')}§f ур.`
-    }
-
     return bodyText
 }

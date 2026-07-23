@@ -891,6 +891,10 @@
 
 		"acss_anchor": {
 			"textures": "textures/blocks/acss/acss_anchor"
+		},
+
+		"arx_small_box": {
+			"textures": "textures/blocks/furniture/small_box"
 		}
 	}
 } 

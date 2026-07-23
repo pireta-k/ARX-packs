@@ -112,7 +112,7 @@ export const coreFramework = {
                 if (player.getDynamicProperty('blockingResistanceCD') > 0) {
                     iDP(player, 'blockingResistanceCD', -1)
                     if (player.getDynamicProperty('blockingResistanceCD') === 0) {
-                        player.runCommand('event entity @s arx:property_is_knockout_set_0')
+                        player.runCommand('event entity @s arx:exit_knockout')
                     }
                 }
                 if (player.getDynamicProperty('blockingPlayerWasAttacked') > 0) {
@@ -171,7 +171,7 @@ export const coreFramework = {
             for (const player of data.players) {
                 // Если мы притворяемся нокнутыми, но начали двигаться
                 if (player.getProperty('arx:is_knocked') && player.getDynamicProperty('respawnDelay') === 0 && player.isMoving && !player.isRiding) {
-                    player.runCommand('event entity @s arx:property_is_knockout_set_0')
+                    player.runCommand('event entity @s arx:exit_knockout')
                 }
 
                 // Если игрока тащат, и скидывают
@@ -179,15 +179,13 @@ export const coreFramework = {
                     const carriedPlayer = getNearestPlayer(player)
                     // Если игрок не нокнут, а просто поднят
                     if (carriedPlayer.isRiding && carriedPlayer.getProperty('arx:is_knocked') && carriedPlayer.getDynamicProperty('respawnDelay') === 0) {
-                        carriedPlayer.runCommand('event entity @s arx:property_is_knockout_set_0')
+                        carriedPlayer.runCommand('event entity @s arx:exit_knockout')
                     }
                     if (carriedPlayer && carriedPlayer.isRiding && carriedPlayer.getProperty('arx:is_knocked') === false) {
                         carriedPlayer.runCommand('inputpermission set @s movement enabled');
                     }
-                    const rideable = player.getComponent('minecraft:rideable');
-                    if (rideable) {
-                        rideable.evictRiders();
-                    }
+                    const rideableComponent = player.getComponent('minecraft:rideable');
+                    if (rideableComponent) rideableComponent.ejectRiders()
                 }
             }
         }
@@ -611,7 +609,7 @@ export const coreFramework = {
 
                 //Установка туманов
                 // Если у игрока сняты туманы 
-                if (getScore(player, 'no_fog') > 0 || player.getDynamicProperty('ghostBoostByScarletMoon')) {
+                if (getScore(player, 'no_fog') > 0) {
                     player.runCommand(`fog @s push minecraft:fog_default "default"`)
                 }
                 // Шахты
@@ -656,7 +654,6 @@ export const coreFramework = {
                     if (player.getDynamicProperty('freezingBlockByPotion') > 0) (blockFreezing = true)
                     if (checkForItem(player, "legs", "arx:snow_bars_scarf") && !checkForItem(player, "chest", undefined)) (blockFreezing = true)
                     if (player.getDynamicProperty('respawnDelay') > 0) { blockFreezing = true }
-                    if (player.getProperty('arx:is_ghost') == true) { blockFreezing = true }
                     if (player.hasTag('heating_by_heater_block_activate')) { blockFreezing = true }
 
                     // Увеличение холода
@@ -749,9 +746,6 @@ export const coreFramework = {
 
                     // Очищаем блокировщики слота
                     player.runCommand('clear @s arx:slot_blocker')
-
-                    // Выставляем счетчик ряда смертей
-                    setScore(player, 'knockout_row_sounter', 0)
                 }
 
                 // Обработка ресанья от лица игрока, который сам ресает игрока
@@ -791,7 +785,7 @@ export const coreFramework = {
                                     // Выставляем данные
                                     sDP(nearbyPlayer, 'respawnDelay', 0)
                                     nearbyPlayer.setProperty("arx:is_knocked", false)
-                                    nearbyPlayer.runCommand('event entity @s arx:property_is_knockout_set_0')
+                                    nearbyPlayer.runCommand('event entity @s arx:exit_knockout')
                                 }
                             }
                             else {
@@ -1166,9 +1160,6 @@ export const coreFramework = {
                 // От экипировки
                 if (checkForItem(player, "Feet", "arx:leg_bag_dual")) speedPower -= 8
 
-                // Бонус для призака алой ночью
-                if (player.getDynamicProperty('ghostBoostByScarletMoon')) speedPower += 30 || 0
-
                 // Увеличение от уровня
                 speedPower += player.getDynamicProperty("skill:running_level") * 2 || 0
 
@@ -1205,9 +1196,6 @@ export const coreFramework = {
                 if (player.getDynamicProperty('speedBoost:level1') > 0) { speedPower += 20 }
                 if (player.getDynamicProperty('speedBoost:level2') > 0) { speedPower += 40 }
                 if (player.getDynamicProperty('speedBoost:level3') > 0) { speedPower += 80 }
-
-                // Штраф от увядания призрака
-                speedPower -= player.getDynamicProperty("ghostWitheringLevel") * 4
 
                 // Бонус после нокаута
                 speedPower += player.getDynamicProperty('speedBoostAfterKnockout')
@@ -1248,12 +1236,6 @@ export const coreFramework = {
                 // Бонус от уровня
                 maxHP += player.getDynamicProperty("skill:hp_level") * 2
 
-                // Штраф от увядания призрака
-                maxHP -= player.getDynamicProperty("ghostWitheringLevel") * 2
-
-                // Бонус для призака алой ночью
-                if (player.getDynamicProperty('ghostBoostByScarletMoon')) maxHP += 10
-
                 // Макс хп - запись в DP
                 sDP(player, "maxHP", maxHP)
 
@@ -1288,9 +1270,6 @@ export const coreFramework = {
 
                 // Увеличение от бонуса фиоликса
                 if (player.getDynamicProperty('statsBonusByFiolix') > 0) { jumpPower += 1 }
-
-                // Бонус для призака алой ночью
-                if (player.getDynamicProperty('ghostBoostByScarletMoon')) jumpPower += 1
 
                 // Воздействие стресса
                 switch (player.getDynamicProperty('stressLevel')) {
@@ -1352,14 +1331,8 @@ export const coreFramework = {
                 if (player.getDynamicProperty('shootingBoostBySpell_minus2')) rangedAttackAccuracy -= 2
                 if (player.getDynamicProperty('shootingBoostBySpell_minus4')) rangedAttackAccuracy -= 4
 
-                // Бонус для призака алой ночью
-                if (player.getDynamicProperty('ghostBoostByScarletMoon')) rangedAttackAccuracy += 3
-
                 // Штраф от темноты
                 if (player.lightLevel < 6) rangedAttackAccuracy -= 3
-
-                // Штраф от увядания призрака
-                rangedAttackAccuracy -= player.getDynamicProperty("ghostWitheringLevel")
 
                 // Воздействие стресса
                 switch (player.getDynamicProperty('stressLevel')) {
@@ -1552,7 +1525,7 @@ world.afterEvents.worldLoad.subscribe(async () => {
         system.runInterval(async () => { // Every tick
             // Create data (to pass it into core blocks)
             let data = {
-                players: world.getPlayers()
+                players: world.getPlayers().filter(p => p.currentHP !== 0)
             }
 
             // Launch core parts

@@ -93,9 +93,6 @@ scoreboard objectives add uni_cool_down dummy uni_cool_down
 
 scoreboard objectives add spell_of_small_head dummy spell_of_small_head
 
-# Нокаут
-    scoreboard objectives add knockout_row_sounter dummy Счетчик_последовательности_ноков
-
 # Обучение
     scoreboard objectives add learning dummy Этап_обучения
 

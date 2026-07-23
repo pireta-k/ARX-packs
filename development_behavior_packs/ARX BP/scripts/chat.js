@@ -14,6 +14,7 @@ import { acquireTrait, checkForTrait, clearTraits } from './traits/traitsOperati
 import { gDP, sDP } from "./arxLib/DPOperations"
 import { isAdmin, getAdmins } from './arxLib/admin'
 import { Weather } from "./arxLib/weather"
+import { sendItems } from "./items/sendItems"
 
 /**
  * @typedef ChatMessageOptions
@@ -104,13 +105,16 @@ export async function parceChatCommand(player, trimmedMessage) {
                     const me = player
                     let result
                     await system.run(() => {
-                        const abc = 'aboba'
-                        result = eval(codeToEval)
-                        // Send a result to the player
-                        player.sendMessage(`§aResult§f: ${result}`)
+                        try {
+                            result = eval(codeToEval)
+                            // Send a result to the player
+                            player.sendMessage(`§aResult§f: ${result}`)
+                        } catch (innerError) {
+                            player.sendMessage(`§cEval runtime error§f: ${innerError.message}`)
+                        }
                     })
                 } catch (error) {
-                    player.sendMessage(`§cEval error§f: ${error}`)
+                    player.sendMessage(`§cEval syntax error§f: ${error.message}`)
                 }
             } else {
                 sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')

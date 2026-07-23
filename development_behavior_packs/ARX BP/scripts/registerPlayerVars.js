@@ -89,12 +89,6 @@ export function registerPlayerVars(player) {
     if (gDP(player, "height") === undefined) {
         sDP(player, "height", 180)
     }
-    if (gDP(player, 'ghostWithering') === undefined) {
-        sDP(player, 'ghostWithering', 0)
-    }
-    if (gDP(player, 'ghostWitheringLevel') === undefined) {
-        sDP(player, 'ghostWitheringLevel', 0)
-    }
     if (gDP(player, 'ghostUltimateResistance') === undefined) {
         sDP(player, 'ghostUltimateResistance', 0)
     }

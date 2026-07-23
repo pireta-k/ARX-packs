@@ -36,8 +36,6 @@ menu.copyright=ARX packs §aactive
 
 rarity=§7[Common] §a[Uncommon] §b[Rare] §g[Epic] §e[Legendary] §c[Mythical] §d[Divine]
 
-entity.arx:grave.name=Гроб
-
 item.arx:book_case_a=§r§fПеревязанная зачарованная книга §b[Rare]\n§7§oНе используйте при полном инвентаре!
 item.arx:book_case_b=§r§fПеревязанная зачарованная книга §g[Epic]\n§7§oНе используйте при полном инвентаре!
 item.arx:book_case_c=§r§fПеревязанная зачарованная книга §c[Mythical]\n§7§oНе используйте при полном инвентаре!

@@ -73,12 +73,6 @@
           "default": 180,
           "client_sync": true
         },
-        // Призрак ли игрок
-        "arx:is_ghost": {
-          "type": "bool",
-          "default": false,
-          "client_sync": true
-        },
         // Var to test client's loading
         "arx:loading_test": {
           "type": "bool",
@@ -1592,6 +1586,11 @@
       }
     },
     "components": {
+      "minecraft:interact": {
+        "interactions": [
+          {}
+        ]
+      },
       "minecraft:health": {
         "value": 20,
         "max": 20
@@ -1635,7 +1634,7 @@
         ]
       },
       "minecraft:attack": {
-        "damage": 0
+        "damage": 1
       },
       "minecraft:exhaustion_values": {
         "heal": 6,
@@ -2281,9 +2280,9 @@
         }
       },
       // Knockout
-      "arx:property_is_knockout_set_0": { // Выход из нокаута
+      "arx:exit_knockout": { // Выход из нокаута
         "set_property": {
-          "arx:is_knocked": 0
+          "arx:is_knocked": false
         },
         "add": {
           "component_groups": [
@@ -2292,7 +2291,7 @@
           ]
         }
       },
-      "arx:property_is_knockout_set_true": { // Игрока нокнули
+      "arx:enter_knockout": { // Игрока нокнули
         "add": {
           "component_groups": [
             "arx:set_knocked_family_data",
@@ -2300,12 +2299,7 @@
           ]
         },
         "set_property": {
-          "arx:is_knocked": "math.random_integer(1, 2)"
-        },
-        "queue_command": {
-          "command": [
-            "scoreboard players set @s revive_delay 0"
-          ]
+          "arx:is_knocked": true
         }
       },
       "arx:set_blocking_damage_sensor": { // Игрок запустил блокировку
