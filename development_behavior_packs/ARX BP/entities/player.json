@@ -1501,13 +1501,15 @@
           ]
         }
       },
-      "arx:return_default_family_data": {
+      "arx:set_default_family_data": {
         "minecraft:type_family": {
           "family": [
             "player",
             "dangerous"
           ]
-        },
+        }
+      },
+      "arx:set_default_hitbox": {
         "minecraft:collision_box": {
           "width": 0.6,
           "height": 1.8
@@ -1517,9 +1519,12 @@
         "minecraft:type_family": {
           "family": [
             "player",
-            "is_knocked"
+            "is_knocked",
+            "avoidable"
           ]
-        },
+        }
+      },
+      "arx:set_hotizontal_hitbox": {
         "minecraft:collision_box": {
           "width": 0.8,
           "height": 0.5
@@ -1599,7 +1604,7 @@
         "value": 1
       },
       "minecraft:experience_reward": {
-        "on_death": "(query.player_level + 1) * (7 + query.player_level * 2) / 2"
+        "on_death": "Math.Min(query.player_level * 7, 100)"
       },
       "minecraft:type_family": {
         "family": [
@@ -1877,10 +1882,10 @@
           ]
         }
       },
-      "arx:return_default_family_data": {
+      "arx:set_default_family_data": {
         "add": {
           "component_groups": [
-            "arx:return_default_family_data"
+            "arx:set_default_family_data"
           ]
         }
       },
@@ -2286,7 +2291,8 @@
         },
         "add": {
           "component_groups": [
-            "arx:return_default_family_data",
+            "arx:set_default_family_data",
+            "arx:set_default_hitbox",
             "arx:return_default_damage_sensor"
           ]
         }
@@ -2295,6 +2301,7 @@
         "add": {
           "component_groups": [
             "arx:set_knocked_family_data",
+            "arx:set_hotizontal_hitbox",
             "arx:return_knocked_damage_sensor"
           ]
         },

@@ -6,7 +6,7 @@ import { system, world, EntityComponentTypes, EquipmentSlot, MolangVariableMap }
 import { getScore, setScore } from '../arxLib/scoresOperations'
 import { increaseSkillLevel, increaseSkillProgress, wipeSkills } from '../skillsOperations'
 import { checkForItem } from "../items/checkForItem"
-import { ModalFormData, MessageFormData, MessageFormResponse } from "@minecraft/server-ui"
+import { ModalFormData, MessageFormData, MessageFormResponse, uiManager } from "@minecraft/server-ui"
 import { getPlayersInRadius } from '../getPlayersInRadius'
 import { getActiveStaffChannel } from '../magic/getActiveStaffChannel'
 import { channelRomanNums } from '../magic/channelRomanNums'
@@ -21,7 +21,7 @@ import { ambienceCoreTick } from './ambience_core'
 import { dynamicLightCoreTick } from './dynamicLightCore'
 import { isInBiomeWithTag, musicCoreTick } from './music_core'
 import { achievementsCoreTick } from './achievements'
-import { sl } from "../lang/fetchLocalization"
+import { fl, sl } from "../lang/fetchLocalization"
 import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
 import { isDay, sleep } from "../arxLib/time"
 
@@ -99,7 +99,7 @@ export const coreFramework = {
         tickSpeed: 100,
         operations: (data) => {
             for (const player of data.players) {
-                player.dimension.spawnEntity('arx:grass_generator_launcher', player.location)
+                if (player.dimension.isChunkLoaded(player.location)) player.dimension.spawnEntity('arx:grass_generator_launcher', player.location)
             }
         }
     },
@@ -169,9 +169,15 @@ export const coreFramework = {
         tickSpeed: 1,
         operations: (data) => {
             for (const player of data.players) {
+                const isKnocked = player.getProperty('arx:is_knocked')
+
+                // Playing dead status - to actionbar
+                if (isKnocked && !player.gDP('respawnDelay')) {
+                    sendToActionBar(player, 'playingDead', fl(player, 'knockout.playing_dead'), 2)
+                }
                 // Если мы притворяемся нокнутыми, но начали двигаться
-                if (player.getProperty('arx:is_knocked') && player.getDynamicProperty('respawnDelay') === 0 && player.isMoving && !player.isRiding) {
-                    player.runCommand('event entity @s arx:exit_knockout')
+                if (isKnocked && !player.gDP('respawnDelay') && player.isMoving && !player.isRiding) {
+                    player.triggerEvent('arx:exit_knockout')
                 }
 
                 // Если игрока тащат, и скидывают
@@ -355,7 +361,7 @@ export const coreFramework = {
                     player.runCommand(`playsound heartbeat.default @s ~ ~ ~ ${loudness} ${pitch}`)
                     player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
                     system.runTimeout(() => {
-                        player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
+                        if (player.isValid) player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
                     }, 5)
                 }
             }
@@ -709,14 +715,10 @@ export const coreFramework = {
                 // respawnDelay - задержка до момента, когда игрок встанет естественным образом
                 // reviveDelay - время, пока игрока поднимают. Хранится на нокнутом поднимаемом игроке
 
-                // Обнаржуение входа в нокаут
-                if (player.getDynamicProperty('respawnDelay') > player.getDynamicProperty('respawnDelayLastPass')) {
-                    player.runCommand('inputpermission set @s camera disabled')
-                    player.runCommand('inputpermission set @s movement disabled')
-                }
+                // === Knockout processing ===
 
                 // Выход из нокаута (именно не вставание, а выход из нокаута. Игрок может продолжить лежать и притворяться мертвым)
-                if (player.getDynamicProperty('respawnDelay') < player.getDynamicProperty('respawnDelayLastPass') && player.getDynamicProperty('respawnDelay') === 0) {
+                if (player.gDP('respawnDelay') < player.gDP('respawnDelayLastPass') && player.gDP('respawnDelay') === 0) {
                     // Разблокировываем движение
                     player.runCommand('inputpermission set @s camera enabled')
                     if (!player.isRiding) { player.runCommand('inputpermission set @s movement enabled') }
@@ -732,37 +734,24 @@ export const coreFramework = {
                         sDP(player, 'speedBoostAfterKnockout', 40)
                     }
 
-                    // Если есть кристалл быстрого возрождения
-                    {
-                        if (player.hasTag('crystal_of_shield_activate')) {
-                            player.runCommand(`tellraw @s { "rawtext": [ { "text": "§aВас защищает магическая сила (кристалл щита активен)" } ] }`)
-                            player.runCommand('effect @s resistance 60 0 true')
-                            player.removeTag('crystal_of_shield_activate')
-                        }
-                    }
-
-                    // Снимаем кристалл второй жизни
-                    player.removeTag('crystal_of_second_life_activate')
-
                     // Очищаем блокировщики слота
                     player.runCommand('clear @s arx:slot_blocker')
                 }
 
-                // Обработка ресанья от лица игрока, который сам ресает игрока
+                // === Reviving processing ===
+
                 if (player.getProperty('arx:is_knocked') === false, player.isSneaking) {
 
                     // Определяем скорость ресанья
                     let reviveSpeedValue = 1
-                    if (checkForItem(player, 'Legs', 'arx:amul_revive')) { // Увеличиваем, если есть амуль быстрого воскрешения
-                        reviveSpeedValue += 2
-                    }
+                    if (checkForItem(player, 'Legs', 'arx:amul_revive')) reviveSpeedValue += 2 // Увеличиваем, если есть амуль быстрого воскрешения
 
                     // Получаем всех игроков поблизости
                     const nearbyPlayers = getPlayersInRadius(player, 1.5)
 
                     // Ресаем
                     for (const nearbyPlayer of nearbyPlayers) {
-                        if (nearbyPlayer.getProperty('arx:is_knocked') === true && !nearbyPlayer.isRiding) {
+                        if (nearbyPlayer.getProperty('arx:is_knocked') && !nearbyPlayer.isRiding) {
 
                             const is_loaded = await isPlayerCompletelyLoaded(nearbyPlayer)
 
@@ -1472,10 +1461,8 @@ export const coreFramework = {
     animationTagListener: {
         tickSpeed: 2,
         operations: (data) => {
-            for (const p of data.players) {
-                if (p.hasTag('is_emoting_via_arx_command') && p.isMoving) {
-                    p.removeTag('is_emoting_via_arx_command')
-                }
+            for (const p of data.players.filter(p => p.hasTag('is_emoting_via_arx_command') && p.isMoving)) {
+                p.removeTag('is_emoting_via_arx_command')
             }
         },
     },
@@ -1492,6 +1479,21 @@ export const coreFramework = {
                         playSound('undemon', d, entity.location)
                         entity.triggerEvent('arx:despawn_as_ghost')
                     }
+                }
+            }
+        }
+    },
+
+    robbingDistanceListener: {
+        tickSpeed: 20,
+        operations: (data) => {
+            for (const player of data.players.filter(p => p.gDP('isRobbingRightNow'))) {
+                let victimArray = getPlayersInRadius(player, 2.5, false).filter(p => p.id === player.gDP('robbingTargetID'))
+
+                if (victimArray.length === 0) {
+                    uiManager.closeAllForms(player)
+                    player.sDP('isRobbingRightNow', false)
+                    player.sDP('robbingTargetID', undefined)
                 }
             }
         }

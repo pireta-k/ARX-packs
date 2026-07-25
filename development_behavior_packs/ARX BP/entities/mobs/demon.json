@@ -148,11 +148,11 @@
 			"arx:driver": {
 				"queue_command": {
 					"command": [
-						"scoreboard players random @s custom_random 0 6",
-						"execute as @s[scores={custom_random=2}] if entity @p[m=survival, has_property={arx:is_knocked=false}] run damage @p[r=15, m=survival] 7",
-						"execute as @s[scores={custom_random=2}] if entity @p[m=survival, has_property={arx:is_knocked=false}] run playanimation @s animation.demon.attack",
-						"execute as @s[scores={custom_random=2}] if entity @p[m=survival, has_property={arx:is_knocked=false}] run playsound dissecting_fog @a ~ ~ ~ ",
-						"playsound demon_fly @a ~ ~ ~"
+						// "scoreboard players random @s custom_random 0 6",
+						// "execute as @s[scores={custom_random=2}] if entity @p[m=survival, has_property={arx:is_knocked=false}] run damage @p[r=15, m=survival] 7",
+						// "execute as @s[scores={custom_random=2}] if entity @p[m=survival, has_property={arx:is_knocked=false}] run playanimation @s animation.demon.attack",
+						// "execute as @s[scores={custom_random=2}] if entity @p[m=survival, has_property={arx:is_knocked=false}] run playsound dissecting_fog @a ~ ~ ~ ",
+						// "playsound demon_fly @a ~ ~ ~"
 					]
 				}
 			},

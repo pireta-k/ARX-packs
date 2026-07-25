@@ -51,7 +51,8 @@ class RandomGenerator {
         else return Math.random();
     }
 
-    /** @param {Number} a @param {Number} b @returns {Number} */
+    /** Inclusive
+     * @param {Number} a @param {Number} b @returns {Number} */
     int(a, b) {
         let min = Math.min(a, b)
         let max = Math.max(a, b)

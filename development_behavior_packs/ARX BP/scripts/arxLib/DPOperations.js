@@ -120,7 +120,28 @@ export function gDP(object, DPName, fallback = undefined) {
             return undefined
         }
     }
-    
+
     if (value === undefined) return fallback
     return value
+}
+
+export class DPManager {
+    static clearOnRPDeath(player) {
+        const dPs = player.getDynamicPropertyIds().filter(dp => !strongDPs.includes(dp))
+        for (const dp of dPs) {
+            player.sDP(dp, undefined)
+        }
+    }
+
+    /**
+     * DP that won't be cleared after RP death
+     */
+    static strongDPs = [
+        'statistics:time_played_sec',
+        'myRule:manaDisplayMode',
+        'myRule:showAttackCDMode',
+        'myRule:chatPrefixes',
+        'myRule:canSeeServerSpeedInInfoBook',
+        'myRule:devMode',
+    ]
 }

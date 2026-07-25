@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Blocks/❤️ Crucial.md",
+                "file": "Blocks/💛 Moderate.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "❤️ Crucial"
+              "title": "💛 Moderate"
             }
           }
         ]
@@ -185,20 +185,20 @@
   },
   "active": "2e2de0c9e1dbf124",
   "lastOpenFiles": [
-    "Blocks/💙 Optional.md",
     "Details/Полностью переделать нокаут через перехват урона.md",
     "Blocks/❤️ Crucial.md",
-    "Arx Ultima 1.x stable release planning.md",
-    "Убрать меч для харакири.md",
+    "Details/Проверить работу статистики.md",
     "Blocks/💛 Moderate.md",
-    "Blocks/💚 Done.md",
+    "Arx Ultima 1.x stable release planning.md",
+    "Blocks/💙 Optional.md",
     "Details/Баг опции камеры.md",
+    "Blocks/💚 Done.md",
+    "Details/Убрать меч для харакири.md",
     "Details/Ошибка возврата в лобби.md",
     "Details/лут в данжах.md",
     "Details/Система управления сущностями.md",
     "Details/Сделать чат удобным.md",
     "Details/Добавить больше эмбиэнт-партиклов.md",
-    "Details/Проверить работу статистики.md",
     "Details/Улучшить чатовые сообщения.md",
     "Details/Иногда при смерти в шахтах, игрок возрождается на поверхности.md",
     "Details/Механика ветра.md",

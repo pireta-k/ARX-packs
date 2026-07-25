@@ -21,7 +21,7 @@
     scoreboard players set @s count_spent_mp 0
 
 #Возвращаем family в нормальное состояние
-    event entity @s arx:return_default_family_data
+    event entity @s arx:set_default_family_data
 
 #Класс
     scoreboard players set @s class 0

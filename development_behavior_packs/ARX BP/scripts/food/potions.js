@@ -83,7 +83,6 @@ export const potionsRegistry = {
     // === OTHER ===
     'arx:le_fishe_au_chocolat': (player => {
         player.runCommand(`playsound le_fishe_au_chocolat @s ~ ~ ~ 0.5`)
-        iDP(player, 'eatenLeFisheCounter')
     }),
     'arx:fiolix': (player => {
         // ?

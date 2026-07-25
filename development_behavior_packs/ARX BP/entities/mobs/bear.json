@@ -14,7 +14,7 @@
 						"filters": {
 							"test": "is_family",
 							"subject": "other",
-							"value": "is_knocked"
+							"value": "avoidable"
 						},
 						"max_dist": 16
 					}
@@ -110,7 +110,7 @@
 										"test": "is_family",
 										"subject": "other",
 										"operator": "not",
-										"value": "is_knocked"
+										"value": "avoidable"
 									}
 								]
 							},

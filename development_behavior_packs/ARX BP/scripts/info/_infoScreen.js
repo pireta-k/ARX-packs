@@ -18,12 +18,24 @@ import { gDP } from "../arxLib/DPOperations"
 import { fl } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
 import { launchCameraUI } from "../camera/launchCameraUI"
+import { UI } from "../arxLib/UI"
 
 // Show to player the main info screen
 export function infoScreen(player) {
 
+    // Add stability data
+    let bodyText
+    if (gDP(player, 'myRule:canSeeServerSpeedInInfoBook')) {
+        const serverSpeed = getStabilityTestResult()
+        if (serverSpeed) {
+            bodyText = (`${fl(player, 'info.stability.result')}: ${serverSpeed}`)
+        } else {
+            bodyText = (fl(player, 'info.stability.no_result'))
+        }
+    }
+
     // All info options
-    let infoOptions = {
+    UI.dynamicActionFormData(player, {
         character: {
             condition: () => gDP(player, 'hasRegisteredCharacter'),
             icon: 'textures/ui/info/about_character',
@@ -89,49 +101,11 @@ export function infoScreen(player) {
             icon: 'textures/ui/info/devOptions',
             exe: () => devOptions(player)
         },
-    }
-
-    // User's info options
-    let userOptions = []
-    for (const key in infoOptions) {
-        const option = infoOptions[key]
-        const available = !('condition' in option) || option.condition()
-        if (available) userOptions.push(key)
-    }
-
-    // Create form
-    let form = new ActionFormData()
-
-    // Add stability data
-    if (gDP(player, 'myRule:canSeeServerSpeedInInfoBook')) {
-        const serverSpeed = getStabilityTestResult()
-        if (serverSpeed) {
-            form.body(`${fl(player, 'info.stability.result')}: ${serverSpeed}`)
-        } else {
-            form.body(fl(player, 'info.stability.no_result'))
+    },
+        'info',
+        {
+            body: gDP(player, 'myRule:canSeeServerSpeedInInfoBook') ? bodyText : undefined,
+            title: fl(player, "info.title")
         }
-    }
-
-    // Add options to form
-    for (const option of userOptions) {
-        const current = infoOptions[option] // Get current option obj
-
-        form.button(fl(player, `info.option.${option}`), current.icon)
-    }
-
-    form.title(fl(player, "info.title"))
-
-    form.show(player).then((response) => {
-        // If canceled, return
-        if (response.canceled) return
-
-        // Get option
-        const optionKey = userOptions[response.selection]
-        const option = infoOptions[optionKey]
-        if (!option) return
-        if (option.condition && !option.condition()) return
-
-        // Run function
-        option.exe()
-    })
+    )
 } 

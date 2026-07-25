@@ -46,6 +46,7 @@ import { setSBPoint } from "./sb/structureBuilder"
 import { emote, emotionsList } from './emote'
 import { Rob } from "./rob"
 import { Knockout } from "./knockout"
+import { UI } from "./arxLib/UI"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -98,7 +99,7 @@ world.afterEvents.playerInventoryItemChange.subscribe((event) => {
     }
 })
 
-// Player spawned (also triggers after knockout)
+// A player has spawned
 world.afterEvents.playerSpawn.subscribe(async (event) => {
     const player = event.player; // Получаем объект игрока
     player.nameTag = ""
@@ -113,7 +114,13 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
 
     registerPlayerVars(player)
 
-    // Is this the thirst time the player entered Arx?
+    // If a player was knocked. 
+    // InputPermissions resets after a player rejoins a world
+    if (player.gDP('respawnDelay') !== 0) {
+        Knockout.applyInputPermissionOnEnter(player)
+    }
+
+    // Is this the thirst time a player entered Arx?
     const playedBefore = player.getDynamicProperty('hasEverPlayedArx')
     if (!playedBefore) {
         // Notify admins about requred verification
@@ -219,7 +226,7 @@ function calculateStrength(player) {
     }
 
     // Нокаут
-    if (player.getProperty('arx:is_knocked') == true) { basicStrength -= 999 }
+    if (player.getProperty('arx:is_knocked')) { basicStrength -= 999 }
 
     // Нет перса
     if (player.getDynamicProperty('hasRegisteredCharacter') === false) { basicStrength -= 999 }
@@ -263,32 +270,41 @@ function calculateStrength(player) {
 // Intercept damage
 world.beforeEvents.entityHurt.subscribe((event) => {
     // === Vars ===
-    let dmg = event.damage
+    let dmg = event.damage + 0
     const e = event.hurtEntity
     const damager = event.damageSource.damagingEntity
     const cause = event.damageSource.cause
+
+    // e.currentHP (== getComponent('minecraft:health')?.currentValue) returns hp AFTER the entity has taken damage.
+    const healthAfter = e.currentHP
+    const healthBefore = healthAfter !== undefined ? healthAfter + dmg : undefined
+    // Is the hit killing the entity?
+    const fatal = healthAfter !== undefined && (healthAfter <= 0)
 
     // === Edit damage ===
     if (damager?.typeId === 'minecraft:player') {
         dmg += calculateStrength(damager)
     }
 
-    // === Additional logic ===
-    // e.getComponent('minecraft:health')?.currentValue returns hp AFTER the entity has taken damage.
-    const healthAfter = e.getComponent('minecraft:health')?.currentValue
-    const healthBefore = healthAfter !== undefined ? healthAfter + dmg : undefined
-    // Is the hit killing the entity?
-    const fatal = healthAfter !== undefined && (healthAfter <= 0)
+    const healthAfterModification = healthBefore - dmg
 
-    console.warn(healthBefore, healthAfter, fatal)
+    // console.warn(
+    //     '\nhealthBefore: ', healthBefore,
+    //     '\nhealthAfter: ', healthAfter,
+    //     '\nhealthAfterModification: ', healthAfterModification,
+    //     '\ndmg: ', dmg,
+    //     '\nfatal: ', fatal
+    // )
+
+    // === Custom logic ===
 
     // A player was damaged
     if (e.typeId === 'minecraft:player') {
-        // Not registered
+        // Not registered. Decline damage
         if (!e.gDP('hasRegisteredCharacter')) {
             event.cancel = true
         }
-        // Fatal
+        // Fatal. Enter knockout without vanilla death.
         else if (fatal) {
             event.cancel = true
             Knockout.enter(e)
@@ -462,37 +478,42 @@ world.afterEvents.playerInteractWithEntity.subscribe(async (interactEvent) => {
     // Interaction with a plater
     if (interactEvent.target?.typeId == "minecraft:player") {
 
-        const target = interactEvent.target // Взятый игрок
-        const self = interactEvent.player // Поднимающий игрок
+        const self = interactEvent.player // Initiator
+        const target = interactEvent.target // The entity that was interacted with
         const distance = getDistanceBetween(target, self)
 
         if (distance < 2) {
-            const form = new ActionFormData()
-                .title('Player interaction')
-                .button('Pick up')
-                .button('Rob')
-                .show(self).then(async (r) => {
-                    if (!r.canceled) {
-                        // Pick up
-                        if (r.selection === 0) {
-                            if (await isPlayerCompletelyLoaded(target)) {
-                                const mainhandItem = getItem(target, 'mainhand')
+            UI.dynamicActionFormData(self, {
+                pickUp: {
+                    exe: async () => {
+                        if (await isPlayerCompletelyLoaded(target)) {
+                            const mainhandItem = getItem(target, 'mainhand')
 
-                                if (!mainhandItem?.getTags().includes('is_weapon')) pickUpPlayer(self, target)
-                                else {
-                                    self.sendMessage(`Can't pick up a player when he is holding a weapon`)
-                                }
-                            }
+                            if (!mainhandItem?.getTags().includes('is_weapon')) pickUpPlayer(self, target)
                             else {
-                                self.sendMessage(`${target.getDynamicProperty('name')} is not fully loaded yet...`)
+                                self.sendMessage(`Can't pick up a player when he is holding a weapon`)
                             }
                         }
-                        // Rob
-                        else if (r.selection === 1) {
-                            Rob.openUI(self, target)
+                        else {
+                            self.sendMessage(`${target.getDynamicProperty('name')} is not fully loaded yet...`)
                         }
-                    }
-                })
+                    },
+                    icon: "textures/ui/player_interaction/pick_up",
+                },
+                rob: {
+                    condition: () => target.getProperty('arx:is_knocked'),
+                    icon: "textures/ui/player_interaction/rob",
+                    exe: () => Rob.openUI(self, target)
+                },
+                kill: {
+                    condition: () => target.getProperty('arx:is_knocked') && !target.isRiding,
+                    exe: () => Knockout.RPDeath(target),
+                    icon: "textures/ui/player_interaction/kill",
+                }
+            },
+                "player_interaction",
+                { title: target.RPName }
+            )
         }
     }
     // Создание персонажа в лобби
@@ -708,6 +729,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
             }
         }
     })
+    initEvent.dimensionRegistry.registerCustomDimension('arx:guide_realm')
     // === Custom commands ===
     const ccr = initEvent.customCommandRegistry
 
@@ -1133,11 +1155,6 @@ export function getEntityFamilies(entity) {
         return []; // Возвращаем пустой массив.
     }
 }
-
-// Режим игры
-world.afterEvents.playerGameModeChange.subscribe((event) => {
-    if (event.toGameMode !== 'Survival') world.getDimension('minecraft:overworld').runCommand(`tellraw @a[scores={verify=2}] { "rawtext": [ { "text": "§f[§dСистема§f] ${event.player.name} gamemode -> §a${event.toGameMode}" } ] }`)
-})
 
 // Food catch
 world.afterEvents.itemCompleteUse.subscribe((event) => {

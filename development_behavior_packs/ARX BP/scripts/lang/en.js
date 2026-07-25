@@ -371,4 +371,13 @@ export const enLocalization = {
     "emote.cannot_cus_riding": 'To start the animation, dismount from whatever you are riding.',
     "emote.cannot_cus_flying": 'To start the animation, stop flying.',
 
+    "rob.cannot.victim_is_not_knocked": 'You can\'t steal items when a victim is conscious.',
+    "rob.cannot.you_are_knocked": 'You can\'t steal while you\'re knocked.',
+    "rob.nothing_to_steal": 'The victim\'s inventory is empty.',
+
+    "player_interaction.option.pickUp": 'Pick up',
+    "player_interaction.option.rob": 'Rob',
+    "player_interaction.option.kill": '§cKill forever',
+
+    "knockout.playing_dead": 'Playing dead...',
 }

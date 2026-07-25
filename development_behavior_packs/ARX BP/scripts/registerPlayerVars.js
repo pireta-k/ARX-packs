@@ -127,9 +127,6 @@ export function registerPlayerVars(player) {
     if (gDP(player, 'MPSmoothAccrue') === undefined) {
         sDP(player, 'MPSmoothAccrue', 0)
     }
-    if (gDP(player, 'eatenLeFisheCounter') === undefined) {
-        sDP(player, 'eatenLeFisheCounter', 0)
-    }
     if (gDP(player, 'holdedMagicChannel') === undefined) {
         sDP(player, 'holdedMagicChannel', 1)
     }

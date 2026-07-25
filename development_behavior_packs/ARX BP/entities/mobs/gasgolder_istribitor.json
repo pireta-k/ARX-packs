@@ -92,7 +92,7 @@
 									"test": "is_family",
 									"subject": "other",
 									"operator": "not",
-									"value": "is_knocked"
+									"value": "avoidable"
 								}
 							]
 						}

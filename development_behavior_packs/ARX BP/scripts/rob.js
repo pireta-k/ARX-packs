@@ -1,10 +1,14 @@
-import { ItemStack, EquipmentSlot } from "@minecraft/server";
+import { ItemStack, EquipmentSlot, Player } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { md5 } from "./arxLib/converters";
+import { sl, fl } from "./lang/fetchLocalization";
+import { Knockout } from "./knockout";
 
 export class Rob {
     // Ui that recounts all available items as buttons with item names
     static openUI(initiator, victim) {
+        if (!this.checkRPConditions(initiator, victim)) return
+
         const form = new ActionFormData()
             .title(`Robbing ${victim.RPName}`)
 
@@ -12,19 +16,46 @@ export class Rob {
         const victimItems = this.collectAllItems(victim)
         const itemsMap = new Map()
 
-        let iteration = 0
-        for (const item of victimItems) {
-            itemsMap.set(iteration, this.getUniqueItemStackId(item))
-            form.button({ translate: item.localizationKey })
-            iteration++
+        if (victimItems.length > 0) {
+            let iteration = 0
+            for (const item of victimItems) {
+                itemsMap.set(iteration, this.getUniqueItemStackId(item))
+                form.button({ translate: item.localizationKey })
+                iteration++
+            }
         }
+        else form.body(fl(initiator, 'rob.nothing_to_steal'))
 
+        initiator.sDP('isRobbingRightNow', true)
+        initiator.sDP('robbingTargetID', victim.id)
         form.show(initiator).then((r) => {
             if (!r.canceled) {
                 const selectedHash = itemsMap.get(r.selection)
                 this.stealItem(initiator, victim, selectedHash)
             }
+
+            initiator.sDP('isRobbingRightNow', false)
+            initiator.sDP('robbingTargetID', undefined)
         })
+    }
+
+    /**
+     * Check, can we rob a player?
+     * @param {Player} initiator 
+     * @param {Player} victim 
+     * @returns {Boolean}
+     */
+    static checkRPConditions(initiator, victim) {
+        let canRob = true
+        if (!victim.getProperty('arx:is_knocked')) {
+            sl(initiator, 'rob.cannot.victim_is_not_knocked', [], '§c')
+            return false
+        }
+        if (initiator.getProperty('arx:is_knocked')) {
+            sl(initiator, 'rob.cannot.you_are_knocked', [], '§c')
+            return false
+        }
+        return true
     }
 
     /** @param {ItemStack} item  */
@@ -107,6 +138,8 @@ export class Rob {
             return
         }
 
+        if (!this.checkRPConditions(initiator, victim)) return
+
         const robberInv = initiator.getComponent("minecraft:inventory")?.container
         if (!robberInv) return
 
@@ -120,8 +153,8 @@ export class Rob {
                     const leftover = robberInv.addItem(item.clone())
 
                     if (!leftover) {
-                        equipComp.setEquipment(slot, undefined)
-                        initiator?.sendMessage('§aSuccessfully stolen!')
+                        const itemToSet = victim.gDP('respawnDelay') ? Knockout.getBlockerItem() : undefined
+                        equipComp.setEquipment(slot, itemToSet)
                         return
                     } else {
                         initiator?.sendMessage("§cYou don't have free space in your inventory")
@@ -140,8 +173,8 @@ export class Rob {
                     const leftover = robberInv.addItem(item.clone())
 
                     if (!leftover) {
-                        victimInv.setItem(i, undefined)
-                        initiator?.sendMessage('§aSuccessfully stolen!')
+                        const itemToSet = victim.gDP('respawnDelay') ? Knockout.getBlockerItem() : undefined
+                        victimInv.setItem(i, itemToSet)
                         return
                     } else {
                         initiator?.sendMessage("§cYou don't have free space in your inventory")

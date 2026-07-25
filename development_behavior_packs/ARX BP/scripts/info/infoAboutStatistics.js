@@ -12,7 +12,7 @@ export function infoAboutStatistics(player) {
 function getBodyText(player) {
     let bodyText = ''
 
-    bodyText += `Время игры: §d${getScore(player, 'time_h')}ч. §d${getScore(player, 'time_m')}мин.\n§f`
+    bodyText += `Время игры: §d${getScore(player, 'time_h')}ч. §d${getScore(player, 'time_m')}мин.\n§f` // DP statistics:time_played_sec
 
     bodyText += '§6===\n§f'
 
@@ -39,10 +39,6 @@ function getBodyText(player) {
     bodyText += `Заклинаний сотворено: §d${getScore(player, 'count_spells')}\n§f`
 
     bodyText += `Маны потрачено: §d${getScore(player, 'count_spent_mp')} MP\n§f`
-
-    bodyText += '§6===\n§f'
-
-    bodyText += `Съедено Le Fishe: §d${player.getDynamicProperty('eatenLeFisheCounter')}`
 
     return bodyText
 }

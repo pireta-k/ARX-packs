@@ -19,15 +19,15 @@ function editVanillaPrototypes() {
         Entity.prototype.gDP = function (value) { return gDP(this, value) }
 
         // HP
-        Object.defineProperty(Entity.prototype, 'currentHP', { get: function () { return this.getComponent('health').currentValue } })
-        Object.defineProperty(Entity.prototype, 'maxHP', { get: function () { return this.getComponent('health').defaultValue } })
+        Object.defineProperty(Entity.prototype, 'currentHP', { get: function () { return this.getComponent('health')?.currentValue } })
+        Object.defineProperty(Entity.prototype, 'maxHP', { get: function () { return this.getComponent('health')?.defaultValue } })
         // 0 - death, 0.5 - moderate injuries, 1 - healthy
         Object.defineProperty(Entity.prototype, 'wellness', { get: function () { return this.currentHP / this.maxHP } })
 
         // Block
         Object.defineProperty(Entity.prototype, 'b', { get: function () { return this.dimension.getBlock(this.location) } })
 
-        Object.defineProperty(Entity.prototype, 'lightLevel', { get: function () { return this.b.getLightLevel() } })
+        Object.defineProperty(Entity.prototype, 'lightLevel', { get: function () { return this.b?.getLightLevel() } })
 
         // Riding
         Object.defineProperty(Entity.prototype, 'isRiding', { get: function () { return !!this.getComponent('minecraft:riding') } })
