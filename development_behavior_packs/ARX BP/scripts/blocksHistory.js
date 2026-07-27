@@ -5,8 +5,7 @@ import { sDP } from "./arxLib/DPOperations"
 
 // Получаем историю блока (триггер)
 world.afterEvents.entityHitBlock.subscribe((hitEvent) => {
-    if (hitEvent.damagingEntity.hasTag('gbd_ready') || checkForItem(hitEvent.damagingEntity, "mainhand", 'arx:mod_sword')) {
-        hitEvent.damagingEntity.removeTag('gbd_ready')
+    if (checkForItem(hitEvent.damagingEntity, "mainhand", 'arx:mod_sword')) {
         readBlockHistory(hitEvent.hitBlock, hitEvent.damagingEntity)
     }
 })
@@ -27,7 +26,7 @@ function recordBlockHistory(block, player) {
     const h = now.getHours().toString().padStart(2, '0')
     const min = now.getMinutes().toString().padStart(2, '0')
     const s = now.getSeconds().toString().padStart(2, '0')
-    
+
     const DPName = `bH:${block.location.x},${block.location.y},${block.location.z},${block.dimension.id.split(':')[1].substring(0, 2)}`
     const valueToRecord = `["${player.name}","${y}${m}${d}","${h}${min}${s}"]`
 
@@ -49,8 +48,8 @@ function readBlockHistory(block, player) {
     const h = timeStr.substring(0, 2)
     const min = timeStr.substring(2, 4)
     const s = timeStr.substring(4, 6)
-    
+
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-    
-    player.sendMessage(`§dИстория взаимодействия:\n§eПоставивший игрок§f: ${name}\n§eДата§f: ${d} ${months[+m-1]} ${y}\n§eВремя§f: ${h}h ${min}m ${s}s`)
+
+    player.sendMessage(`§dИстория взаимодействия:\n§eПоставивший игрок§f: ${name}\n§eДата§f: ${d} ${months[+m - 1]} ${y}\n§eВремя§f: ${h}h ${min}m ${s}s`)
 }

@@ -68,7 +68,6 @@ export function rayCast(player, distance, options = {}) {
             normal: blockHit.normal,
             block: blockHit.block
         })
-        playSound('magic.ray.hit', dimension, blockHit.location)
 
         distanceLeft -= blockHit.distance
         distancePassed += blockHit.distance

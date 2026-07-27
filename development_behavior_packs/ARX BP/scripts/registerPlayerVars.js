@@ -89,9 +89,6 @@ export function registerPlayerVars(player) {
     if (gDP(player, "height") === undefined) {
         sDP(player, "height", 180)
     }
-    if (gDP(player, 'ghostUltimateResistance') === undefined) {
-        sDP(player, 'ghostUltimateResistance', 0)
-    }
 
     if (gDP(player, 'reviveDelay') === undefined) {
         sDP(player, 'reviveDelay', 0)

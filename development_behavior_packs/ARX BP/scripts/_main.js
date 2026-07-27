@@ -47,6 +47,7 @@ import { emote, emotionsList } from './emote'
 import { Rob } from "./rob"
 import { Knockout } from "./knockout"
 import { UI } from "./arxLib/UI"
+import { infoScreen } from "./info/_infoScreen"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -534,6 +535,10 @@ world.afterEvents.playerInteractWithEntity.subscribe(async (interactEvent) => {
     }
 })
 
+export const customDimensionIds = [
+    'arx:guide_realm'
+]
+
 // При запуске мира
 system.beforeEvents.startup.subscribe(initEvent => {
     initEvent.blockComponentRegistry.registerCustomComponent('arx:blockInteration', {
@@ -729,7 +734,9 @@ system.beforeEvents.startup.subscribe(initEvent => {
             }
         }
     })
-    initEvent.dimensionRegistry.registerCustomDimension('arx:guide_realm')
+    for (const dId of customDimensionIds) {
+        initEvent.dimensionRegistry.registerCustomDimension(dId)
+    }
     // === Custom commands ===
     const ccr = initEvent.customCommandRegistry
 
@@ -748,7 +755,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         }
     )
     // Structure Builder
-    const sbOptions = ccr.registerEnum('arx:sbOptions', ['p1', 'p2'])
+    ccr.registerEnum('arx:sbOptions', ['p1', 'p2'])
     ccr.registerCommand(
         {
             name: 'arx:sb',
@@ -774,8 +781,8 @@ system.beforeEvents.startup.subscribe(initEvent => {
         }
     )
     // sDP
-    const sdpOptions0 = ccr.registerEnum('arx:sdpOptions0', ['me', 'world'])
-    const sdpOptions1 = ccr.registerEnum('arx:sdpOptions1', ['number', 'bool', 'string'])
+    ccr.registerEnum('arx:sdpOptions0', ['me', 'world'])
+    ccr.registerEnum('arx:sdpOptions1', ['number', 'bool', 'string'])
     ccr.registerCommand(
         {
             name: 'arx:sdp',
@@ -816,7 +823,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         }
     )
     // Emote
-    const emotionsEnum = ccr.registerEnum('arx:emotionsEnum', emotionsList)
+    ccr.registerEnum('arx:emotionsEnum', emotionsList)
     ccr.registerCommand(
         {
             name: 'arx:emote',
@@ -838,7 +845,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         }
     )
     // Ftp (Fast teleportation)
-    const ftpOptions = ccr.registerEnum('arx:ftpOptions', ['spawn', 'lobby', 'save', 'load'])
+    ccr.registerEnum('arx:ftpOptions', ['spawn', 'lobby', 'save', 'load'])
     ccr.registerCommand(
         {
             name: 'arx:ftp',
@@ -892,6 +899,82 @@ system.beforeEvents.startup.subscribe(initEvent => {
                     break
             }
             return { status: CustomCommandStatus.Success }
+        }
+    )
+    // Pos
+    ccr.registerCommand(
+        {
+            name: 'arx:pos',
+            description: 'Get my coordinates',
+            permissionLevel: CommandPermissionLevel.Admin,
+            cheatsRequired: true,
+        },
+        origin => {
+            const player = origin.initiator ?? origin.sourceEntity
+            if (player.location) {
+                const { x, y, z } = player.location;
+                const xPos = x.toFixed(1);
+                const yPos = y.toFixed(1);
+                const zPos = z.toFixed(1);
+
+                player.sendMessage(`Pos > ${xPos} ${yPos} ${zPos}`);
+            } else {
+                player.sendMessage("Cannot get your position");
+            }
+        }
+    )
+    // SetName
+    ccr.registerCommand(
+        {
+            name: 'arx:setname',
+            description: 'Change in-game name',
+            permissionLevel: CommandPermissionLevel.Any,
+            cheatsRequired: false,
+            mandatoryParameters: [
+                {
+                    name: 'arx:name',
+                    type: CustomCommandParamType.String
+                }
+            ]
+        },
+        (origin, arg0) => {
+            const player = origin.initiator ?? origin.sourceEntity
+            if (!arg0) {
+                sl(player, 'custom_commands.setName.cannot.empty')
+                return
+            }
+            if (arg0.length > 30) {
+                sl(player, 'custom_commands.setName.cannot.long')
+                return
+            }
+            player.sendMessage(``)
+            sl(player, 'custom_commands.setName.success', [arg0])
+        }
+    )
+    // Menu
+    ccr.registerCommand(
+        {
+            name: 'arx:menu',
+            description: 'Open Arx menu',
+            permissionLevel: CommandPermissionLevel.Any,
+            cheatsRequired: false,
+        },
+        origin => {
+            const player = origin.initiator ?? origin.sourceEntity
+            system.run(() => { infoScreen(player) })
+        }
+    )
+    // Menu short
+    ccr.registerCommand(
+        {
+            name: 'arx:m',
+            description: 'Open Arx menu',
+            permissionLevel: CommandPermissionLevel.Any,
+            cheatsRequired: false,
+        },
+        origin => {
+            const player = origin.initiator ?? origin.sourceEntity
+            system.run(() => { infoScreen(player) })
         }
     )
 })

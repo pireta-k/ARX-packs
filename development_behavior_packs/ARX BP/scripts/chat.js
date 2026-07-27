@@ -15,41 +15,222 @@ import { gDP, sDP } from "./arxLib/DPOperations"
 import { isAdmin, getAdmins } from './arxLib/admin'
 import { Weather } from "./arxLib/weather"
 import { sendItems } from "./items/sendItems"
+import { NPCManager } from "./npcManager"
+import { customDimensionIds, getDistanceBetween, getEntityFamilies } from "./_main"
+import { infoScreen } from "./info/_infoScreen"
+import { random } from "./arxLib/random"
 
 /**
  * @typedef ChatMessageOptions
- * @property {Entity} sourceEntity
  * @property {String} [forceSourceName]
- * @property {'local' | 'global' | 'shout' | 'whisper'} type
- * @property {String} content
+ * @property {'local' | 'global' | 'shout' | 'whisper' | 'action'} [type]
+ * @property {Boolean} [debug]
  */
+
 
 /**
- * Arx Message class
+ * Chat class
  */
-class ChatMessage {
-    /** @param {ChatMessageOptions} options */
-    constructor(options) {
-        this.sourceEntity = options.sourceEntity
-        this.type = options.type
-        this.content = options.content
+export class Chat {
+    /**
+     * Arx Message class
+     */
+    static Message = class {
+        #sourceEntity
+        #originalText
+        #clearDistance
+        #style
+        #isTransDimensional
+        #fullDistance
+        #targetEntities
+        #sourceName
+        #formattingMap
+        #langKey
+        #debug
 
-        switch (options.clearDistance) {
-            case 'local':
-                this.clearDistance = 8; break
-            case 'global':
-                this.clearDistance = Infinity; break
-            case 'shout':
-                this.clearDistance = 20; break
-            case 'whisper':
-                this.clearDistance = 2; break
+        /** 
+         * @param {String} content 
+         * @param {ChatMessageOptions} [options] 
+         * */
+        constructor(sourceEntity, content, options = {}) {
+
+            this.#debug = !!options.debug
+            this.#sourceEntity = sourceEntity // An entity that sends a message
+            this.#originalText = content // An original text from message without any modifications
+            this.#splitFormatting() // Assign formattingMap & rawText
+
+            this.type = options.type ?? Chat.defaultMessageType
+            if (!Chat.messageTypes.includes(this.type)) this.type = Chat.defaultMessageType
+
+            switch (this.type) {
+                case 'local': // <- Default type
+                    this.#clearDistance = 12
+                    this.#style = '§a'
+                    break
+                case 'global':
+                    this.#clearDistance = Infinity
+                    this.#style = '§c'
+                    break
+                case 'shout':
+                    this.#clearDistance = 25
+                    this.#style = '§v'
+                    break
+                case 'whisper':
+                    this.#clearDistance = 3
+                    this.#style = '§6'
+                    break
+                case 'action':
+                    this.#clearDistance = 12
+                    this.#style = '§b'
+                    break
+                default:
+                    this.#clearDistance = 0
+                    this.#style = ''
+                    console.warn(`Unexpected message type: ${options.type}`)
+            }
+
+            this.#langKey = `chat.messageType.${this.type}`
+            this.#isTransDimensional = this.#clearDistance === Infinity
+            this.#fullDistance = this.#clearDistance * 2
+
+            if (!this.#isTransDimensional) {
+                this.#targetEntities = this.#sourceEntity.dimension.getEntities({
+                    location: this.#sourceEntity.location,
+                    maxDistance: this.#fullDistance
+                }).filter(e => Chat.canHear(e))
+            } else {
+                let entities = []
+                for (const d of this.#getAvailableDimensions()) {
+                    entities.push(...d.getEntities().filter(e => Chat.canHear(e)))
+                }
+                this.#targetEntities = entities
+            }
+            this.#sourceName = options.forceSourceName ?? sourceEntity?.gDP('name') ?? '???'
         }
 
-        this.fullDistance = this.clearDistance * 2
+        /**
+         * Get a raw text and styles from an original text. Styles always go with §, like §a
+         * Needed for applying messing correctly. If we will apply messing on style, some visual bullshit will occur
+         */
+        #splitFormatting() {
+            const formattingMap = new Map() // Key - index, value - letter.
+            let result = this.#originalText
 
-        this.targetEntities =
-            this.sourceName = options.forceSourceName ?? options.sourceEntity?.gDP('name') ?? options.sourceEntity.fl()
+            while (true) {
+                // Get an index of §
+                const index = result.indexOf('§')
+                if (index === -1) break
+
+                // Protection of messages ending with §
+                if (index + 1 >= result.length) {
+                    // Just keep it and break
+                    // If this IF has triggered, then it is the last cycle
+                    break
+                }
+
+                formattingMap.set(index, result[index + 1])
+                // Cut this out of result
+                result = result.slice(0, index) + result.slice(index + 2)
+            }
+
+            this.#formattingMap = formattingMap
+            this.rawText = result
+
+            if (this.#debug) console.warn("splitFormatting: " + result)
+        }
+
+        /**
+         * Assemble style back. Returns the result
+         * @param {String} text 
+         * @returns {String}
+         */
+        #assembleFormatting(text) {
+            // Check
+            if (!this.#formattingMap || !this.#formattingMap.size) return text
+
+            const reversedKeys = [...this.#formattingMap.keys()].sort((a, b) => b - a)
+            for (const key of reversedKeys) { // Restore the formatting in the reversed order
+                const symbol = this.#formattingMap.get(key)
+                text = text.slice(0, key) + '§' + symbol + text.slice(key)
+            }
+
+            if (this.#debug) console.warn("assembleFormatting: " + text)
+            return text
+        }
+
+        /**
+         * Returns a text with applied messing
+         * Does not change length (for correct #assembleFormatting())
+         * Works with this.rawText
+         * @param {Entity} singleListener 
+         * @returns {String}
+         */
+        #applyMessing(singleListener) {
+            if (this.#clearDistance === Infinity) return this.rawText // Infinity distance
+            const defactoDistance = getDistanceBetween(this.#sourceEntity, singleListener)
+            if (this.#clearDistance >= defactoDistance) return this.rawText // Clear distance
+            // A distance is longer then clear but still ok to hear a speech
+            let rawText = this.rawText
+            const spoilFactor = (defactoDistance - this.#clearDistance) / this.#clearDistance // Value from 0 to 1
+            const messSymbols = [...'■.?-']
+
+            for (let i = 0; i < rawText.length; i++) {
+                if (spoilFactor > random.random_0_to_1()) {
+                    const desiredSymbol = random.element(messSymbols)
+                    rawText = rawText.slice(0, i) + desiredSymbol + rawText.slice(i + 1)
+                }
+            }
+
+            if (this.#debug) console.warn("applyMessing: " + rawText)
+            return rawText
+        }
+
+        /**
+         * Collect dimensions for isTransDimensional messages
+         * Needs to be collected only one time. Uses cache
+         */
+        #getAvailableDimensions() {
+            if (Chat.Message.#availableDimensionsCache) return Chat.Message.#availableDimensionsCache
+            const ds = [
+                world.getDimension('minecraft:overworld'),
+                world.getDimension('minecraft:nether'),
+                world.getDimension('minecraft:end'),
+            ]
+            for (const dId of customDimensionIds) {
+                ds.push(world.getDimension(dId))
+            }
+            Chat.Message.#availableDimensionsCache = ds
+            return ds
+        }
+        static #availableDimensionsCache
+
+        /**
+         * Sends this message to chat
+         */
+        send() {
+            for (const e of this.#targetEntities) {
+                let text = this.#applyMessing(e)
+                text = this.#assembleFormatting(text)
+                if (e.typeId === 'minecraft:player') {
+                    const typeText = e.gDP('myRule:chatPrefixes') === 'short' ? fl(e, this.#langKey)[0] : fl(e, this.#langKey)
+                    e.sendMessage(`[${this.#style}${typeText}§f] <${this.#sourceName}§f> ${text}`)
+                } else {
+                    // TO-DO - NPCManager trigger
+                }
+            }
+        }
     }
+
+    /**
+     * Returns true if the entity can hear a chat
+     * @param {Entity} e 
+     */
+    static canHear(e) {
+        return (e.typeId === 'minecraft:player') || getEntityFamilies(e).includes('dynamic_npc')
+    }
+
+    static messageTypes = ['local', 'global', 'shout', 'whisper', 'action'] // Thirst one is a default one
+    static defaultMessageType = this.messageTypes[0]
 }
 
 // Обработка чата before
@@ -72,32 +253,7 @@ export async function parceChatCommand(player, trimmedMessage) {
         // command содержит в себе список из последовательности введенных слов в команде
         const command = trimmedMessage.split(/\s+/)
 
-        if (command[0] == "!test") { // Тест функция
-            if (isAdmin(player)) {
-                sl(player, 'lobby.verify.new_player_entered_arx', [player.name])
-            } else {
-                sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
-        else if (command[0] === "!pos") { // Получить координаты
-            if (isAdmin(player)) {
-                if (player.location) {
-                    const { x, y, z } = player.location;
-                    const xPos = x.toFixed(1);
-                    const yPos = y.toFixed(1);
-                    const zPos = z.toFixed(1);
-
-                    player.sendMessage(`[§dSYSTEM§f] > ${xPos} ${yPos} ${zPos}`);
-                } else {
-                    player.sendMessage("[§dSYSTEM§f] > Не удалось получить координаты");
-                }
-            } else {
-                sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
-        else if (command[0] == "!eval") { // Eval функция
+        if (command[0] == "!eval") { // Eval функция
             if (isAdmin(player)) {
                 const codeToEval = trimmedMessage.slice(5);
                 try {
@@ -118,28 +274,6 @@ export async function parceChatCommand(player, trimmedMessage) {
                 }
             } else {
                 sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
-        else if (command[0] == "!") { // Инфо о командах
-            sDP(player, 'hasEverSeenArxCommandsHelp', true)
-            queueCommand(player, `function javascript/arx_commands_help`);
-        }
-
-        else if (command[0].toLowerCase() == "!имя" || command[0].toLowerCase() == "!name" || command[0].toLowerCase() == "!setname") { // Установить имя
-            const newName = command.slice(1).join(' ').trim()
-
-            if (!newName) {
-                queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cНевозможно установить пустое имя." } ] }`)
-            }
-            else {
-                if (newName.length < 30) {
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§aИмя персонажа для локального чата изменено на §f${newName}§a." } ] }`)
-                    sDP(player, "name", newName)
-                }
-                else {
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cПожалуйста, введите более короткое имя." } ] }`)
-                }
             }
         }
 
@@ -211,16 +345,6 @@ export async function parceChatCommand(player, trimmedMessage) {
             }
         }
 
-        else if (command[0] == "!gbd") { // Get Block Data
-            if (isAdmin(player)) {
-                queueCommand(player, "tag @s add gbd_ready")
-                queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§f§aКликните на блок§f, чтобы получить данные о его взаимдействиях на этом хосте." } ] }`)
-            }
-            else {
-                sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
         else if (command[0] == "!verify") { // Верификация игрока
             if (!isAdmin(player)) sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
             else if (!world.getDynamicProperty('requireUserVerification')) player.sendMessage('§cВерификация отключена глобально')
@@ -252,11 +376,6 @@ export async function parceChatCommand(player, trimmedMessage) {
                     }
                 }
             }
-        }
-
-        else if (command[0] == "!i" || command[0] == "!и") { // Открыть инфо
-            player.sendMessage('§aЗакройте чат и прыгните§f, чтобы открыть <Инфо>')
-            sDP(player, 'ui:readyToOpenInfoBook', true)
         }
 
         else if (command[0].toLowerCase() == "!w" || command[0].toLowerCase() == "!ш") { // Использование шёпота
@@ -322,35 +441,14 @@ export async function parceChatCommand(player, trimmedMessage) {
                 player.sendMessage(`§cВы не можете использовать глобальный чат, пока вы без сознания.`)
             }
         }
-        else if (command[0] == "!camset") {
-            if (player.getDynamicProperty('respawnDelay') === 0) {
-                queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§aКамера установлена.\n§eИспользование камеры с любой целью, кроме эстетического улучшения ракурса, является тяжёлым нарушением правил Аркса по части РП." } ] }`)
-                queueCommand(player, `tellraw @a[rm=0.01, r=10] { "rawtext": [ { "text": "[§dSYSTEM§f] > "}, {"selector": "@s"}, { "text": " установил(а) камеру поблизости." } ] }`)
-                queueCommand(player, `tellraw @a[scores={verify=2}] { "rawtext": [ { "text": "[§dSYSTEM§f] > "}, {"selector": "@s"}, { "text": " установил(а) камеру на ${Math.round(player.location.x)} ${Math.round(player.location.y)} ${Math.round(player.location.z)}." } ] }`)
-                queueCommand(player, `camera @s set minecraft:free pos ~ ~1.7 ~ rot ~ ~`)
-            }
-            else {
-                queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cВы не можете управлять камерой, пока вы без сознания." } ] }`)
-            }
-        }
-        else if (command[0] == "!camclr") {
-            if (player.getDynamicProperty('respawnDelay') === 0) {
-                queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§aКамера сброшена." } ] }`)
-                queueCommand(player, `tellraw @a[rm=0.01, r=10] { "rawtext": [ { "text": "[§dSYSTEM§f] > "}, {"selector": "@s"}, { "text": " сбросил(а) камеру поблизости." } ] }`)
-                queueCommand(player, `tellraw @a[scores={verify=2}] { "rawtext": [ { "text": "[§dSYSTEM§f] > "}, {"selector": "@s"}, { "text": " сбросил(а) камеру." } ] }`)
-                queueCommand(player, `camera @s clear`)
-            }
-            else {
-                queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cВы не можете управлять камерой, пока вы без сознания." } ] }`)
-            }
-        }
 
         else {
-            player.sendMessage(`§cТакой команды Аркса не существует.\nВведите §f!§c, чтобы посмотреть доступные.`)
+            player.sendMessage(`§cТакой команды Аркса не существует.`)
         }
     }
     else { // Сообщение - не команда Аркса. Обработать и отправить
-        sendChatMessage(player, trimmedMessage, "§aЛокал.", 8, player.getDynamicProperty('name'))
+        // sendChatMessage(player, trimmedMessage, "§aЛокал.", 8, player.getDynamicProperty('name'))
+        new Chat.Message(player, trimmedMessage).send()
     }
 }
 
@@ -807,10 +905,4 @@ export function msgFromGuide(player, message) {
     }
     player.sendMessage(`[§aГид§f] > ${message}`)
     player.runCommand('playsound random.orb @s ~ ~ ~')
-}
-export function msgFromSystem(player, message) {
-    if (!player || !message) {
-        console.warn(`Попытка отправить сообщение от системы игроку ${player.name} с содержанием ${message} с отсутствием достаточного числа аргументов`)
-    }
-    player.sendMessage(`[§dСистема§f] > ${message}`)
 }

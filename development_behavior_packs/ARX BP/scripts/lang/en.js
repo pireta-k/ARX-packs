@@ -380,4 +380,14 @@ export const enLocalization = {
     "player_interaction.option.kill": '§cKill forever',
 
     "knockout.playing_dead": 'Playing dead...',
+
+    "custom_commands.setName.cannot.empty": 'Name cannot be empty.',
+    "custom_commands.setName.cannot.long": 'Please enter a shorter name (less than 30 characters).',
+    "custom_commands.setName.success": 'Character name for local chat changed to §a$0$§f.',
+
+    "chat.messageType.local": 'Local',
+    "chat.messageType.global": 'Global',
+    "chat.messageType.shout": 'Shout',
+    "chat.messageType.whisper": 'Whisper',
+    "chat.messageType.action": 'Action',
 }

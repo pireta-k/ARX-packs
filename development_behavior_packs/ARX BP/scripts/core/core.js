@@ -164,7 +164,7 @@ export const coreFramework = {
             }
         }
     },
-    // Knockout system
+    // Knockout system - 1 tick
     knockoutSystem: {
         tickSpeed: 1,
         operations: (data) => {
@@ -192,6 +192,126 @@ export const coreFramework = {
                     }
                     const rideableComponent = player.getComponent('minecraft:rideable');
                     if (rideableComponent) rideableComponent.ejectRiders()
+                }
+            }
+        }
+    },
+    // Knockout system - 20 ticks
+    knockout: {
+        tickSpeed: 20,
+        operations: async (data) => {
+            for (const player of data.players) {
+                // respawnDelay - задержка до момента, когда игрок встанет естественным образом
+                // reviveDelay - время, пока игрока поднимают. Хранится на нокнутом поднимаемом игроке
+
+                // === Knockout processing ===
+
+                // Выход из нокаута (именно не вставание, а выход из нокаута. Игрок может продолжить лежать и притворяться мертвым)
+                if (player.gDP('respawnDelay') < player.gDP('respawnDelayLastPass') && player.gDP('respawnDelay') === 0) {
+                    // Разблокировываем движение
+                    player.runCommand('inputpermission set @s camera enabled')
+                    if (!player.isRiding) { player.runCommand('inputpermission set @s movement enabled') }
+
+                    // Говорим фразу
+                    {
+                        const rand = Math.floor(Math.random() * 3)
+                        const text =
+                            rand === 0 ? 'Где я...?' :
+                                rand === 1 ? 'Сколько прошло времени...?' : 'Как больно...'
+
+                        player.sendMessage(`§o§e${text}\n§7Вы ещё не до конца поняли, что к чему, но уже готовы бежать. (Получен временный бонус скорости)`)
+                        sDP(player, 'speedBoostAfterKnockout', 40)
+                    }
+
+                    // Очищаем блокировщики слота
+                    player.runCommand('clear @s arx:slot_blocker')
+                }
+
+                // === Reviving processing ===
+
+                if (player.getProperty('arx:is_knocked') === false, player.isSneaking) {
+
+                    // Определяем скорость ресанья
+                    let reviveSpeedValue = 1
+                    if (checkForItem(player, 'Legs', 'arx:amul_revive')) reviveSpeedValue += 2 // Увеличиваем, если есть амуль быстрого воскрешения
+
+                    // Получаем всех игроков поблизости
+                    const nearbyPlayers = getPlayersInRadius(player, 1.5)
+
+                    // Ресаем
+                    for (const nearbyPlayer of nearbyPlayers) {
+                        if (nearbyPlayer.getProperty('arx:is_knocked') && !nearbyPlayer.isRiding) {
+
+                            const is_loaded = await isPlayerCompletelyLoaded(nearbyPlayer)
+
+                            if (is_loaded) {
+                                iDP(nearbyPlayer, 'reviveDelay', reviveSpeedValue)
+                                displayRespawnLine(nearbyPlayer, player) // Отображаем линию воскрешения ресающему
+                                displayRespawnLine(nearbyPlayer, nearbyPlayer) // Отображаем линию воскрешения тому кого ресают
+
+                                // Мы воскресили до нужного reviveDelay or more (reviveDelay >= 10)
+                                if (nearbyPlayer.getDynamicProperty('reviveDelay') >= 10) {
+                                    // Отправляем сообщение поднимаемому
+                                    if (nearbyPlayer.getDynamicProperty("respawnDelay") === 0) {
+                                        nearbyPlayer.runCommand(`tellraw @s { "rawtext": [ { "text": "${player.getDynamicProperty('name')} §aпомогает мне. Притворяться вырубленным сейчас не выйдет" } ] }`)
+                                    } else {
+                                        nearbyPlayer.runCommand(`tellraw @s { "rawtext": [ { "text": "${player.getDynamicProperty('name')} §aпомогает мне" } ] }`)
+                                    }
+                                    // Отправляем сообщение поднимающему
+                                    player.runCommand(`tellraw @s { "rawtext": [ { "text": "${nearbyPlayer.getDynamicProperty('name')} §aчувствует себя лучше" } ] }`)
+
+                                    // Выставляем данные
+                                    sDP(nearbyPlayer, 'respawnDelay', 0)
+                                    nearbyPlayer.setProperty("arx:is_knocked", false)
+                                    nearbyPlayer.runCommand('event entity @s arx:exit_knockout')
+                                }
+                            }
+                            else {
+                                player.sendMessage(`${nearbyPlayer.getDynamicProperty('name')} is still loading...`)
+                            }
+                        }
+                    }
+                }
+
+                // Обработка нокнутого игрока
+                if (player.getProperty('arx:is_knocked') === true) {
+                    // Если нас перестали ресать, то сбрасываем прогресс ресанья
+                    {
+                        // Получаем всех игроков поблизости
+                        const nearbyPlayers = getPlayersInRadius(player, 1.5)
+                        // Проверяем, есть ли хотя бы один тот, кто ресает
+                        let someoneWhoIsHelpingMe = false
+                        for (const nearbyPlayer of nearbyPlayers) {
+                            if (nearbyPlayer.getProperty('arx:is_knocked') === false, nearbyPlayer.isSneaking) {
+                                someoneWhoIsHelpingMe = true
+                            }
+                        }
+                        if (!someoneWhoIsHelpingMe) {
+                            sDP(player, 'reviveDelay', 0)
+                        }
+                    }
+                    // Темнеем камеру
+                    if (player.getDynamicProperty('respawnDelay') == 6) {
+                        player.runCommand('camera @s fade time 0 0 10 color 20 3 3')
+                    } else if (player.getDynamicProperty('respawnDelay') > 6) {
+                        player.runCommand('camera @s fade time 0 2 0 color 20 3 3')
+                    }
+                }
+
+                // Обработка переменных
+                sDP(player, 'respawnDelayLastPass', player.getDynamicProperty('respawnDelay'))
+                if (player.getDynamicProperty('respawnDelay') > 0) {
+                    iDP(player, 'respawnDelay', -1)
+                }
+
+                // Функия рисования линии респавна
+                function displayRespawnLine(playerWhoIsKnocked, playerToDisplay) {
+                    const reviveValue = playerWhoIsKnocked.getDynamicProperty('reviveDelay')
+                    let resultLine = '§a'
+                    for (let i = 0; i < reviveValue; i++) {
+                        resultLine += '█ '
+                    }
+                    sendToActionBar(playerToDisplay, 'respawnLine', resultLine.slice(0, -1), 25) // Выводим, срезая пробел сзади строки
                 }
             }
         }
@@ -248,14 +368,12 @@ export const coreFramework = {
     wateringCropsBySoaking: {
         tickSpeed: 80,
         operations: (data) => {
-            for (const player of data.players) {
-                if (gDP(player, 'wetness', 0) > 0) {
-                    const blocksBelow = player.getAllBlocksStandingOn().filter(b => b.typeId === 'minecraft:farmland')
-                    for (const b of blocksBelow) {
-                        const moisturing = b.permutation.getState('moisturized_amount') // 0 - 7 inclusive
-                        if (moisturing < 7) {
-                            b.setPermutation(b.permutation.withState('moisturized_amount', moisturing + 1))
-                        }
+            for (const player of data.players.filter(p => p.gDP('wetness', 0) > 0)) {
+                const blocksBelow = player.getAllBlocksStandingOn().filter(b => b.typeId === 'minecraft:farmland')
+                for (const b of blocksBelow) {
+                    const moisturing = b.permutation.getState('moisturized_amount') // 0 - 7 inclusive
+                    if (moisturing < 7) {
+                        b.setPermutation(b.permutation.withState('moisturized_amount', moisturing + 1))
                     }
                 }
             }
@@ -703,126 +821,6 @@ export const coreFramework = {
                     }
 
                     sDP(player, 'freezing', freezing)
-                }
-            }
-        }
-    },
-    // Knockout
-    knockout: {
-        tickSpeed: 20,
-        operations: async (data) => {
-            for (const player of data.players) {
-                // respawnDelay - задержка до момента, когда игрок встанет естественным образом
-                // reviveDelay - время, пока игрока поднимают. Хранится на нокнутом поднимаемом игроке
-
-                // === Knockout processing ===
-
-                // Выход из нокаута (именно не вставание, а выход из нокаута. Игрок может продолжить лежать и притворяться мертвым)
-                if (player.gDP('respawnDelay') < player.gDP('respawnDelayLastPass') && player.gDP('respawnDelay') === 0) {
-                    // Разблокировываем движение
-                    player.runCommand('inputpermission set @s camera enabled')
-                    if (!player.isRiding) { player.runCommand('inputpermission set @s movement enabled') }
-
-                    // Говорим фразу
-                    {
-                        const rand = Math.floor(Math.random() * 3)
-                        const text =
-                            rand === 0 ? 'Где я...?' :
-                                rand === 1 ? 'Сколько прошло времени...?' : 'Как больно...'
-
-                        player.sendMessage(`§o§e${text}\n§7Вы ещё не до конца поняли, что к чему, но уже готовы бежать. (Получен временный бонус скорости)`)
-                        sDP(player, 'speedBoostAfterKnockout', 40)
-                    }
-
-                    // Очищаем блокировщики слота
-                    player.runCommand('clear @s arx:slot_blocker')
-                }
-
-                // === Reviving processing ===
-
-                if (player.getProperty('arx:is_knocked') === false, player.isSneaking) {
-
-                    // Определяем скорость ресанья
-                    let reviveSpeedValue = 1
-                    if (checkForItem(player, 'Legs', 'arx:amul_revive')) reviveSpeedValue += 2 // Увеличиваем, если есть амуль быстрого воскрешения
-
-                    // Получаем всех игроков поблизости
-                    const nearbyPlayers = getPlayersInRadius(player, 1.5)
-
-                    // Ресаем
-                    for (const nearbyPlayer of nearbyPlayers) {
-                        if (nearbyPlayer.getProperty('arx:is_knocked') && !nearbyPlayer.isRiding) {
-
-                            const is_loaded = await isPlayerCompletelyLoaded(nearbyPlayer)
-
-                            if (is_loaded) {
-                                iDP(nearbyPlayer, 'reviveDelay', reviveSpeedValue)
-                                displayRespawnLine(nearbyPlayer, player) // Отображаем линию воскрешения ресающему
-                                displayRespawnLine(nearbyPlayer, nearbyPlayer) // Отображаем линию воскрешения тому кого ресают
-
-                                // Мы воскресили до нужного reviveDelay or more (reviveDelay >= 10)
-                                if (nearbyPlayer.getDynamicProperty('reviveDelay') >= 10) {
-                                    // Отправляем сообщение поднимаемому
-                                    if (nearbyPlayer.getDynamicProperty("respawnDelay") === 0) {
-                                        nearbyPlayer.runCommand(`tellraw @s { "rawtext": [ { "text": "${player.getDynamicProperty('name')} §aпомогает мне. Притворяться вырубленным сейчас не выйдет" } ] }`)
-                                    } else {
-                                        nearbyPlayer.runCommand(`tellraw @s { "rawtext": [ { "text": "${player.getDynamicProperty('name')} §aпомогает мне" } ] }`)
-                                    }
-                                    // Отправляем сообщение поднимающему
-                                    player.runCommand(`tellraw @s { "rawtext": [ { "text": "${nearbyPlayer.getDynamicProperty('name')} §aчувствует себя лучше" } ] }`)
-
-                                    // Выставляем данные
-                                    sDP(nearbyPlayer, 'respawnDelay', 0)
-                                    nearbyPlayer.setProperty("arx:is_knocked", false)
-                                    nearbyPlayer.runCommand('event entity @s arx:exit_knockout')
-                                }
-                            }
-                            else {
-                                player.sendMessage(`${nearbyPlayer.getDynamicProperty('name')} is still loading...`)
-                            }
-                        }
-                    }
-                }
-
-                // Обработка нокнутого игрока
-                if (player.getProperty('arx:is_knocked') === true) {
-                    // Если нас перестали ресать, то сбрасываем прогресс ресанья
-                    {
-                        // Получаем всех игроков поблизости
-                        const nearbyPlayers = getPlayersInRadius(player, 1.5)
-                        // Проверяем, есть ли хотя бы один тот, кто ресает
-                        let someoneWhoIsHelpingMe = false
-                        for (const nearbyPlayer of nearbyPlayers) {
-                            if (nearbyPlayer.getProperty('arx:is_knocked') === false, nearbyPlayer.isSneaking) {
-                                someoneWhoIsHelpingMe = true
-                            }
-                        }
-                        if (!someoneWhoIsHelpingMe) {
-                            sDP(player, 'reviveDelay', 0)
-                        }
-                    }
-                    // Темнеем камеру
-                    if (player.getDynamicProperty('respawnDelay') == 6) {
-                        player.runCommand('camera @s fade time 0 0 10 color 20 3 3')
-                    } else if (player.getDynamicProperty('respawnDelay') > 6) {
-                        player.runCommand('camera @s fade time 0 2 0 color 20 3 3')
-                    }
-                }
-
-                // Обработка переменных
-                sDP(player, 'respawnDelayLastPass', player.getDynamicProperty('respawnDelay'))
-                if (player.getDynamicProperty('respawnDelay') > 0) {
-                    iDP(player, 'respawnDelay', -1)
-                }
-
-                // Функия рисования линии респавна
-                function displayRespawnLine(playerWhoIsKnocked, playerToDisplay) {
-                    const reviveValue = playerWhoIsKnocked.getDynamicProperty('reviveDelay')
-                    let resultLine = '§a'
-                    for (let i = 0; i < reviveValue; i++) {
-                        resultLine += '█ '
-                    }
-                    sendToActionBar(playerToDisplay, 'respawnLine', resultLine.slice(0, -1), 25) // Выводим, срезая пробел сзади строки
                 }
             }
         }
@@ -1590,7 +1588,6 @@ const dynamicPropertiesToDecrease = {
     'statsBonusByFiolix': undefined,
     'scrollOfHealingCD': '§aСвиток исцеления снова можно использовать',
     'autoHPRegenCD': undefined,
-    'ghostUltimateResistance': undefined,
     'speedBoostAfterKnockout': undefined,
     'speedBoost:level0': '§6Бонус скорости от заклинания [ур. 1] закончился',
     'speedBoost:level1': '§6Бонус скорости от заклинания [ур. 2] закончился',

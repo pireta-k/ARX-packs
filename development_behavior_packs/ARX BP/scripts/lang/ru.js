@@ -261,4 +261,14 @@ export const ruLocalization = {
     "emote.cannot_cus_moving": 'Чтобы запустить анимацию, встаньте на одном месте.',
     "emote.cannot_cus_riding": 'Чтобы запустить анимацию, слезьте с того, на чем сидите.',
     "emote.cannot_cus_flying": 'Чтобы запустить анимацию, прекратите летать.',
+
+    "custom_commands.setName.cannot.empty": 'Невозможно установить пустое имя.',
+    "custom_commands.setName.cannot.long": 'Пожалуйста, введите более короткое имя (менее 30 символов).',
+    "custom_commands.setName.success": 'Имя персонажа для локального чата изменено на §a$0$§f.',
+
+    "chat.messageType.local": 'Локал.',
+    "chat.messageType.global": 'Глобал.',
+    "chat.messageType.shout": 'Крик',
+    "chat.messageType.whisper": 'Шёпот',
+    "chat.messageType.action": 'Действие',
 }

@@ -27,7 +27,7 @@
 			},
 			"minecraft:type_family": {
 				"family": [
-					"npc",
+					"dynamic_npc",
 					"untargetable"
 				]
 			},

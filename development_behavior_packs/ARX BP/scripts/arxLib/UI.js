@@ -53,7 +53,10 @@ export class UI {
             if (option.condition && !option.condition(p)) return
 
             // Run function
-            option.exe()
+            try { option.exe() }
+            catch (error) {
+                console.warn(`§eDynamic Action Form Data§f: ${error.stack}${error}`)
+            }
         })
     }
 }

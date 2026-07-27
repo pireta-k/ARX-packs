@@ -83,8 +83,8 @@ export function arxSettings(p) {
 
     let chatPrefixesDefaultDropdownPos
     const chatPrefixes = gDP(p, 'myRule:chatPrefixes')
-    if (chatPrefixes === 'fullEN') chatPrefixesDefaultDropdownPos = 0
-    if (chatPrefixes === 'shortEN') chatPrefixesDefaultDropdownPos = 1
+    if (chatPrefixes === 'full') chatPrefixesDefaultDropdownPos = 0
+    if (chatPrefixes === 'short') chatPrefixesDefaultDropdownPos = 1
 
     const canSeeServerSpeedInInfoBookDefaultTogglePos = p.getDynamicProperty('myRule:canSeeServerSpeedInInfoBook')
     const devModeDefaultTogglePos = p.getDynamicProperty('myRule:devMode')
@@ -117,8 +117,8 @@ export function arxSettings(p) {
             else if (response.formValues[1] === 3) sDP(p, 'myRule:showAttackCDMode', 'line')
             else if (response.formValues[1] === 4) sDP(p, 'myRule:showAttackCDMode', 'none')
 
-            if (response.formValues[2] === 0) sDP(p, 'myRule:chatPrefixes', 'fullEN')
-            else if (response.formValues[2] === 1) sDP(p, 'myRule:chatPrefixes', 'shortEN')
+            if (response.formValues[2] === 0) sDP(p, 'myRule:chatPrefixes', 'full')
+            else if (response.formValues[2] === 1) sDP(p, 'myRule:chatPrefixes', 'short')
 
             sDP(p, 'myRule:canSeeServerSpeedInInfoBook', response.formValues[3])
 
