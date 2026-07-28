@@ -2,6 +2,7 @@
 import { ruLocalization } from './ru'
 import { enLocalization } from './en'
 import { sDP } from '../arxLib/DPOperations'
+import { Player } from '@minecraft/server'
 
 // Vars
 export const defaultLanguage = 'en'
@@ -22,19 +23,19 @@ const insertionsLimit = 64
  * @param {LangErrorBehaviour} [errorBehaviour] 
  * @returns {string}
 */
-export function fl(player, textId, insertions = [], errorBehaviour = 'sendString') {
+export function fl(e, textId, insertions = [], errorBehaviour = 'sendString') {
 
     // Wrong usage
-    if (!player) {
-        console.warn('Called fl() without player object')
+    if (!e) {
+        console.warn('Called fl() without Entity object')
         return
     }
     if (!textId) {
-        console.warn(`Called fl() without textId object for player ${player.name}`)
+        console.warn(`Called fl() without textId object for e ${e.RPName}`)
         return
     }
 
-    const langId = getPlayerLanguage(player)
+    const langId = e instanceof Player ? getPlayerLanguage(e) : defaultLanguage
     let returnText = ''
 
     returnText = langMap[langId][textId]
@@ -42,7 +43,7 @@ export function fl(player, textId, insertions = [], errorBehaviour = 'sendString
     if (langId != defaultLanguage && !returnText) returnText = langMap[defaultLanguage][textId]
 
     if (!returnText) {
-        if (errorBehaviour = 'sendString') return `§cNo localization for ${textId} in ${langId}§f`
+        if (errorBehaviour === 'sendString') return `§cNo localization for ${textId} in ${langId}§f`
         else return false
     }
 
@@ -86,8 +87,12 @@ export function slfg(player, textId, insertions = []) {
     player.sendMessage('[§aGuide§f] > ' + fl(player, textId, insertions))
 }
 
-// Check existance of a lang key
-// Returns bool
+/**
+ * Check existance of a lang key
+ * @param {String} key 
+ * @param {String} language 
+ * @returns {Boolean}
+ */
 export function checkLocalization(key, language = defaultLanguage) {
     if (!Object.keys(langMap).includes(language)) {
         console.error(`checkLocalization(): non-existent language <${language}> given`)

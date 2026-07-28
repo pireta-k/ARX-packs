@@ -22,11 +22,11 @@ import { random } from "./arxLib/random"
 
 /**
  * @typedef ChatMessageOptions
- * @property {String} [forceSourceName]
  * @property {'local' | 'global' | 'shout' | 'whisper' | 'action'} [type]
  * @property {Boolean} [debug]
+ * @property {Boolean} [contentIsLocalizationKey=false] - for Dynamic NPC (they usually talk with localization, not direct text)
+ * @property {any[]} []
  */
-
 
 /**
  * Chat class
@@ -43,21 +43,22 @@ export class Chat {
         #isTransDimensional
         #fullDistance
         #targetEntities
-        #sourceName
         #formattingMap
         #langKey
-        #debug
+        #entitiesMap
 
         /** 
+         * @param {Entity} sourceEntity 
          * @param {String} content 
          * @param {ChatMessageOptions} [options] 
-         * */
+         */
         constructor(sourceEntity, content, options = {}) {
 
-            this.#debug = !!options.debug
+            /** @type {ChatProcessor} */
+            this.options = options
             this.#sourceEntity = sourceEntity // An entity that sends a message
             this.#originalText = content // An original text from message without any modifications
-            this.#splitFormatting() // Assign formattingMap & rawText
+            if (!options.contentIsLocalizationKey) this.#splitFormatting() // Assign formattingMap & rawText
 
             this.type = options.type ?? Chat.defaultMessageType
             if (!Chat.messageTypes.includes(this.type)) this.type = Chat.defaultMessageType
@@ -105,7 +106,22 @@ export class Chat {
                 }
                 this.#targetEntities = entities
             }
-            this.#sourceName = options.forceSourceName ?? sourceEntity?.gDP('name') ?? '???'
+            /** 
+             * A Map that constains an entity and a text to send to this entity
+             * @typedef {Map<Entity, String>}
+             */
+            this.#entitiesMap = new Map()
+            for (const e of this.#targetEntities) {
+                const isLocKey = options.contentIsLocalizationKey ?? false
+                const text = isLocKey ? fl(e, this.#originalText) : this.#originalText
+                let { messedText, isClear } = this.#applyMessing(text, e)
+                messedText = this.#assembleFormatting(messedText)
+
+                this.#entitiesMap.set(e, {
+                    text: messedText,
+                    isClear: isClear
+                })
+            }
         }
 
         /**
@@ -136,7 +152,7 @@ export class Chat {
             this.#formattingMap = formattingMap
             this.rawText = result
 
-            if (this.#debug) console.warn("splitFormatting: " + result)
+            if (this.options.debug) console.warn("splitFormatting: " + result)
         }
 
         /**
@@ -146,7 +162,7 @@ export class Chat {
          */
         #assembleFormatting(text) {
             // Check
-            if (!this.#formattingMap || !this.#formattingMap.size) return text
+            if (!this.#formattingMap || !this.#formattingMap.size || this.options.contentIsLocalizationKey) return text
 
             const reversedKeys = [...this.#formattingMap.keys()].sort((a, b) => b - a)
             for (const key of reversedKeys) { // Restore the formatting in the reversed order
@@ -154,7 +170,7 @@ export class Chat {
                 text = text.slice(0, key) + '§' + symbol + text.slice(key)
             }
 
-            if (this.#debug) console.warn("assembleFormatting: " + text)
+            if (this.options.debug) console.warn("assembleFormatting: " + text)
             return text
         }
 
@@ -163,26 +179,25 @@ export class Chat {
          * Does not change length (for correct #assembleFormatting())
          * Works with this.rawText
          * @param {Entity} singleListener 
-         * @returns {String}
+         * @returns {{text: String, isClear: Boolean}}
          */
-        #applyMessing(singleListener) {
-            if (this.#clearDistance === Infinity) return this.rawText // Infinity distance
+        #applyMessing(text, singleListener) {
+            if (this.#clearDistance === Infinity) return { messedText: text, isClear: true } // Infinity distance
             const defactoDistance = getDistanceBetween(this.#sourceEntity, singleListener)
-            if (this.#clearDistance >= defactoDistance) return this.rawText // Clear distance
+            if (this.#clearDistance >= defactoDistance) return { messedText: text, isClear: true } // Clear distance
             // A distance is longer then clear but still ok to hear a speech
-            let rawText = this.rawText
             const spoilFactor = (defactoDistance - this.#clearDistance) / this.#clearDistance // Value from 0 to 1
             const messSymbols = [...'■.?-']
 
-            for (let i = 0; i < rawText.length; i++) {
+            for (let i = 0; i < text.length; i++) {
                 if (spoilFactor > random.random_0_to_1()) {
                     const desiredSymbol = random.element(messSymbols)
-                    rawText = rawText.slice(0, i) + desiredSymbol + rawText.slice(i + 1)
+                    text = text.slice(0, i) + desiredSymbol + text.slice(i + 1)
                 }
             }
 
-            if (this.#debug) console.warn("applyMessing: " + rawText)
-            return rawText
+            if (this.options.debug) console.warn("applyMessing: " + text)
+            return { messedText: text, isClear: false }
         }
 
         /**
@@ -208,14 +223,15 @@ export class Chat {
          * Sends this message to chat
          */
         send() {
-            for (const e of this.#targetEntities) {
-                let text = this.#applyMessing(e)
-                text = this.#assembleFormatting(text)
+            for (const [e, { text, isClear }] of this.#entitiesMap) {
                 if (e.typeId === 'minecraft:player') {
                     const typeText = e.gDP('myRule:chatPrefixes') === 'short' ? fl(e, this.#langKey)[0] : fl(e, this.#langKey)
-                    e.sendMessage(`[${this.#style}${typeText}§f] <${this.#sourceName}§f> ${text}`)
+                    const name = this.#sourceEntity.typeId === 'minecraft:player'
+                        ? this.#sourceEntity.RPName // A source is a Player
+                        : fl(this.#sourceEntity, this.#sourceEntity.gDP('localizationName') ?? '.', [], 'sendFalse') || '???'
+                    e.sendMessage(`[${this.#style}${typeText}§f] <${name}§f> ${text}`)
                 } else {
-                    // TO-DO - NPCManager trigger
+                    NPCManager.processChatTrigger(e, this, text, isClear)
                 }
             }
         }

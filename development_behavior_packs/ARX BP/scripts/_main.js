@@ -947,7 +947,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
                 sl(player, 'custom_commands.setName.cannot.long')
                 return
             }
-            player.sendMessage(``)
+            player.sDP('name', arg0)
             sl(player, 'custom_commands.setName.success', [arg0])
         }
     )

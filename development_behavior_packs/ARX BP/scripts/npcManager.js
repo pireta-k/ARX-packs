@@ -1,6 +1,7 @@
 import { Entity, system, world } from "@minecraft/server"
 import { sleep } from "./arxLib/time"
 import { Vector } from "./arxLib/math"
+import { Chat } from "./chat"
 
 const defaultTimeout = 30 // Seconds
 const baitListeningTickSpeed = 2 // Ticks
@@ -14,7 +15,17 @@ const dPPrefix = 'NPCManager:'
  */
 
 /** An element of a sequence body
- * @typedef {SequenceArrayElementGoTo | SequenceArrayElementWait | SequenceArrayElementPlayAnimation | SequenceArrayElementMerge | SequenceArrayElementCycle | SequenceArrayElementJumpToStep | SequenceArrayElementTransit | SequenceArrayElementFork | SequenceArrayElementSay} SequenceArrayElement
+ * @typedef {SequenceArrayElementGoTo | 
+ * SequenceArrayElementWait | 
+ * SequenceArrayElementPlayAnimation | 
+ * SequenceArrayElementMerge | 
+ * SequenceArrayElementCycle | 
+ * SequenceArrayElementJumpToStep | 
+ * SequenceArrayElementTransit | 
+ * SequenceArrayElementFork | 
+ * SequenceArrayElementSay | 
+ * SequenceArrayElementExpectChatMessage | 
+ * SequenceArrayElementSetLocalName} SequenceArrayElement
  */
 
 /** Goto
@@ -86,23 +97,42 @@ const dPPrefix = 'NPCManager:'
  */
 
 /**
- * TO-DO Say
+ * TO-UPDATE Say
  * Send a message to local chat
  * @typedef SequenceArrayElementSay
  * @property {"say"} type
- * @property {'local' | 'global' | 'shout' | 'whisper'} [messageType]
- * @property {String} text
+ * @property {MessageType} [messageType] - Local by default
+ * @property {String} [text]
+ * @property {String} [localizationKey]
  */
 
 /**
- * TO-DO ExpectChatMessage
+ * ExpectChatMessage
  * Waits to hear something
  * @typedef SequenceArrayElementExpectChatMessage
  * @property {"expectChatMessage"} type
- * @property {'includes' | 'equal'} mode
- * @property {'any' | 'clear' | 'messed' } [isMessed]
- * @property {'local' | 'global' | 'shout' | 'whisper'} [messageType]
- * @property {String} text
+ * @property {String} [text] - Listen for a certain text
+ * @property {ExpectChatMessageMode} [mode] - Does the desired text have to match with a heard text exactly? 'includes' by default
+ * @property {ExpectChatMessageMess} [isMessed] - Is messed
+ * @property {MessageType[]} [messageType] - Type of a message. If defined, messageTypeExclude will be ignored
+ * @property {MessageType[]} [messageTypeExclude] - Type of a message that are not OK. ['global' by default]
+ */
+
+/**
+ * @typedef { 'equal' | 'includes' | 'notEqual' | 'notIncludes'} ExpectChatMessageMode
+ */
+/**
+ * @typedef {'any' | 'clear' | 'messed'} ExpectChatMessageMess
+ */
+/**
+ * @typedef {'local' | 'global' | 'shout' | 'whisper' | 'action'} MessageType
+ */
+
+/**
+ * TO-DO SetLocalName. Takes a localization key
+ * @typedef SequenceArrayElementSetLocalName
+ * @property {"setLocalName"} type
+ * @property {String} [localizationKey]
  */
 
 /** A head and a body
@@ -121,17 +151,23 @@ const sequences = {
             canBeAppliedOn: ['arx:eve']
         },
         body: [
+            { type: "setLocalName", localizationKey: 'eve.name' },
+            { type: "say", text: 'I\'m here!' },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
             { type: "playAnimation", animationId: "animation.killing_time.a" },
             { type: "wait", ticks: 80 },
             { type: "goto", location: { x: 5, y: -60, z: 5 } },
             { type: "playAnimation", animationId: "animation.killing_time.b" },
             { type: "wait", ticks: 80 },
+            { type: "say", text: 'Give me a code: 12343' },
+            { type: "expectChatMessage", mode: "includes", text: '12343', isMessed: "clear" },
+            { type: "say", text: 'Thanks' },
             { type: "goto", location: { x: -5, y: -60, z: 5 } },
             { type: "goto", location: { x: -5, y: -60, z: -5 } },
             { type: "goto", location: { x: 5, y: -60, z: -5 } },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
             { type: "playAnimation", animationId: "animation.killing_time.c" },
+            { type: "say", text: 'That\'s all' }
         ]
     }
 }
@@ -141,13 +177,20 @@ function checkSequences() {
         const seqWarnPrefix = `[§eSequenceCheckWarning§r]`
         console.warn(seqWarnPrefix + ': ' + text)
     }
-    const allowedSteps = ["goto", "wait", "playAnimation"]
 
     for (const key in sequences) {
         const seq = sequences[key]
         // Basic
-        if (!('head' in seq)) warn(`No head in ${key} sequence`); delete sequences[key]; continue
-        if (!('body' in seq)) warn(`No body in ${key} sequence`); delete sequences[key]; continue
+        if (!('head' in seq)) {
+            warn(`No head in ${key} sequence`)
+            delete sequences[key]
+            continue
+        }
+        if (!('body' in seq)) {
+            warn(`No body in ${key} sequence`)
+            delete sequences[key]
+            continue
+        }
         // Add ID
         seq.head.id = key
         // Head details
@@ -156,7 +199,6 @@ function checkSequences() {
         }
         // Body details
         if (!Array.isArray(seq.body)) warn(`Body is not an array in ${key}`)
-        if (seq.body.filter(step => !allowedSteps.includes(step.type)).length > 0) warn(`Unknown step type(s) in ${key}`)
     }
 }
 checkSequences()
@@ -270,6 +312,38 @@ class NPCSequence {
                 e.playAnimation(step.animationId)
                 break
 
+            case 'expectChatMessage':
+                let currentResolve
+                try {
+                    await new Promise((resolve, reject) => {
+                        currentResolve = resolve
+                        /** @type {ChatListenerOptions} */
+                        const options = {
+                            text: step.text,
+                            mode: step.mode ?? 'includes',
+                            isMessed: step.isMessed ?? 'any',
+                            messageType: step.messageType,
+                            messageTypeExclude: step.messageTypeExclude ?? ['global']
+                        }
+                        NPCManager.registerChatListener(e, options, resolve) // Register chat listener and wait for it to be resolved
+                    })
+                } catch (error) {
+                    console.error(`An error occoured in expectChatMessage: ${error.stack}${error}`)
+                } finally {
+                    if (currentResolve) NPCManager.unregisterChatListener(e, currentResolve)
+                }
+                break
+
+            case 'say':
+                if (step.text) new Chat.Message(e, step.text, { type: step.messageType }).send()
+                else if (step.localizationKey) { } // to-do
+                else console.warn('A message has no text nor localization key')
+                break
+
+            case 'setLocalName':
+                e.sDP('localizationName', step.localizationKey)
+                break
+
             default:
                 console.error(`Unexpected action in sequence ${this.id} in step ${stepId}: ${step.type}`)
         }
@@ -277,6 +351,158 @@ class NPCSequence {
 }
 
 export class NPCManager {
+
+    // === Chat listeners ===
+
+    /**
+     * @typedef ChatListener
+     * @property {ChatListenerOptions} options
+     * @property {Function} resolve
+     */
+    /** @type {Map<Entity.id, ChatListener[]>} */
+    static chatListeners = new Map()
+    /**
+     * @typedef ChatListenerOptions
+     * @property {String} text
+     * @property {ExpectChatMessageMode} mode
+     * @property {ExpectChatMessageMess} isMessed
+     * @property {MessageType[]} [messageType] - An array of message types that are OK
+     * @property {MessageType[]} [messageTypeExclude] - An array of message types that are not OK. ['global' by default]
+     */
+
+    /**
+     * Add a listener to chatListeners
+     * @param {Entity} e 
+     * @param {ChatListenerOptions} options
+     * @param {Function} resolve 
+     */
+    static registerChatListener(e, options, resolve) {
+        // console.warn(`Chat listener has beed added for ${e.typeId}`)
+        // Create an empty listeners array if it don't exist
+        if (!this.chatListeners.has(e.id)) {
+            this.chatListeners.set(e.id, [])
+        }
+
+        // Add a new listener
+        const existingListeners = this.chatListeners.get(e.id)
+        existingListeners.push({
+            options: options,
+            resolve: resolve
+        })
+    }
+    /**
+     * Remove chat listener
+     * @param {Entity} e 
+     * @param {Function} [resolve] - Unique resolve "button" for a current listener. Removes all listeners if not specified
+     */
+    static unregisterChatListener(e, resolve) {
+        // console.warn(`Chat listener has beed removed for ${e.typeId}`)
+        const listeners = this.chatListeners.get(e.id)
+        if (!listeners) return
+
+        if (resolve) {
+            const index = listeners.findIndex(listener => listener.resolve === resolve)
+            if (index !== -1) {
+                listeners.splice(index, 1)
+            }
+        } else {
+            this.chatListeners.delete(e.id)
+        }
+
+        // No listeners left
+        if (listeners.length === 0) {
+            this.chatListeners.delete(e.id)
+        }
+    }
+    /**
+     * Triggers externally when a dynamicNPC recieves an arx message 
+     * @param {Entity} listenerEntity 
+     * @param {Chat.Message} message 
+     * @param {String} text - Heard text
+     * @param {Boolean} isClear - Is the message clear 
+     * @returns 
+     */
+    static processChatTrigger(listenerEntity, message, inputText, isClear) {
+        // console.warn(`Chat was processed for ${listenerEntity.typeId}`)
+        /** @type { ChatListener[] } */
+        const listeners = this.chatListeners.get(listenerEntity.id)
+        if (!listeners) return false // Entity doesn't have chat listeners
+
+        for (let i = listeners.length - 1; i >= 0; i--) {
+            const listener = listeners[i]
+            // === Check options ===
+            // Check content
+            let allowByContent = false
+            {
+                if (!listener.options.text) allowByContent = true
+                else {
+                    switch (listener.options.mode) {
+                        case 'equal':
+                            if (inputText == listener.options.text) allowByContent = true
+                            break
+
+                        case 'notEqual':
+                            if (inputText != listener.options.text) allowByContent = true
+                            break
+
+                        case 'includes':
+                            if (inputText.includes(listener.options.text)) allowByContent = true
+                            break
+
+                        case 'notIncludes':
+                            if (!inputText.includes(listener.options.text)) allowByContent = true
+                            break
+
+                        default:
+                            console.warn(`processChatTrigger: desired text provided, but a mode is incorrect: ${listener.options.mode}`)
+                    }
+                }
+            }
+
+            // Check mess
+            let allowByMess = false
+            {
+                switch (listener.options.isMessed) {
+                    case "any":
+                    case undefined:
+                        allowByMess = true
+                        break
+
+                    case "clear":
+                        if (isClear) allowByMess = true
+                        break
+
+                    case "messed":
+                        if (!isClear) allowByMess = true
+                        break
+
+                    default:
+                        console.warn(`processChatTrigger: unexpected isMessed value (${listener.options.isMessed}). Consider as 'any'.`)
+                        allowByMess = true
+                        break
+                }
+            }
+
+            // Check type
+            let allowByType = false
+            {
+                if ((listener.options.messageType?.length ?? 0) > 0) { // Analyze only messageType
+                    if (listener.options.messageType.includes(message.type)) allowByType = true
+                } else { // Analyze only messageTypeExclude
+                    if (!listener.options.messageTypeExclude.includes(message.type)) allowByType = true
+                }
+            }
+
+            if (allowByContent && allowByMess && allowByType) {
+                listener.resolve({
+                    heardText: inputText,
+                    sourceName: message.sourceName,
+                })
+            }
+        }
+    }
+
+
     // Entities that are processing now
     static entities = []
     /**
@@ -298,7 +524,7 @@ export class NPCManager {
     static removeEntity(e) {
         if (this.isEntityProcessing(e)) {
             this.entities = this.entities.filter(id => id !== e.id)
-            console.warn('An entity was removed from active entities')
+            // console.warn('An entity was removed from active entities')
             return true
         }
         return false
@@ -324,10 +550,17 @@ export class NPCManager {
      * @param {Number} step  
      */
     static setSequenceId(e, id) { return e.sDP(dPPrefix + 'sequenceId', id) }
-    /** @param {Entity} e */
+    /** 
+     * Clears entity's sequence and all sequence-related data
+     * @param {Entity} e 
+     * */
     static clearSequence(e) {
-        e.sDP(dPPrefix + 'sequenceId', undefined)
-        e.sDP(dPPrefix + 'sequenceStep', undefined)
+        if (e && e.isValid) {
+            e.sDP(dPPrefix + 'sequenceId', undefined)
+            e.sDP(dPPrefix + 'sequenceStep', undefined)
+        }
+        this.removeEntity(e)
+        this.unregisterChatListener(e)
         return true
     }
     /** @param {Entity} e */
@@ -381,7 +614,7 @@ export class NPCManager {
                 return
             } else {
                 // Override occures
-                NPCManager.setSequenceStep(e, 0)
+                NPCManager.clearSequence(e)
             }
         }
 
@@ -401,7 +634,6 @@ export class NPCManager {
             } catch (error) {
                 console.warn(`NPCManager - ${error.stack}${error}`)
             } finally {
-                this.removeEntity(e)
                 NPCManager.clearSequence(e)
             }
         }
@@ -453,4 +685,5 @@ world.afterEvents.entityLoad.subscribe(async event => {
 world.beforeEvents.entityRemove.subscribe(async event => {
     const e = event.removedEntity
     NPCManager.removeEntity(e)
+    NPCManager.unregisterChatListener(e)
 })

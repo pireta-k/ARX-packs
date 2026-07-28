@@ -390,4 +390,6 @@ export const enLocalization = {
     "chat.messageType.shout": 'Shout',
     "chat.messageType.whisper": 'Whisper',
     "chat.messageType.action": 'Action',
+
+    "eve.name": 'Eve',
 }
