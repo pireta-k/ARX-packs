@@ -920,7 +920,7 @@ export const coreFramework = {
         }
     },
     // Decrease DPs
-    decreaseSPs: {
+    decreaseDPs: {
         tickSpeed: 20,
         operations: (data) => {
             for (const player of data.players) {
@@ -942,8 +942,8 @@ export const coreFramework = {
 
 
     // Stats calculations
-    // Weigh Analysis
-    weighAnalysis: {
+    // Weight Analysis
+    weightAnalysis: {
         tickSpeed: 60,
         operations: (data) => {
             for (const player of data.players) {
