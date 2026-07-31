@@ -37,10 +37,11 @@ const dPPrefix = 'NPCManager:'
  */
 
 /** Wait
- * Wait in ticks.
+ * Wait in ticks or seconds.
  * @typedef SequenceArrayElementWait
  * @property {"wait"} type
- * @property {Number} ticks
+ * @property {Number} [ticks]
+ * @property {Number} [seconds]
  */
 
 /** Animation
@@ -59,10 +60,9 @@ const dPPrefix = 'NPCManager:'
  */
 
 /** TO-DO Cycle
- * Make inner steps to run in cycle. Breaks when breakOn is true. Intended to use with merge (a NPC goes in circles and waits when you'll give her food)
+ * Make inner steps to run in cycle. Intended to use with merge (a NPC goes in circles and waits when you'll give her food)
  * @typedef SequenceArrayElementCycle
  * @property {"cycle"} type
- * @property {Function} [breakOn] - checks on every step of a cycle
  * @property {SequenceArrayElement[]} sequence
  */
 
@@ -119,7 +119,7 @@ const dPPrefix = 'NPCManager:'
  * @property {MessageType[]} [messageTypeExclude] - Type of a message that are not OK. ['global' by default]
  */
 
-/** @typedef { 'equal' | 'includes' | 'notEqual' | 'notIncludes'} ExpectChatMessageMode*/
+/** @typedef { 'equal' | 'includes' | 'notEqual' | 'notIncludes' | 'any'} ExpectChatMessageMode*/ // Any means that text does not matter at all
 /** @typedef {'any' | 'clear' | 'messed'} ExpectChatMessageMess*/
 /** @typedef {'local' | 'global' | 'shout' | 'whisper' | 'action'} MessageType*/
 
@@ -138,13 +138,13 @@ const dPPrefix = 'NPCManager:'
  */
 
 /** A head and a body
- * @typedef SingleSequence
+ * @typedef SequenceObject
  * @property {SequenceHead} head
  * @property {SequenceArrayElement[]} body
  */
 
 /** All the sequences
- * @type {Record<String, SingleSequence>}
+ * @type {Record<String, SequenceObject>}
  */
 const sequences = {
     eve_test: {
@@ -172,25 +172,33 @@ const sequences = {
                         sequence: [
                             { type: "say", text: 'Give me a code: 12343' },
                             { type: "expectChatMessage", mode: "includes", text: '12343', isMessed: "clear" },
+                            { type: "wait", seconds: 1 },
+                            { type: "say", text: 'Thanks' },
                         ]
                     },
-                    { type: "say", text: 'Thanks' },
                 ]
-            },
-            {
-                type: "subsequence",
-                sequence: []
             },
             { type: "goto", location: { x: -5, y: -60, z: 5 } },
             { type: "goto", location: { x: -5, y: -60, z: -5 } },
             { type: "goto", location: { x: 5, y: -60, z: -5 } },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
+            { type: "wait", seconds: -1 },
             { type: "playAnimation", animationId: "animation.killing_time.c" },
+            {
+                type: 'cycle',
+                sequence: [
+                    { type: "wait", ticks: 200 },
+                    { type: "say", text: 'Hmmm...' },
+                ]
+            },
             { type: "say", text: 'That\'s all' }
         ]
     }
 }
 
+/**
+ * Checks, are the sequences OK.
+ */
 function checkSequences() {
     function warn(text) {
         const seqWarnPrefix = `[§eSequenceCheckWarning§r]`
@@ -229,7 +237,7 @@ checkSequences()
  */
 class NPCSequence {
 
-    /** @param {SingleSequence} sequence; @param {Entity} entity  */
+    /** @param {SequenceObject} sequence; @param {Entity} entity  */
     constructor(sequence, entity) {
         // Check sequence
         if (typeof sequence !== 'object' || !sequence.head || !sequence.body || !entity) {
@@ -311,8 +319,14 @@ class NPCSequence {
 
             // No further step in this sequence
             if (!this.#doStepExists(nextStepOnTheSameLevel)) {
-                // The sequence is completed
+                // The root sequence is completed
                 if (resultStep.length <= 1) return true
+                // Are we in a cycle?
+                const parentStep = resultStep.slice(0, -1)
+                const parentElement = this.#getStepObj(parentStep)
+                if (parentElement.type === 'cycle') {
+                    return [...parentStep, 0]
+                }
                 // Exit subsequence
                 resultStep = resultStep.slice(0, -1)
             } else { break }
@@ -352,8 +366,11 @@ class NPCSequence {
      * @returns {Boolean}
      */
     static #isElementAnySubsequence(seq) {
-        const subsequenceTypes = ['subsequence']
-        if (subsequenceTypes.includes(seq.type)) return true
+        try {
+            const subsequenceTypes = ['subsequence', 'cycle', 'merge']
+            if (subsequenceTypes.includes(seq.type)) return true
+        }
+        catch { }
         return false
     }
 
@@ -396,7 +413,7 @@ class NPCSequence {
     async #runStep(step) {
         // Check
         if (!Array.isArray(step)) {
-            console.warn(`Invalid step provided for `)
+            console.warn(`#runStep: Invalid step (${step}, type ${typeof step}) provided for seq ${this.id}`)
         }
 
         const e = this.entity
@@ -404,7 +421,7 @@ class NPCSequence {
         /** @type {SequenceArrayElement} */
         const seqElement = this.#getStepObj(step)
         if (!seqElement) {
-            console.error(`Trying to run non-existent step for ${this.id}`)
+            console.error(`Trying to run non-existent step ${step} for ${this.id}`)
             return
         }
         switch (seqElement.type) {
@@ -414,7 +431,7 @@ class NPCSequence {
                 await new Promise((resolve, reject) => {
                     const b = e.dimension.getBlock(resolvedLocation)
                     if (!b) {
-                        console.warn(`Cannot create a block object while processing a sequence (id: ${NPCManager.getSequenceId(e)}). The entity was teleported to desired location instead of classic navigation`)
+                        console.warn(`Cannot create a block object while processing a sequence (id: ${NPCManager.getSequenceId(e)}, step ${step}). The entity was teleported to desired location instead of classic navigation`)
                         e.teleport(resolvedLocation)
                         resolve(true)
                         return
@@ -449,7 +466,12 @@ class NPCSequence {
                 break
 
             case 'wait':
-                await sleep(seqElement.ticks)
+                const ticks = Math.round(seqElement.ticks ?? seqElement.seconds * 20)
+                if (!ticks || typeof ticks !== 'number' || ticks < 0) {
+                    console.warn(`NPCSequence: Wait element ${step} on seq ${this.id}: invalid (ticks | seconds) value provided`)
+                } else {
+                    await sleep(ticks)
+                }
                 break
 
             case 'playAnimation':
@@ -595,6 +617,10 @@ export class NPCManager {
 
                         case 'notIncludes':
                             if (!inputText.includes(listener.options.text)) allowByContent = true
+                            break
+
+                        case 'any':
+                            allowByContent = true
                             break
 
                         default:
