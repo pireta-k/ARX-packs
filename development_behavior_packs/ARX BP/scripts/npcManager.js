@@ -59,7 +59,7 @@ const dPPrefix = 'NPCManager:'
  * @property {SequenceArrayElement[]} sequence
  */
 
-/** TO-DO Cycle
+/** Cycle
  * Make inner steps to run in cycle. Intended to use with merge (a NPC goes in circles and waits when you'll give her food)
  * @typedef SequenceArrayElementCycle
  * @property {"cycle"} type
@@ -73,12 +73,11 @@ const dPPrefix = 'NPCManager:'
  * @property {Number[]} step
  */
 
-/** TO-DO Transit
+/** Transit
  * Switches current sequence to a new one
  * @typedef SequenceArrayElementTransit
  * @property {"transit"} type
- * @property {String} sequence
- * @property {Number[]} [step]
+ * @property {String} sequenceId
  */
 
 /**
@@ -182,8 +181,8 @@ const sequences = {
             { type: "goto", location: { x: -5, y: -60, z: -5 } },
             { type: "goto", location: { x: 5, y: -60, z: -5 } },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
-            { type: "wait", seconds: -1 },
             { type: "playAnimation", animationId: "animation.killing_time.c" },
+            { type: 'transit', sequenceId: 'eve_test2' },
             {
                 type: 'cycle',
                 sequence: [
@@ -192,6 +191,20 @@ const sequences = {
                 ]
             },
             { type: "say", text: 'That\'s all' }
+        ]
+    },
+
+    eve_test2: {
+        head: {
+            baitBlockId: 'arx:bait_eve',
+            canBeAppliedOn: ['arx:eve']
+        },
+        body: [
+            { type: "say", text: 'I was transferred to eve_test2' },
+            { type: "goto", location: { x: 0, y: -60, z: 0 } },
+            { type: "say", messageType: 'action', text: "Yawn" },
+            { type: 'wait', seconds: 1 },
+            { type: "say", text: "Mmmmh... I'm tired" },
         ]
     }
 }
@@ -374,6 +387,8 @@ class NPCSequence {
         return false
     }
 
+    /** @typedef {'killSequence' | undefined} SequenceElementResponce */
+
     /**
      * === The main function of this class ===
      * Runs a sequence from a last-saved ?? 0 step
@@ -392,7 +407,10 @@ class NPCSequence {
                 currentStep.push(0)
             }
             // Run
-            await this.#runStep(currentStep)
+            /** @type {SequenceElementResponce} */
+            const responce = await this.#runStep(currentStep)
+            if (responce === 'killSequence') break
+
             currentStep = this.#getNextStep(currentStep)
             if (currentStep === false) {
                 console.warn('An error occured while processing a sequence step. Sequence aborted')
@@ -409,6 +427,7 @@ class NPCSequence {
     /**
      * Execute sequence step and wait for it to end
      * @param {Number[]} step
+     * @returns {SequenceElementResponce}
      */
     async #runStep(step) {
         // Check
@@ -509,6 +528,14 @@ class NPCSequence {
             case 'setLocalName':
                 e.sDP('localizationName', seqElement.localizationKey)
                 break
+
+            case 'transit':
+                if (!(seqElement.sequenceId in sequences)) {
+                    console.error(`Trying to transit to a non-existent sequence ${seqElement.sequenceId} from seq ${this.id}`)
+                    return
+                }
+                NPCManager.runSequence(this.entity, seqElement.sequenceId, { allowOverride: true })
+                return 'killSequence'
 
             default:
                 console.error(`Unexpected action in sequence ${this.id}: ${seqElement.type}`)
