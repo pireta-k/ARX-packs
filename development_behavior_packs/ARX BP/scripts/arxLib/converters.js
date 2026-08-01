@@ -10,12 +10,17 @@ export function obj2str(obj) {
 
 /** Transforms vector from XYZ to XZ
  * @param {import("@minecraft/server").Vector3} vectorXYZ 
- * @returns 
+ * @returns {import("@minecraft/server").VectorXZ}
  */
 export function vectorXYZ2XZ(vectorXYZ) {
-    return {x: vectorXYZ.x, z: vectorXYZ.z}
+    return { x: vectorXYZ.x, z: vectorXYZ.z }
 }
 
+/**
+ * Make a md5 hash from a string
+ * @param {String} str 
+ * @returns {String}
+ */
 export function md5(str) {
     // Реализация MD5 на чистом JS
     function cmn(q, a, b, x, s, t) { a = add32(add32(a, q), add32(x, t)); return add32((a << s) | (a >>> (32 - s)), b); }

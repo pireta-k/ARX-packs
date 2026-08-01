@@ -2,13 +2,15 @@ import { Entity, system, world } from "@minecraft/server"
 import { sleep } from "./arxLib/time"
 import { Vector } from "./arxLib/math"
 import { Chat } from "./chat"
+import { md5 } from "./arxLib/converters"
+import { sDP } from "./arxLib/DPOperations"
 
 const defaultTimeout = 30 // Seconds
 const baitListeningTickSpeed = 2 // Ticks
 const dPPrefix = 'NPCManager:'
 
 /** A head of a sequence
- * @typedef SequenceHead
+ * @typedef {Object} SequenceHead
  * @property {String} [id] - unique id. Sets automatically as sequence key in sequences obj
  * @property {String} [baitBlockId] - an Id of needed bait block
  * @property {String[]} [canBeAppliedOn] - an array of entity typeIDs that a sequence can be applied to
@@ -31,14 +33,14 @@ const dPPrefix = 'NPCManager:'
 
 /** Goto
  * Go to a desired location
- * @typedef SequenceArrayElementGoTo
+ * @typedef {Object} SequenceArrayElementGoTo
  * @property {"goto"} type
  * @property {import("@minecraft/server").Vector3} location
  */
 
 /** Wait
  * Wait in ticks or seconds.
- * @typedef SequenceArrayElementWait
+ * @typedef {Object} SequenceArrayElementWait
  * @property {"wait"} type
  * @property {Number} [ticks]
  * @property {Number} [seconds]
@@ -46,14 +48,14 @@ const dPPrefix = 'NPCManager:'
 
 /** Animation
  * Play animation
- * @typedef SequenceArrayElementPlayAnimation
+ * @typedef {Object} SequenceArrayElementPlayAnimation
  * @property {"playAnimation"} type
  * @property {String} animationId
  */
 
 /** TO-DO Merge
  * Makes all inner steps to fire immediately. End depends on mode.
- * @typedef SequenceArrayElementMerge
+ * @typedef {Object} SequenceArrayElementMerge
  * @property {"merge"} type
  * @property {'awaitAll' | 'awaitFirst' | 'awaitOnlyAt0Position'} mode
  * @property {SequenceArrayElement[]} sequence
@@ -61,21 +63,22 @@ const dPPrefix = 'NPCManager:'
 
 /** Cycle
  * Make inner steps to run in cycle. Intended to use with merge (a NPC goes in circles and waits when you'll give her food)
- * @typedef SequenceArrayElementCycle
+ * @typedef {Object} SequenceArrayElementCycle
  * @property {"cycle"} type
  * @property {SequenceArrayElement[]} sequence
+ * @property {Number} [repeatTimes]
  */
 
 /** TO-DO JumpToStep
  * Jumps to a certain step of a current sequence
- * @typedef SequenceArrayElementJumpToStep
+ * @typedef {Object} SequenceArrayElementJumpToStep
  * @property {"jumpToStep"} type
  * @property {Number[]} step
  */
 
 /** Transit
  * Switches current sequence to a new one
- * @typedef SequenceArrayElementTransit
+ * @typedef {Object} SequenceArrayElementTransit
  * @property {"transit"} type
  * @property {String} sequenceId
  */
@@ -83,7 +86,7 @@ const dPPrefix = 'NPCManager:'
 /**
  * TO-DO Fork
  * Decision. Two doors. Or three? Don't mind.
- * @typedef SequenceArrayElementFork
+ * @typedef {Object} SequenceArrayElementFork
  * @property {"fork"} type
  * @property {ForkElement[]} 
  */
@@ -91,25 +94,25 @@ const dPPrefix = 'NPCManager:'
 /**
  * TO-DO Fork element
  * Element that uses in SequenceArrayElementFork
- * @typedef ForkElement
+ * @typedef {Object} ForkElement
  * @property {SequenceArrayElement} trigger - If await returns, counts as chosen.
  * @property {SequenceArrayElement} then - Then, will occur something. Maybe even SequenceArrayElementTransit
  */
 
 /**
- * TO-UPDATE Say
+ * Say
  * Send a message to local chat
- * @typedef SequenceArrayElementSay
+ * @typedef {Object} SequenceArrayElementSay
  * @property {"say"} type
- * @property {MessageType} [messageType] - Local by default
- * @property {String} [text]
- * @property {String} [localizationKey]
+ * @property {String} key - Localization key
+ * @property {MessageType} [messageType='local']
+ * @property {Boolean} [sayRawKey=false]
  */
 
 /**
  * ExpectChatMessage
  * Waits to hear something
- * @typedef SequenceArrayElementExpectChatMessage
+ * @typedef {Object} SequenceArrayElementExpectChatMessage
  * @property {"expectChatMessage"} type
  * @property {String} [text] - Listen for a certain text
  * @property {ExpectChatMessageMode} [mode] - Does the desired text have to match with a heard text exactly? 'includes' by default
@@ -124,20 +127,36 @@ const dPPrefix = 'NPCManager:'
 
 /**
  * SetLocalName. Takes a localization key
- * @typedef SequenceArrayElementSetLocalName
+ * @typedef {Object} SequenceArrayElementSetLocalName
  * @property {"setLocalName"} type
  * @property {String} [localizationKey]
  */
 
 /**
  * Subsequence. An embedded array of sequence steps
- * @typedef SequenceArrayElementSubsequence
+ * @typedef {Object} SequenceArrayElementSubsequence
  * @property {"subsequence"} type
  * @property {SequenceArrayElement[]} sequence
  */
 
+/**
+ * TO-DO Execute. 
+ * USE WITH CAUTION
+ * @typedef {Object} SequenceArrayElementExecute
+ * @property {"execute"} type
+ * @property {Function} run - async function
+ */
+
+/**
+ * TO-DO LightPost. 
+ * Does nothing by itself. Works as a marker. Can be jumped on with transit
+ * @typedef {Object} SequenceArrayElementLightPost
+ * @property {"lightPost"} type
+ * @property {Function} run
+ */
+
 /** A head and a body
- * @typedef SequenceObject
+ * @typedef {Object} SequenceObject
  * @property {SequenceHead} head
  * @property {SequenceArrayElement[]} body
  */
@@ -156,7 +175,8 @@ const sequences = {
                 type: 'subsequence', // Initialize
                 sequence: [
                     { type: "setLocalName", localizationKey: 'eve.name' },
-                    { type: "say", text: 'I\'m here!' },
+                    { type: "say", key: 'I\'m here!', sayRawKey: true },
+                    { type: "say", key: 'chat.eve.hello' },
                 ]
             },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
@@ -169,10 +189,10 @@ const sequences = {
                     {
                         type: "subsequence",
                         sequence: [
-                            { type: "say", text: 'Give me a code: 12343' },
-                            { type: "expectChatMessage", mode: "includes", text: '12343', isMessed: "clear" },
+                            { type: "say", key: 'Give me a code: 12343', sayRawKey: true },
+                            { type: "expectChatMessage", mode: "includes", text: '12343', isMessed: "any" },
                             { type: "wait", seconds: 1 },
-                            { type: "say", text: 'Thanks' },
+                            { type: "say", key: 'Thanks', sayRawKey: true },
                         ]
                     },
                 ]
@@ -182,15 +202,16 @@ const sequences = {
             { type: "goto", location: { x: 5, y: -60, z: -5 } },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
             { type: "playAnimation", animationId: "animation.killing_time.c" },
-            { type: 'transit', sequenceId: 'eve_test2' },
+            // { type: 'transit', sequenceId: 'eve_test2' },
             {
                 type: 'cycle',
+                repeatTimes: 3,
                 sequence: [
-                    { type: "wait", ticks: 200 },
-                    { type: "say", text: 'Hmmm...' },
+                    { type: "wait", seconds: 2 },
+                    { type: "say", key: 'Hmmm...', sayRawKey: true },
                 ]
             },
-            { type: "say", text: 'That\'s all' }
+            { type: "say", key: 'That\'s all', sayRawKey: true }
         ]
     },
 
@@ -200,11 +221,11 @@ const sequences = {
             canBeAppliedOn: ['arx:eve']
         },
         body: [
-            { type: "say", text: 'I was transferred to eve_test2' },
+            { type: "say", key: 'I\'ve started eve_test2', sayRawKey: true },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
-            { type: "say", messageType: 'action', text: "Yawn" },
+            { type: "say", messageType: 'action', key: "Yawn", sayRawKey: true },
             { type: 'wait', seconds: 1 },
-            { type: "say", text: "Mmmmh... I'm tired" },
+            { type: "say", key: "Mmmmh... I'm tired", sayRawKey: true },
         ]
     }
 }
@@ -276,6 +297,11 @@ class NPCSequence {
      * @returns {SequenceArrayElement | null}
      */
     #getStepObj(step, shutUp = false) {
+        if (this.#isStep(step)) {
+            console.warn(`Incorrect step recieved in #getStepObj for ${this.id}: ${step}`)
+            return null
+        }
+
         let currentSequence = this.body
 
         for (let i = 0; i < step.length; i++) {
@@ -307,23 +333,54 @@ class NPCSequence {
     }
 
     /**
+     * Check, is a value looks like a SequenceStap
+     * @param {any} step 
+     * @returns {Boolean}
+     */
+    #isStep(step) {
+        if (!Array.isArray(step)) {
+            return false
+        }
+        step.forEach(item => {
+            if (typeof item !== 'number') return false
+        })
+        return true
+    }
+
+    /**
+     * Returns a step that is parent to a given one
+     * @param {SequenceStep} step 
+     * @returns {SequenceStep | null}
+     */
+    #getParentStep(step) {
+        if (!this.#isStep(step)) {
+            console.warn('getParentStep: invalid step provided')
+            return null
+        }
+        if (step.length > 1) { // Not root
+            return step.slice(0, -1)
+        } else { // Root
+            return null
+        }
+    }
+
+    /**
      * Returns a next step
      * Returns true if a sequence is completed
      * Returns false if something unexpected occured
+     * Not intended to run "just to check". It changes saved data
      * @returns {SequenceStep | Boolean}
      */
-    #getNextStep(step) {
-        const originalSequenceElement = this.#getStepObj(step)
-        if (!originalSequenceElement) {
-            console.warn('Step is invalid')
+    #fetchNextStep(step) {
+
+        if (!this.#doStepExists(step)) {
+            console.warn('fetchNextStep: Step is invalid')
             return false
         }
 
         let resultStep = [...step]
 
-        // === Exit sequence/subsequence: no next step on this sequence ===
-        // Returns true if a sequence is completed
-        // If a subsequence(s) was completed, exit it and proceed to "Same-level transition"
+        // === If no next step on this sequence: Exit sequence/subsequence  ===
         // Check for multiple endings (Maybe we have to exit 2 depth levels simultaneously, who knows.)
         while (true) {
 
@@ -332,14 +389,26 @@ class NPCSequence {
 
             // No further step in this sequence
             if (!this.#doStepExists(nextStepOnTheSameLevel)) {
+
                 // The root sequence is completed
                 if (resultStep.length <= 1) return true
+
                 // Are we in a cycle?
-                const parentStep = resultStep.slice(0, -1)
+                const parentStep = this.#getParentStep(resultStep)
                 const parentElement = this.#getStepObj(parentStep)
                 if (parentElement.type === 'cycle') {
-                    return [...parentStep, 0]
+
+                    if (parentElement.repeatTimes) {
+                        const repeatsDone = this.#getCycleCounter(parentStep)
+                        if (repeatsDone < parentElement.repeatTimes - 1) {
+                            this.#setCycleCounter(parentStep, repeatsDone + 1)
+                            return [...parentStep, 0] // Repeat
+                        }
+                    } else { // Snap to a start of a cycle instantly
+                        return [...parentStep, 0]
+                    }
                 }
+
                 // Exit subsequence
                 resultStep = resultStep.slice(0, -1)
             } else { break }
@@ -349,7 +418,7 @@ class NPCSequence {
         const thisSequenceElement = this.#getStepObj(resultStep)
         // Check
         if (!thisSequenceElement) {
-            console.warn('NPCSequence.#getNextStep(): Unexpected error occured')
+            console.warn('NPCSequence.#fetchNextStep(): Unexpected error occured')
             return false
         }
         // Transit further
@@ -357,11 +426,43 @@ class NPCSequence {
 
         // === Enter sequence ===
         // Also check for multiple entrances, maybe we have to go 2 or 3 levels up
-        while (NPCSequence.#isElementAnySubsequence(this.#getStepObj(resultStep))) {
+        while (true) {
+            const element = this.#getStepObj(resultStep)
+            if (!NPCSequence.#isElementAnySubsequence(element)) break
+            if (element.type === "cycle") this.#setCycleCounter(resultStep, 0)
             resultStep.push(0)
         }
 
         return resultStep
+    }
+
+    /**
+     * Get a current value of a cycle counter for a step
+     * @param {String} seqId 
+     * @param {SequenceStep} step - Step of a cycle element
+     * @returns {number}
+     */
+    #getCycleCounter(step) {
+        const element = this.#getStepObj(step)
+        if (element.type !== "cycle") {
+            throw new Error('Trying to get a cycle counter of not-cycle sequence')
+        }
+        const dp = this.#getCycleCounterDp(step)
+        return this.entity.gDP(dp) || 0
+    }
+    #setCycleCounter(step, value) {
+        if (typeof value !== 'number') {
+            throw new Error('Trying to set a not-number value to a cycle counter')
+        }
+        const element = this.#getStepObj(step)
+        if (element.type !== "cycle") {
+            throw new Error('Trying to set a cycle counter of not-cycle sequence')
+        }
+        const dp = this.#getCycleCounterDp(step)
+        this.entity.sDP(dp, value)
+    }
+    #getCycleCounterDp(step) {
+        return dPPrefix + ':cycleCounter:' + this.id + ':' + step.toString()
     }
 
     /**
@@ -411,7 +512,7 @@ class NPCSequence {
             const responce = await this.#runStep(currentStep)
             if (responce === 'killSequence') break
 
-            currentStep = this.#getNextStep(currentStep)
+            currentStep = this.#fetchNextStep(currentStep)
             if (currentStep === false) {
                 console.warn('An error occured while processing a sequence step. Sequence aborted')
                 break // End with an error
@@ -520,9 +621,12 @@ class NPCSequence {
                 break
 
             case 'say':
-                if (seqElement.text) new Chat.Message(e, seqElement.text, { type: seqElement.messageType }).send()
-                else if (seqElement.localizationKey) { } // to-do
-                else console.warn('A message has no text nor localization key')
+                if (!seqElement.key) console.warn('Trying to run Say element without key')
+                if (seqElement.sayRawKey === true) { // Just a text message
+                    new Chat.Message(e, seqElement.key, { type: seqElement.messageType }).send()
+                } else { // Localization key message
+                    new Chat.Message(e, seqElement.key, { type: seqElement.messageType, contentIsLocalizationKey: true }).send()
+                }
                 break
 
             case 'setLocalName':
@@ -759,6 +863,12 @@ export class NPCManager {
         if (e && e.isValid) {
             e.sDP(dPPrefix + 'sequenceId', undefined)
             e.sDP(dPPrefix + 'sequenceStep', undefined)
+
+            // Clear cycle data
+            const cycleCounterPrefix = dPPrefix + ':cycleCounter'
+            e.getDynamicPropertyIds().forEach(element => {
+                if (element.startsWith(cycleCounterPrefix)) e.sDP(element, undefined)
+            });
         }
         this.removeEntity(e)
         this.unregisterChatListener(e)

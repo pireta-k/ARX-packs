@@ -392,4 +392,5 @@ export const enLocalization = {
     "chat.messageType.action": 'Action',
 
     "eve.name": 'Eve',
+    "chat.eve.hello": "Hi! I'm Eve.",
 }

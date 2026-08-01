@@ -2,7 +2,7 @@
 import { ruLocalization } from './ru'
 import { enLocalization } from './en'
 import { sDP } from '../arxLib/DPOperations'
-import { Player } from '@minecraft/server'
+import { Entity, Player } from '@minecraft/server'
 
 // Vars
 export const defaultLanguage = 'en'
@@ -17,7 +17,7 @@ const insertionsLimit = 64
  */
 
 /** Fetch Localization. This functions takes a player and textId as input and returns requested text as output.
- * @param {player} player - Player
+ * @param {Entity} e - Player
  * @param {string} textId - id of desired text. Looks like game.title.something
  * @param {array} [insertions=[]] - Insertions are words from array that we should insert in text. In raw text, they're marked as $0$, $1$ and so on. $ is special symbol for parcer, and num is an index of insertion in array. 
  * @param {LangErrorBehaviour} [errorBehaviour] 
@@ -26,12 +26,12 @@ const insertionsLimit = 64
 export function fl(e, textId, insertions = [], errorBehaviour = 'sendString') {
 
     // Wrong usage
-    if (!e) {
-        console.warn('Called fl() without Entity object')
+    if (!e || !e.isValid) {
+        throw new Error(`Called fl() without textId object for invalid entity`)
         return
     }
     if (!textId) {
-        console.warn(`Called fl() without textId object for e ${e.RPName}`)
+        throw new Error(`Called fl() without textId object for e ${e.typeId} with RPName ${e.RPName}`)
         return
     }
 

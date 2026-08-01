@@ -25,7 +25,6 @@ import { random } from "./arxLib/random"
  * @property {'local' | 'global' | 'shout' | 'whisper' | 'action'} [type]
  * @property {Boolean} [debug]
  * @property {Boolean} [contentIsLocalizationKey=false] - for Dynamic NPC (they usually talk with localization, not direct text)
- * @property {any[]} []
  */
 
 /**
@@ -44,7 +43,7 @@ export class Chat {
         #fullDistance
         #targetEntities
         #formattingMap
-        #langKey
+        #messageTypeLangKey
         #entitiesMap
 
         /** 
@@ -53,6 +52,10 @@ export class Chat {
          * @param {ChatMessageOptions} [options] 
          */
         constructor(sourceEntity, content, options = {}) {
+
+            if (!content && options.contentIsLocalizationKey) {
+                console.warn('Trying to create a localization-type message with empty localization key')
+            }
 
             /** @type {ChatProcessor} */
             this.options = options
@@ -90,7 +93,7 @@ export class Chat {
                     console.warn(`Unexpected message type: ${options.type}`)
             }
 
-            this.#langKey = `chat.messageType.${this.type}`
+            this.#messageTypeLangKey = `chat.messageType.${this.type}`
             this.#isTransDimensional = this.#clearDistance === Infinity
             this.#fullDistance = this.#clearDistance * 2
 
@@ -113,7 +116,7 @@ export class Chat {
             this.#entitiesMap = new Map()
             for (const e of this.#targetEntities) {
                 const isLocKey = options.contentIsLocalizationKey ?? false
-                const text = isLocKey ? fl(e, this.#originalText) : this.#originalText
+                const text = isLocKey ? fl(e, content) : content
                 let { messedText, isClear } = this.#applyMessing(text, e)
                 messedText = this.#assembleFormatting(messedText)
 
@@ -223,15 +226,30 @@ export class Chat {
          * Sends this message to chat
          */
         send() {
-            for (const [e, { text, isClear }] of this.#entitiesMap) {
-                if (e.typeId === 'minecraft:player') {
-                    const typeText = e.gDP('myRule:chatPrefixes') === 'short' ? fl(e, this.#langKey)[0] : fl(e, this.#langKey)
-                    const name = this.#sourceEntity.typeId === 'minecraft:player'
-                        ? this.#sourceEntity.RPName // A source is a Player
-                        : fl(this.#sourceEntity, this.#sourceEntity.gDP('localizationName') ?? '.', [], 'sendFalse') || '???'
-                    e.sendMessage(`[${this.#style}${typeText}§f] <${name}§f> ${text}`)
-                } else {
-                    NPCManager.processChatTrigger(e, this, text, isClear)
+            for (const [listener, { text, isClear }] of this.#entitiesMap) {
+                if (this.options.debug) console.warn(`Processing a chat for ${listener.typeId}`)
+
+                // Player recieves a message
+                if (listener.typeId === 'minecraft:player') {
+                    // Get message type
+                    const typeFromLang = fl(listener, this.#messageTypeLangKey)
+                    const typeText = listener.gDP('myRule:chatPrefixes') === 'short' ? typeFromLang[0] : typeFromLang
+
+                    // Get souce name
+                    let sourceName
+                    if (this.#sourceEntity.typeId === 'minecraft:player') sourceName = this.#sourceEntity.RPName
+                    else {
+                        const locKey = this.#sourceEntity.gDP('localizationName') || '.'
+                        sourceName = fl(listener, locKey, [], 'sendFalse') || '???'
+                    }
+
+                    // Send
+                    listener.sendMessage(`[${this.#style}${typeText}§f] <${sourceName}§f> ${text}`)
+                }
+                // Dynamic NPC recieves a message. Doesn't resieves it's own messages
+                else if (listener !== this.#sourceEntity) {
+                    if (this.options.debug) console.warn('Processing DNPC trigger')
+                    NPCManager.processChatTrigger(listener, this, text, isClear)
                 }
             }
         }
