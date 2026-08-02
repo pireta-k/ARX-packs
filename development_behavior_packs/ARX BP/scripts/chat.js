@@ -103,11 +103,7 @@ export class Chat {
                     maxDistance: this.#fullDistance
                 }).filter(e => Chat.canHear(e))
             } else {
-                let entities = []
-                for (const d of this.#getAvailableDimensions()) {
-                    entities.push(...d.getEntities().filter(e => Chat.canHear(e)))
-                }
-                this.#targetEntities = entities
+                this.#targetEntities = world.getEntitiesInAllDimensions().filter(e => Chat.canHear(e))
             }
             /** 
              * A Map that constains an entity and a text to send to this entity
@@ -202,25 +198,6 @@ export class Chat {
             if (this.options.debug) console.warn("applyMessing: " + text)
             return { messedText: text, isClear: false }
         }
-
-        /**
-         * Collect dimensions for isTransDimensional messages
-         * Needs to be collected only one time. Uses cache
-         */
-        #getAvailableDimensions() {
-            if (Chat.Message.#availableDimensionsCache) return Chat.Message.#availableDimensionsCache
-            const ds = [
-                world.getDimension('minecraft:overworld'),
-                world.getDimension('minecraft:nether'),
-                world.getDimension('minecraft:end'),
-            ]
-            for (const dId of customDimensionIds) {
-                ds.push(world.getDimension(dId))
-            }
-            Chat.Message.#availableDimensionsCache = ds
-            return ds
-        }
-        static #availableDimensionsCache
 
         /**
          * Sends this message to chat

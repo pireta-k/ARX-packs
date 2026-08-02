@@ -1,8 +1,11 @@
 // This file edits vanilla prototyes
-import { System, World, Entity, Player, ItemStack } from "@minecraft/server"
+import { System, World, world, Entity, Player, ItemStack } from "@minecraft/server"
 import { sDP, iDP, gDP } from "./arxLib/DPOperations"
 import { Vector } from "./arxLib/math"
 import { Weather } from "./arxLib/weather"
+import { customDimensionIds } from "./_main"
+
+let dimensionsCache
 
 function editVanillaPrototypes() {
     // Player
@@ -15,7 +18,7 @@ function editVanillaPrototypes() {
         // DP operations
         Entity.prototype.sDP = function (dp, value) { return sDP(this, dp, value) }
         Entity.prototype.iDP = function (dp, valueToIncrease = 1) { return iDP(this, dp, valueToIncrease) }
-        Entity.prototype.gDP = function (value) { return gDP(this, value) }
+        Entity.prototype.gDP = function (value, fallback = undefined) { return gDP(this, value, fallback) }
 
         // HP
         Object.defineProperty(Entity.prototype, 'currentHP', { get: function () { return this.getComponent('health')?.currentValue } })
@@ -45,7 +48,27 @@ function editVanillaPrototypes() {
         // DP operations
         World.prototype.sDP = function (dp, value) { return sDP(this, dp, value) }
         World.prototype.iDP = function (dp, valueToIncrease = 1) { return iDP(this, dp, valueToIncrease) }
-        World.prototype.gDP = function (value) { return gDP(this, value) }
+        World.prototype.gDP = function (value, fallback = undefined) { return gDP(this, value, fallback) }
+        World.prototype.getAllDimensions = function () {
+            if (dimensionsCache) return dimensionsCache
+            const ds = [
+                world.getDimension('minecraft:overworld'),
+                world.getDimension('minecraft:nether'),
+                world.getDimension('minecraft:the_end'),
+            ]
+            for (const dId of customDimensionIds) {
+                ds.push(world.getDimension(dId))
+            }
+            dimensionsCache = ds
+            return ds
+        }
+        World.prototype.getEntitiesInAllDimensions = function () {
+            let result = []
+            for (const d of world.getAllDimensions()) {
+                result.push(...d.getEntities())
+            }
+            return result
+        }
     }
 }
 

@@ -23,6 +23,9 @@ function getBodyText(p) {
     bodyText += ('§e' + fl(p, 'info.devs.links') + '§f\n')
     bodyText += 'Telegram: §bt.me/arxult§f\n'
     bodyText += 'Discord: §bdiscord.gg/CngH7spGbn§f\n'
+    bodyText += 'Github: §bgithub.com/pireta-k/ARX-packs§f\n'
+    bodyText += '\n'
+    bodyText += 'You can report bugs to §bgithub.com/pireta-k/ARX-packs/issues§f\n'
     bodyText += '\n'
 
     // Thanks
@@ -35,4 +38,4 @@ function getBodyText(p) {
     return bodyText
 }
 
-const specialThanks = ['Serty', 'Zelenchik', 'Magik', 'Максик', 'Ирочка', 'Tima', 'Fanat']
+const specialThanks = ['Serty & RPG++', 'Zelenchik', 'Magik', 'Максик', 'Ирочка', 'Tima', 'Fanat']

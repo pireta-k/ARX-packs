@@ -22,7 +22,8 @@ const dPPrefix = 'NPCManager:'
  * SequenceArrayElementPlayAnimation | 
  * SequenceArrayElementMerge | 
  * SequenceArrayElementCycle | 
- * SequenceArrayElementJumpToStep | 
+ * SequenceArrayElementLightPost | 
+ * SequenceArrayElementJumpToLightPost | 
  * SequenceArrayElementTransit | 
  * SequenceArrayElementFork | 
  * SequenceArrayElementSay | 
@@ -67,20 +68,6 @@ const dPPrefix = 'NPCManager:'
  * @property {"cycle"} type
  * @property {SequenceArrayElement[]} sequence
  * @property {Number} [repeatTimes]
- */
-
-/** TO-DO JumpToStep
- * Jumps to a certain step of a current sequence
- * @typedef {Object} SequenceArrayElementJumpToStep
- * @property {"jumpToStep"} type
- * @property {Number[]} step
- */
-
-/** Transit
- * Switches current sequence to a new one
- * @typedef {Object} SequenceArrayElementTransit
- * @property {"transit"} type
- * @property {String} sequenceId
  */
 
 /**
@@ -140,19 +127,33 @@ const dPPrefix = 'NPCManager:'
  */
 
 /**
- * TO-DO Execute. 
+ * TO-DO Execute
  * USE WITH CAUTION
  * @typedef {Object} SequenceArrayElementExecute
  * @property {"execute"} type
  * @property {Function} run - async function
  */
 
+/** Transit
+ * Switches current sequence to a new one
+ * @typedef {Object} SequenceArrayElementTransit
+ * @property {"transit"} type
+ * @property {String} sequenceId
+ */
+
 /**
- * TO-DO LightPost. 
- * Does nothing by itself. Works as a marker. Can be jumped on with transit
+ * TO-DO LightPost
+ * Does nothing by itself. Works as a marker. Can be jumped on with transit or jumpToLightPost
  * @typedef {Object} SequenceArrayElementLightPost
  * @property {"lightPost"} type
- * @property {Function} run
+ * @property {String} name
+ */
+
+/** TO-DO JumpToLightPost
+ * Jumps to a certain lightPost of a current sequence
+ * @typedef {Object} SequenceArrayElementJumpToLightPost
+ * @property {"jumpToLightPost"} type
+ * @property {String} name
  */
 
 /** A head and a body
@@ -179,6 +180,7 @@ const sequences = {
                     { type: "say", key: 'chat.eve.hello' },
                 ]
             },
+            { type: 'lightPost', name: 'Start' },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
             {
                 type: "subsequence",
@@ -297,7 +299,7 @@ class NPCSequence {
      * @returns {SequenceArrayElement | null}
      */
     #getStepObj(step, shutUp = false) {
-        if (this.#isStep(step)) {
+        if (!this.#isStep(step)) {
             console.warn(`Incorrect step recieved in #getStepObj for ${this.id}: ${step}`)
             return null
         }
@@ -338,13 +340,8 @@ class NPCSequence {
      * @returns {Boolean}
      */
     #isStep(step) {
-        if (!Array.isArray(step)) {
-            return false
-        }
-        step.forEach(item => {
-            if (typeof item !== 'number') return false
-        })
-        return true
+        if (!Array.isArray(step)) return false
+        return step.every(item => typeof item === 'number')
     }
 
     /**
@@ -462,7 +459,7 @@ class NPCSequence {
         this.entity.sDP(dp, value)
     }
     #getCycleCounterDp(step) {
-        return dPPrefix + ':cycleCounter:' + this.id + ':' + step.toString()
+        return dPPrefix + 'cycleCounter:' + this.id + ':' + step.toString()
     }
 
     /**
@@ -488,11 +485,13 @@ class NPCSequence {
         return false
     }
 
-    /** @typedef {'killSequence' | undefined} SequenceElementResponce */
+    /** @typedef {'finishThread' | 'success' | 'fail'} SequenceElementResponce */
+    /** @typedef {'doNotClearSequenceData' | undefined} SequenceResponce */
 
     /**
      * === The main function of this class ===
      * Runs a sequence from a last-saved ?? 0 step
+     * @returns {SequenceResponce}
      */
     async run() {
         const e = this.entity
@@ -507,10 +506,28 @@ class NPCSequence {
             while (NPCSequence.#isElementAnySubsequence(this.#getStepObj(currentStep))) {
                 currentStep.push(0)
             }
+            // Check, if an entity is valid
+            if (!e || !e.isValid) {
+                console.warn('Entity is invalid or is not loaded, stopping sequence')
+                NPCManager.removeEntity(e)
+                NPCManager.unregisterChatListener(e)
+                return 'doNotClearSequenceData'
+            }
+            // Check, if an entity is in an unloaded chunk
+            if (!e.dimension.isChunkLoaded(e.location)) {
+                NPCManager.Freeze.freeze(e)
+                return 'doNotClearSequenceData'
+            }
+            // Check, if the entity is in loading list
+            if (!NPCManager.isEntityProcessing(e)) {
+                console.warn(`Sequence ${this.id} step ${currentStep} started, but the entity is not in the active Entities list.`)
+                return 'doNotClearSequenceData'
+            }
             // Run
             /** @type {SequenceElementResponce} */
             const responce = await this.#runStep(currentStep)
-            if (responce === 'killSequence') break
+            if (responce === 'fail') console.warn(`A sequence ${this.id} element on step ${currentStep} has reported a failure`)
+            if (responce === 'finishThread') break
 
             currentStep = this.#fetchNextStep(currentStep)
             if (currentStep === false) {
@@ -542,7 +559,7 @@ class NPCSequence {
         const seqElement = this.#getStepObj(step)
         if (!seqElement) {
             console.error(`Trying to run non-existent step ${step} for ${this.id}`)
-            return
+            return 'fail'
         }
         switch (seqElement.type) {
             case 'goto':
@@ -554,7 +571,7 @@ class NPCSequence {
                         console.warn(`Cannot create a block object while processing a sequence (id: ${NPCManager.getSequenceId(e)}, step ${step}). The entity was teleported to desired location instead of classic navigation`)
                         e.teleport(resolvedLocation)
                         resolve(true)
-                        return
+                        return 'fail'
                     }
                     b.setType(this.baitBlockId)
 
@@ -563,14 +580,14 @@ class NPCSequence {
                         if (!e.isValid) {
                             system.clearRun(intervalId)
                             reject('Entity is not valid')
-                            return
+                            return 'fail'
                         }
                         if (secondsElapsed > defaultTimeout) {
                             system.clearRun(intervalId)
-                            b.setType('minecraft:air')
+                            if (b) b.setType('minecraft:air')
                             e.teleport(resolvedLocation) // Teleport entity to the desired location
                             resolve(true)
-                            return
+                            return 'success'
                         }
                         if (e.getTags().includes('bait_reached')) {
                             // console.warn(`Successfully reached the block`)
@@ -578,7 +595,7 @@ class NPCSequence {
                             b.setType('air')
                             system.clearRun(intervalId)
                             resolve(true)
-                            return
+                            return 'success'
                         }
                         secondsElapsed += 0.05 * baitListeningTickSpeed
                     }, baitListeningTickSpeed)
@@ -592,10 +609,12 @@ class NPCSequence {
                 } else {
                     await sleep(ticks)
                 }
+                return 'success'
                 break
 
             case 'playAnimation':
                 e.playAnimation(seqElement.animationId)
+                return 'success'
                 break
 
             case 'expectChatMessage':
@@ -618,6 +637,7 @@ class NPCSequence {
                 } finally {
                     if (currentResolve) NPCManager.unregisterChatListener(e, currentResolve)
                 }
+                return 'success'
                 break
 
             case 'say':
@@ -627,6 +647,7 @@ class NPCSequence {
                 } else { // Localization key message
                     new Chat.Message(e, seqElement.key, { type: seqElement.messageType, contentIsLocalizationKey: true }).send()
                 }
+                return 'success'
                 break
 
             case 'setLocalName':
@@ -636,13 +657,19 @@ class NPCSequence {
             case 'transit':
                 if (!(seqElement.sequenceId in sequences)) {
                     console.error(`Trying to transit to a non-existent sequence ${seqElement.sequenceId} from seq ${this.id}`)
-                    return
+                    return 'fail'
                 }
                 NPCManager.runSequence(this.entity, seqElement.sequenceId, { allowOverride: true })
-                return 'killSequence'
+                return 'finishThread'
+                break
+
+            case 'lightPost': // Do nothing
+                return 'success'
+                break
 
             default:
                 console.error(`Unexpected action in sequence ${this.id}: ${seqElement.type}`)
+                return 'fail'
         }
     }
 }
@@ -805,7 +832,7 @@ export class NPCManager {
 
 
     // Entities that are processing now
-    static entities = []
+    static activeEntities = []
     /**
      * Add an entity to processing list
      * @param {Entity} e 
@@ -815,7 +842,7 @@ export class NPCManager {
             console.warn(`Can't add the entity to active entities: it is already added`)
             return false
         }
-        else this.entities.push(e.id)
+        else this.activeEntities.push(e.id)
     }
     /**
      * Remove Entites from processing list
@@ -824,21 +851,19 @@ export class NPCManager {
      */
     static removeEntity(e) {
         if (this.isEntityProcessing(e)) {
-            this.entities = this.entities.filter(id => id !== e.id)
+            this.activeEntities = this.activeEntities.filter(id => id !== e.id)
             // console.warn('An entity was removed from active entities')
             return true
         }
         return false
     }
     /**
-     * Is the entity listed in entities?
+     * Is the entity listed in activeEntities?
      * @param {Entity} e 
      */
-    static isEntityProcessing(e) { return this.entities.includes(e.id) }
+    static isEntityProcessing(e) { return this.activeEntities.includes(e.id) }
 
     // Any direct interactions with DPs are PROHIBITED! Use only functions below.
-    /** @param {Entity} e */
-    static doEntityHasActiveSequence(e) { return e.gDP(dPPrefix + 'sequenceId') !== undefined }
     /** 
      * @param {Entity} e
      * @returns {SequenceStep}
@@ -865,7 +890,7 @@ export class NPCManager {
             e.sDP(dPPrefix + 'sequenceStep', undefined)
 
             // Clear cycle data
-            const cycleCounterPrefix = dPPrefix + ':cycleCounter'
+            const cycleCounterPrefix = dPPrefix + 'cycleCounter'
             e.getDynamicPropertyIds().forEach(element => {
                 if (element.startsWith(cycleCounterPrefix)) e.sDP(element, undefined)
             });
@@ -876,6 +901,8 @@ export class NPCManager {
     }
     /** @param {Entity} e */
     static getSequenceId(e) { return e.gDP(dPPrefix + 'sequenceId') }
+    /** @param {Entity} e */
+    static hasSavedSequence(e) { return NPCManager.getSequenceId(e) !== undefined }
     /**
      * Get a sequence instance that is registered on an entity right now
      * @param {Entity} e 
@@ -940,12 +967,15 @@ export class NPCManager {
         }
         if (seq) {
             this.addEntity(e)
+            let responce
             try {
-                await seq.run()
+                responce = await seq.run()
             } catch (error) {
                 console.warn(`NPCManager - ${error.stack}${error}`)
             } finally {
-                NPCManager.clearSequence(e)
+                if (responce !== 'doNotClearSequenceData') {
+                    NPCManager.clearSequence(e)
+                }
             }
         }
         else console.error(`Cannot start sequence: Unexpected error occured`)
@@ -982,19 +1012,80 @@ export class NPCManager {
         const offset = e.gDP(dPPrefix + 'offset') ?? { x: 0, y: 0, z: 0 }
         return Vector.sum(vector, offset)
     }
+
+    /**
+     * Freezing an entity means removing it from active entities cuz it's not fully loaded. 
+     * As an example, an entity can be loaded and valid, but a this entity's chunk is not loaded.
+     * Then freezing will be applied
+     */
+    static Freeze = class {
+        /**
+         * Freeze an entity. It means that it stays in the world but is not completely loaded
+         * @param {Entity} e 
+         */
+        static freeze(e) {
+            console.warn(`Entity ${e.typeId} freezed`)
+            NPCManager.removeEntity(e)
+            NPCManager.unregisterChatListener(e)
+            this.applyFreezeStatus(e)
+        }
+        static unfreeze(e) {
+            console.warn(`Entity ${e.typeId} unfreezed`)
+            NPCManager.restoreSequence(e)
+            this.removeFreezeStatus(e)
+        }
+        /**
+         * Apply freeze status. Only affects saved data
+         * @param {Entity} e 
+         */
+        static applyFreezeStatus(e) {
+            if (!this.getFreezeStatus(e)) {
+                const currentEntities = world.gDP(this.freezedEntitiesDp, [])
+                currentEntities.push(e.id)
+                world.sDP(this.freezedEntitiesDp, currentEntities)
+            }
+        }
+        /**
+         * Remove freeze status. Only affects saved data
+         * @param {Entity} e 
+         */
+        static removeFreezeStatus(e) {
+            const currentEntities = world.gDP(this.freezedEntitiesDp, [])
+            world.sDP(this.freezedEntitiesDp, currentEntities.filter(id => id !== e.id))
+        }
+        static getFreezeStatus(e) {
+            return (world.gDP(this.freezedEntitiesDp, []).includes(e.id))
+        }
+        static freezedEntitiesDp = dPPrefix + 'freezedEntities'
+    }
 }
 
 // An entity was loaded. Check for sequences
 world.afterEvents.entityLoad.subscribe(async event => {
     const e = event.entity
-    if (NPCManager.doEntityHasActiveSequence(e) && !NPCManager.isEntityProcessing(e)) {
+    if (NPCManager.hasSavedSequence(e) && !NPCManager.isEntityProcessing(e)) {
         NPCManager.restoreSequence(e)
     }
 })
 
-// Entity death or unloading
+// Entity death or unloading (Does not trigger if an entity just leaves a loaded chuck)
 world.beforeEvents.entityRemove.subscribe(async event => {
     const e = event.removedEntity
+    // console.warn(`Unloaded ${e.typeId}`)
     NPCManager.removeEntity(e)
     NPCManager.unregisterChatListener(e)
+
+    // Remove freeze.
+    NPCManager.Freeze.removeFreezeStatus(e)
+})
+
+// A code was initialized (fix sequence death on /reload)
+system.run(() => {
+    for (const d of world.getAllDimensions()) {
+        for (const e of d.getEntities()) {
+            if (NPCManager.hasSavedSequence(e) && !NPCManager.isEntityProcessing(e)) {
+                NPCManager.restoreSequence(e)
+            }
+        }
+    }
 })

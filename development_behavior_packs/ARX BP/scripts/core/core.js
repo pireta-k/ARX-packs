@@ -32,6 +32,7 @@ import { msgFromGuide, parceChatCommand } from "../chat"
 import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
 import { playSound } from "../arxLib/audio"
+import { NPCManager } from "../npcManager"
 
 /** TO-DO
 OPTIONAL overclock: {    <- If this key exists, can overclock, else cannot 
@@ -1492,6 +1493,19 @@ export const coreFramework = {
                     uiManager.closeAllForms(player)
                     player.sDP('isRobbingRightNow', false)
                     player.sDP('robbingTargetID', undefined)
+                }
+            }
+        }
+    },
+
+    freezedDynamicNPCs: {
+        tickSpeed: 60,
+        condition: () => { return world.gDP(NPCManager.Freeze.freezedEntitiesDp, []).length > 0 },
+        operations: () => {
+            for (const e of world.getEntitiesInAllDimensions()) {
+                // The entity is freezed, unfreeze
+                if (e && e.isValid && NPCManager.Freeze.getFreezeStatus(e) && e.dimension.isChunkLoaded(e.location)) {
+                    NPCManager.Freeze.unfreeze(e)
                 }
             }
         }
