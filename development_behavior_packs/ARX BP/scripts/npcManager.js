@@ -126,7 +126,7 @@ const dPPrefix = 'NPCManager:'
  * Subsequence. An embedded array of sequence steps
  * @typedef {Object} SequenceArrayElementSubsequence
  * @property {"subsequence"} type
- * @property {Boolean} [await] - Wait for the end of a subsequence
+ * @property {Boolean} [await=true] - Wait for the end of a subsequence
  * @property {SequenceArrayElement[]} sequence
  */
 
@@ -229,7 +229,7 @@ const sequences = {
                     { type: "say", key: 'Hmmm...', sayRawKey: true },
                 ]
             },
-            { type: 'jumpToLightPost', name: 'start' },
+            // { type: 'jumpToLightPost', name: 'start' },
             { type: "say", key: 'That\'s all', sayRawKey: true }
         ]
     },
@@ -248,9 +248,6 @@ const sequences = {
         ]
     }
 }
-
-/** @typedef {Number[]} SequenceStep */
-/** @typedef {SequenceStep[]} StepHub */
 
 /**
  * A class that represents an action sequence for an NPC
@@ -283,9 +280,9 @@ class NPCSequence {
      * @param {boolean} [shutUp=false] - Do not write in log, if the index is non-existent
      * @returns {SequenceArrayElement | null}
      */
-    #getStepObj(step, shutUp = false) {
+    #getSequenceArrayElement(step, shutUp = false) {
         if (!this.#isStep(step)) {
-            console.warn(`Incorrect step recieved in #getStepObj for ${this.id}: ${step}`)
+            console.warn(`Incorrect step recieved in #getSequenceArrayElement for ${this.id}: ${step}`)
             return null
         }
 
@@ -347,85 +344,13 @@ class NPCSequence {
     }
 
     /**
-     * Returns a next step
-     * Returns true if a sequence is completed
-     * Returns false if something unexpected occured
-     * Not intended to run "just to check". It changes saved data
-     * @returns {SequenceStep | Boolean}
-     */
-    #fetchNextStep(step) {
-
-        if (!this.#doStepExists(step)) {
-            console.warn('fetchNextStep: Step is invalid')
-            return false
-        }
-
-        let resultStep = [...step]
-
-        // === If no next step on this sequence: Exit sequence/subsequence  ===
-        // Check for multiple endings (Maybe we have to exit 2 depth levels simultaneously, who knows.)
-        while (true) {
-
-            const nextStepOnTheSameLevel = [...resultStep]
-            nextStepOnTheSameLevel[nextStepOnTheSameLevel.length - 1] += 1
-
-            // No further step in this sequence
-            if (!this.#doStepExists(nextStepOnTheSameLevel)) {
-
-                // The root sequence is completed
-                if (resultStep.length <= 1) return true
-
-                // Are we in a cycle?
-                const parentStep = this.#getParentStep(resultStep)
-                const parentElement = this.#getStepObj(parentStep)
-                if (parentElement.type === 'cycle') {
-
-                    if (parentElement.repeatTimes) {
-                        const repeatsDone = this.#getCycleCounter(parentStep)
-                        if (repeatsDone < parentElement.repeatTimes - 1) {
-                            this.#setCycleCounter(parentStep, repeatsDone + 1)
-                            return [...parentStep, 0] // Repeat
-                        }
-                    } else { // Snap to a start of a cycle instantly
-                        return [...parentStep, 0]
-                    }
-                }
-
-                // Exit subsequence
-                resultStep = resultStep.slice(0, -1)
-            } else { break }
-        }
-
-        // === Same-level transition ===
-        const thisSequenceElement = this.#getStepObj(resultStep)
-        // Check
-        if (!thisSequenceElement) {
-            console.warn('NPCSequence.#fetchNextStep(): Unexpected error occured')
-            return false
-        }
-        // Transit further
-        resultStep[resultStep.length - 1] += 1
-
-        // === Enter sequence ===
-        // Also check for multiple entrances, maybe we have to go 2 or 3 levels up
-        while (true) {
-            const element = this.#getStepObj(resultStep)
-            if (!NPCSequence.isElementAnySubsequence(element)) break
-            if (element.type === "cycle") this.#setCycleCounter(resultStep, 0)
-            resultStep.push(0)
-        }
-
-        return resultStep
-    }
-
-    /**
      * Get a current value of a cycle counter for a step
      * @param {String} seqId 
      * @param {SequenceStep} step - Step of a cycle element
      * @returns {number}
      */
     #getCycleCounter(step) {
-        const element = this.#getStepObj(step)
+        const element = this.#getSequenceArrayElement(step)
         if (element.type !== "cycle") {
             throw new Error('Trying to get a cycle counter of not-cycle sequence')
         }
@@ -436,7 +361,7 @@ class NPCSequence {
         if (typeof value !== 'number') {
             throw new Error('Trying to set a not-number value to a cycle counter')
         }
-        const element = this.#getStepObj(step)
+        const element = this.#getSequenceArrayElement(step)
         if (element.type !== "cycle") {
             throw new Error('Trying to set a cycle counter of not-cycle sequence')
         }
@@ -453,7 +378,7 @@ class NPCSequence {
      * @returns {Boolean}
      */
     #doStepExists(step) {
-        return !!this.#getStepObj(step, true)
+        return !!this.#getSequenceArrayElement(step, true)
     }
 
     /**
@@ -475,17 +400,21 @@ class NPCSequence {
 
     /**
      * Runs a single thread and waits for it's end
+     * Adds and removes steps to stepHub by itself.
      * Can create new threads
-     * @param {SequenceStep} step 
+     * @param {SequenceStep} step
      */
-    async #runThread(e, step) {
+    async #runThread(step) {
+        console.warn(`A thread ${step} has §arunned`)
+        const e = this.entity
+
         // Check step
         if (!this.#doStepExists(step)) {
-            console.warn(`NPCSequence.runThread(): Unexistent step ${step} has gotten from an entity. A thread was killed`)
+            console.warn(`NPCSequence.#runThread(): Unexistent step ${step} has gotten from an entity. A thread was killed`)
             return 'fail'
         }
 
-        NPCManager.StepHub.addStep(e, step)
+        const stepHub = NPCManager.StepHub.get(e).addStep(step)
 
         while (true) {
             let newStep
@@ -514,7 +443,7 @@ class NPCSequence {
             // Responce
             if (responce === 'fail') console.warn(`A sequence ${this.id} element on step ${step} has reported a failure`)
             if (responce === 'finishThread') {
-                NPCManager.StepHub.removeStep(e, step)
+                stepHub.removeStep(step)
                 break
             }
             if (typeof responce === 'object' && responce.forceNextStep) {
@@ -525,30 +454,34 @@ class NPCSequence {
                 const nextStepOnTheSameLevel = [...step]
                 nextStepOnTheSameLevel[nextStepOnTheSameLevel.length - 1] += 1
 
-                if (!this.#doStepExists(nextStepOnTheSameLevel)) return 'success' // End of a level sequence
+                if (!this.#doStepExists(nextStepOnTheSameLevel)) break // End of a level sequence
                 newStep = nextStepOnTheSameLevel
             }
 
             // Save new step
-            NPCManager.StepHub.replaceStepWith(e, step, newStep)
+            stepHub.replaceStepWith(step, newStep)
 
             // Assign step to run a new cycle iteration
             step = newStep
         }
+
+        stepHub.removeStep(step)
+        console.warn(`A thread ${step} has §cended`)
+        return 'success'
     }
 
     /**
      * === The main function of this class ===
-     * Runs a sequence from a last-saved ?? 0 step
+     * Runs a sequence from a last-saved ?? start step(s)
      * @returns {SequenceResponce}
      */
-    async run() {
+    async start() {
         const e = this.entity
-        const stepHub = NPCManager.StepHub.getNumberOfSteps(e) > 0 ? NPCManager.StepHub.load(e) : NPCManager.StepHub.setToStart(e)
+        const stepHub = new NPCManager.StepHub(e)
 
         // == Threads processing ===
-        for (const step of stepHub) {
-            await this.#runThread(e, step)
+        for (const step of stepHub.hub) {
+            await this.#runThread(step)
         }
 
         // Finished
@@ -569,7 +502,7 @@ class NPCSequence {
         const e = this.entity
 
         /** @type {SequenceArrayElement} */
-        const seqElement = this.#getStepObj(step)
+        const seqElement = this.#getSequenceArrayElement(step)
         if (!seqElement) {
             console.error(`Trying to run non-existent step ${step} for ${this.id}`)
             return 'fail'
@@ -694,10 +627,10 @@ class NPCSequence {
             // Subsequences
             case 'subsequence':
                 const deeperStep = [...step, 0]
-                if (seqElement.await) {
-                    await this.#runThread(e, deeperStep)
+                if (seqElement.await !== false) {
+                    await this.#runThread(deeperStep)
                 } else {
-                    this.#runThread(e, deeperStep)
+                    this.#runThread(deeperStep)
                 }
                 break
 
@@ -915,7 +848,7 @@ export class NPCManager {
     static clearSequence(e) {
         if (e && e.isValid) {
             NPCManager.setSequenceId(e, undefined)
-            NPCManager.StepHub.reset(e)
+            NPCManager.StepHub.get(e).reset()
 
             // Clear cycle data
             const cycleCounterPrefix = dPPrefix + 'cycleCounter'
@@ -997,7 +930,7 @@ export class NPCManager {
             this.addEntity(e)
             let responce
             try {
-                responce = await seq.run()
+                responce = await seq.start()
             } catch (error) {
                 console.warn(`NPCManager - ${error.stack}${error}`)
             } finally {
@@ -1088,99 +1021,127 @@ export class NPCManager {
     }
 
     /**
-     * A hub that keeps all the active threads. Always saves to entity
+     * A hub that keeps all the active threads. Saves to entity
      */
     static StepHub = class {
+
+        /** @typedef {Number[]} SequenceStep */
+        /** @typedef {SequenceStep[]} StepHub */
+
+        /** @returns {StepHub} */
+        static getNewStepHub() {
+            return [[0]]
+        }
+
+        static #map = new WeakMap()
+
+        /**
+         * Get a stepHub for an entity
+         * @param {Entity} e 
+         * @returns {InstanceType<NPCManager.StepHub>}
+         */
+        static get(e) {
+            return this.#map.get(e) || this.#map.set(e, new NPCManager.StepHub(e)).get(e)
+        }
+
+        /** 
+         * Load a stepHub from entity's DP
+         * @returns {StepHub}
+         */
+        #load() {
+            return this.e.gDP(dPPrefix + 'stepHub')
+        }
+
+        /** 
+         * Save a stepHub to entity's DP
+         * Executes automatically in stepHub's function after changing stepHub
+         * @param {StepHub} stepHub
+         */
+        #save() {
+            this.e.sDP(dPPrefix + 'stepHub', this.hub)
+            return this
+        }
+
+        /** @param {Entity} e */
+        constructor(e) {
+            /** @type {Entity} */
+            this.e = e
+            /** @type {StepHub} */
+            this.hub = this.#load() || NPCManager.StepHub.getNewStepHub()
+        }
+
         /**
          * Get an index of the provided step in entity's stephub. If step is not in hub, return undefined
-         * @param {Entity} e 
          * @param {SequenceStep} stepToCheck 
          * @returns {Number}
          */
-        static #getIndexOfStep(e, stepToCheck) {
-
-            const hub = this.load(e)
-            if (!hub) return undefined
-
-            for (let i = 0; i < hub.length; i++) {
-                if (JSON.stringify(hub[i]) === JSON.stringify(stepToCheck)) return i
+        #getIndexOfStep(stepToCheck) {
+            for (let i = 0; i < this.hub.length; i++) {
+                if (JSON.stringify(this.hub[i]) === JSON.stringify(stepToCheck)) return i
             }
             return undefined
         }
+
         /**
          * Replaces a step in a hub with a new one
-         * @param {Entity} e 
          * @param {SequenceStep} stepToReplace 
          * @param {SequenceStep} stepToReplaceWith 
          * @returns {Boolean}
          */
-        static replaceStepWith(e, stepToReplace, stepToReplaceWith) {
-            const hub = this.load(e)
-            const index = this.#getIndexOfStep(e, stepToReplace)
+        replaceStepWith(stepToReplace, stepToReplaceWith) {
+            const index = this.#getIndexOfStep(stepToReplace)
             if (index === undefined) {
-                console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved.`)
+                console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved to stepHub.`)
                 return false
             }
-            hub[index] = stepToReplaceWith
-            this.save(e, hub)
+            this.hub[index] = stepToReplaceWith
+            this.#save()
             return true
         }
+
         /**
          * Adds a new step to stepHub
-         * @param {Entity} e 
          * @param {SequenceStep} step 
          */
-        static addStep(e, step) {
-            const hub = this.load(e)
-            hub.push(step)
-            this.save(e, hub)
+        addStep(step) {
+            if (this.#getIndexOfStep(step) !== undefined) {
+                // console.warn(`Trying to add to a hub a step that is already in hub - aborted.`)
+                return this
+            }
+            this.hub.push(step)
+            this.#save()
+            return this
         }
+
         /**
          * Removes given step.
          * If no step provided, clears all the stepHub
-         * @param {Entity} e 
          * @param {SequenceStep} [step]
          */
-        static removeStep(e, step) {
-            const index = this.#getIndexOfStep(e, step)
+        removeStep(step) {
+            const index = this.#getIndexOfStep(step)
             if (index === undefined) {
                 console.warn(`Cannot remove a step ${step} that is not in the hub rn`)
                 return
             }
-            const hub = this.load(e)
-            hub.splice(index, 1)
-            this.save(e, hub)
+            this.hub.splice(index, 1)
+            this.#save()
         }
+
         /**
          * Clears stephub for an entity
-         * @param {Entity} e 
          */
-        static reset(e) {
-            this.save(e, undefined)
+        reset() {
+            this.hub = NPCManager.StepHub.getNewStepHub()
+            this.#save()
         }
-        /** 
-         * @param {Entity} e
-         * @returns {StepHub}
-         */
-        static load(e) { return e.gDP(dPPrefix + 'stepHub') }
-        /** 
-         * @param {Entity} e
-         * @param {StepHub} stepHub
-         */
-        static save(e, stepHub) { return e.sDP(dPPrefix + 'stepHub', stepHub) }
-        static getNumberOfSteps(e) {
-            const hub = this.load(e)
-            return Array.isArray(hub) ? hub.length : 0
-        }
+
         /**
-         * Set and return a new stephub
-         * @param {Entity} e 
-         * @returns {StepHub}
+         * Get a number of currently saved steps
+         * @returns {Number}
          */
-        static setToStart(e) {
-            const startHub = [[0]]
-            this.save(e, startHub)
-            return startHub
+        getNumberOfSteps() {
+            return this.hub.length
         }
     }
 }
