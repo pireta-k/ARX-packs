@@ -14,6 +14,7 @@ const dPPrefix = 'NPCManager:'
  * @property {String} [id] - unique id. Sets automatically as sequence key in sequences obj
  * @property {String} [baitBlockId] - an Id of needed bait block
  * @property {String[]} [canBeAppliedOn] - an array of entity typeIDs that a sequence can be applied to
+ * @property {LightPostMap} [lightPostMap] - A map of lightposts. Creates automatically
  */
 
 /** An element of a sequence body
@@ -73,17 +74,19 @@ const dPPrefix = 'NPCManager:'
 /**
  * TO-DO Fork
  * Decision. Two doors. Or three? Don't mind.
+ * Allows you to choose between given ForkElement. 
+ * After one was chosen, all other cannot be chosen.
  * @typedef {Object} SequenceArrayElementFork
  * @property {"fork"} type
- * @property {ForkElement[]} 
+ * @property {ForkElement[]} elements
  */
 
 /**
  * TO-DO Fork element
  * Element that uses in SequenceArrayElementFork
  * @typedef {Object} ForkElement
- * @property {SequenceArrayElement} trigger - If await returns, counts as chosen.
- * @property {SequenceArrayElement} then - Then, will occur something. Maybe even SequenceArrayElementTransit
+ * @property {SequenceArrayElement[]} trigger - If trigger sequence finishes, counts as the chosen option.
+ * @property {SequenceArrayElement[]} then - Then, will occur something. Maybe even SequenceArrayElementTransit
  */
 
 /**
@@ -123,6 +126,7 @@ const dPPrefix = 'NPCManager:'
  * Subsequence. An embedded array of sequence steps
  * @typedef {Object} SequenceArrayElementSubsequence
  * @property {"subsequence"} type
+ * @property {Boolean} [await] - Wait for the end of a subsequence
  * @property {SequenceArrayElement[]} sequence
  */
 
@@ -134,22 +138,24 @@ const dPPrefix = 'NPCManager:'
  * @property {Function} run - async function
  */
 
-/** Transit
- * Switches current sequence to a new one
+/** TO-UPDATE Transit
+ * Switches current sequence to a new one.
+ * Kills all threads on a current sequence
  * @typedef {Object} SequenceArrayElementTransit
  * @property {"transit"} type
  * @property {String} sequenceId
+ * @property {String} [lightPost]
  */
 
 /**
- * TO-DO LightPost
+ * LightPost
  * Does nothing by itself. Works as a marker. Can be jumped on with transit or jumpToLightPost
  * @typedef {Object} SequenceArrayElementLightPost
  * @property {"lightPost"} type
  * @property {String} name
  */
 
-/** TO-DO JumpToLightPost
+/** JumpToLightPost
  * Jumps to a certain lightPost of a current sequence
  * @typedef {Object} SequenceArrayElementJumpToLightPost
  * @property {"jumpToLightPost"} type
@@ -176,12 +182,21 @@ const sequences = {
                 type: 'subsequence', // Initialize
                 sequence: [
                     { type: "setLocalName", localizationKey: 'eve.name' },
-                    { type: "say", key: 'I\'m here!', sayRawKey: true },
                     { type: "say", key: 'chat.eve.hello' },
                 ]
             },
-            { type: 'lightPost', name: 'Start' },
+            { type: 'lightPost', name: 'start' },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
+            {
+                type: 'subsequence',
+                await: false,
+                sequence: [
+                    { type: "wait", seconds: 1 },
+                    { type: "say", key: 'What are we doing, exactly?', sayRawKey: true },
+                    { type: "wait", seconds: 1.5 },
+                    { type: "say", key: 'Am I a laboratory rat?', sayRawKey: true },
+                ]
+            },
             {
                 type: "subsequence",
                 sequence: [
@@ -202,6 +217,7 @@ const sequences = {
             { type: "goto", location: { x: -5, y: -60, z: 5 } },
             { type: "goto", location: { x: -5, y: -60, z: -5 } },
             { type: "goto", location: { x: 5, y: -60, z: -5 } },
+            { type: 'lightPost', name: 'finish' },
             { type: "goto", location: { x: 0, y: -60, z: 0 } },
             { type: "playAnimation", animationId: "animation.killing_time.c" },
             // { type: 'transit', sequenceId: 'eve_test2' },
@@ -213,6 +229,7 @@ const sequences = {
                     { type: "say", key: 'Hmmm...', sayRawKey: true },
                 ]
             },
+            { type: 'jumpToLightPost', name: 'start' },
             { type: "say", key: 'That\'s all', sayRawKey: true }
         ]
     },
@@ -232,41 +249,8 @@ const sequences = {
     }
 }
 
-/**
- * Checks, are the sequences OK.
- */
-function checkSequences() {
-    function warn(text) {
-        const seqWarnPrefix = `[§eSequenceCheckWarning§r]`
-        console.warn(seqWarnPrefix + ': ' + text)
-    }
-
-    for (const key in sequences) {
-        const seq = sequences[key]
-        // Basic
-        if (!('head' in seq)) {
-            warn(`No head in ${key} sequence`)
-            delete sequences[key]
-            continue
-        }
-        if (!('body' in seq)) {
-            warn(`No body in ${key} sequence`)
-            delete sequences[key]
-            continue
-        }
-        // Add ID
-        seq.head.id = key
-        // Head details
-        if (!seq.head.baitBlockId && seq.body.filter(step => step.type === 'goto').length > 0) {
-            warn(`Goto exist in ${key}, but there is no baitBlockId given`)
-        }
-        // Body details
-        if (!Array.isArray(seq.body)) warn(`Body is not an array in ${key}`)
-    }
-}
-checkSequences()
-
 /** @typedef {Number[]} SequenceStep */
+/** @typedef {SequenceStep[]} StepHub */
 
 /**
  * A class that represents an action sequence for an NPC
@@ -287,6 +271,7 @@ class NPCSequence {
         this.entity = entity
         this.baitBlockId = sequence.head.baitBlockId
         this.canBeAppliedOn = sequence.head.canBeAppliedOn
+        this.lightPostMap = sequence.head.lightPostMap
 
         this.body = sequence.body
     }
@@ -323,7 +308,7 @@ class NPCSequence {
             }
 
             // This is not a subsequence, but a step declares that we have to open it as a subsequence. Abort
-            if (!NPCSequence.#isElementAnySubsequence(thisSequenceElement)) {
+            if (!NPCSequence.isElementAnySubsequence(thisSequenceElement)) {
                 console.warn('Subsequence expected but not exists')
                 return null
             }
@@ -425,7 +410,7 @@ class NPCSequence {
         // Also check for multiple entrances, maybe we have to go 2 or 3 levels up
         while (true) {
             const element = this.#getStepObj(resultStep)
-            if (!NPCSequence.#isElementAnySubsequence(element)) break
+            if (!NPCSequence.isElementAnySubsequence(element)) break
             if (element.type === "cycle") this.#setCycleCounter(resultStep, 0)
             resultStep.push(0)
         }
@@ -476,7 +461,7 @@ class NPCSequence {
      * @param {SequenceArrayElement} seq 
      * @returns {Boolean}
      */
-    static #isElementAnySubsequence(seq) {
+    static isElementAnySubsequence(seq) {
         try {
             const subsequenceTypes = ['subsequence', 'cycle', 'merge']
             if (subsequenceTypes.includes(seq.type)) return true
@@ -485,27 +470,26 @@ class NPCSequence {
         return false
     }
 
-    /** @typedef {'finishThread' | 'success' | 'fail'} SequenceElementResponce */
+    /** @typedef {'finishThread' | 'success' | 'fail' | Record<any, any>} SequenceElementResponce */
     /** @typedef {'doNotClearSequenceData' | undefined} SequenceResponce */
 
     /**
-     * === The main function of this class ===
-     * Runs a sequence from a last-saved ?? 0 step
-     * @returns {SequenceResponce}
+     * Runs a single thread and waits for it's end
+     * Can create new threads
+     * @param {SequenceStep} step 
      */
-    async run() {
-        const e = this.entity
-        let currentStep = NPCManager.getSequenceStep(e) ?? [0]
+    async #runThread(e, step) {
         // Check step
-        if (!this.#doStepExists(currentStep)) {
-            console.warn(`NPCSequence.run(): Unexistent step ${currentStep} has gotten from an entity. Current step was set to zero.`)
-            currentStep = [0]
+        if (!this.#doStepExists(step)) {
+            console.warn(`NPCSequence.runThread(): Unexistent step ${step} has gotten from an entity. A thread was killed`)
+            return 'fail'
         }
+
+        NPCManager.StepHub.addStep(e, step)
+
         while (true) {
-            // If is is a subsequence (or a set of them)
-            while (NPCSequence.#isElementAnySubsequence(this.#getStepObj(currentStep))) {
-                currentStep.push(0)
-            }
+            let newStep
+
             // Check, if an entity is valid
             if (!e || !e.isValid) {
                 console.warn('Entity is invalid or is not loaded, stopping sequence')
@@ -520,30 +504,59 @@ class NPCSequence {
             }
             // Check, if the entity is in loading list
             if (!NPCManager.isEntityProcessing(e)) {
-                console.warn(`Sequence ${this.id} step ${currentStep} started, but the entity is not in the active Entities list.`)
+                console.warn(`Sequence ${this.id} step ${step} started, but the entity is not in the active Entities list.`)
                 return 'doNotClearSequenceData'
             }
             // Run
             /** @type {SequenceElementResponce} */
-            const responce = await this.#runStep(currentStep)
-            if (responce === 'fail') console.warn(`A sequence ${this.id} element on step ${currentStep} has reported a failure`)
-            if (responce === 'finishThread') break
+            const responce = await this.#runStep(step)
 
-            currentStep = this.#fetchNextStep(currentStep)
-            if (currentStep === false) {
-                console.warn('An error occured while processing a sequence step. Sequence aborted')
-                break // End with an error
-            } else if (currentStep === true) {
-                break // Sucessful end
+            // Responce
+            if (responce === 'fail') console.warn(`A sequence ${this.id} element on step ${step} has reported a failure`)
+            if (responce === 'finishThread') {
+                NPCManager.StepHub.removeStep(e, step)
+                break
             }
-            NPCManager.setSequenceStep(e, currentStep)
+            if (typeof responce === 'object' && responce.forceNextStep) {
+                if (!this.#doStepExists(responce.forceNextStep)) console.warn(`Forced a non-existent step ${responce.forceNextStep}`)
+                newStep = responce.forceNextStep
+            }
+            else {
+                const nextStepOnTheSameLevel = [...step]
+                nextStepOnTheSameLevel[nextStepOnTheSameLevel.length - 1] += 1
+
+                if (!this.#doStepExists(nextStepOnTheSameLevel)) return 'success' // End of a level sequence
+                newStep = nextStepOnTheSameLevel
+            }
+
+            // Save new step
+            NPCManager.StepHub.replaceStepWith(e, step, newStep)
+
+            // Assign step to run a new cycle iteration
+            step = newStep
         }
+    }
+
+    /**
+     * === The main function of this class ===
+     * Runs a sequence from a last-saved ?? 0 step
+     * @returns {SequenceResponce}
+     */
+    async run() {
+        const e = this.entity
+        const stepHub = NPCManager.StepHub.getNumberOfSteps(e) > 0 ? NPCManager.StepHub.load(e) : NPCManager.StepHub.setToStart(e)
+
+        // == Threads processing ===
+        for (const step of stepHub) {
+            await this.#runThread(e, step)
+        }
+
         // Finished
         NPCManager.clearSequence(e)
     }
 
     /**
-     * Execute sequence step and wait for it to end
+     * Execute single sequence step and wait for it to end
      * @param {Number[]} step
      * @returns {SequenceElementResponce}
      */
@@ -665,6 +678,31 @@ class NPCSequence {
 
             case 'lightPost': // Do nothing
                 return 'success'
+                break
+
+            case 'jumpToLightPost':
+                const stepToJumpTo = this.lightPostMap.get(seqElement.name)
+                if (!stepToJumpTo) {
+                    console.warn(`Lightpost with name ${seqElement.name} do not exist on sequence ${this.id}`)
+                    return 'fail'
+                }
+                return {
+                    forceNextStep: stepToJumpTo
+                }
+                break
+
+            // Subsequences
+            case 'subsequence':
+                const deeperStep = [...step, 0]
+                if (seqElement.await) {
+                    await this.#runThread(e, deeperStep)
+                } else {
+                    this.#runThread(e, deeperStep)
+                }
+                break
+
+            case 'cycle':
+                // I'll do it later
                 break
 
             default:
@@ -865,16 +903,6 @@ export class NPCManager {
 
     // Any direct interactions with DPs are PROHIBITED! Use only functions below.
     /** 
-     * @param {Entity} e
-     * @returns {SequenceStep}
-     */
-    static getSequenceStep(e) { return e.gDP(dPPrefix + 'sequenceStep') }
-    /** 
-     * @param {Entity} e 
-     * @param {SequenceStep} step  
-     */
-    static setSequenceStep(e, step) { return e.sDP(dPPrefix + 'sequenceStep', step) }
-    /** 
      * Sets sequence Id to an entity
      * @param {Entity} e 
      * @param {Number} step  
@@ -886,8 +914,8 @@ export class NPCManager {
      * */
     static clearSequence(e) {
         if (e && e.isValid) {
-            e.sDP(dPPrefix + 'sequenceId', undefined)
-            e.sDP(dPPrefix + 'sequenceStep', undefined)
+            NPCManager.setSequenceId(e, undefined)
+            NPCManager.StepHub.reset(e)
 
             // Clear cycle data
             const cycleCounterPrefix = dPPrefix + 'cycleCounter'
@@ -1058,6 +1086,103 @@ export class NPCManager {
         }
         static freezedEntitiesDp = dPPrefix + 'freezedEntities'
     }
+
+    /**
+     * A hub that keeps all the active threads. Always saves to entity
+     */
+    static StepHub = class {
+        /**
+         * Get an index of the provided step in entity's stephub. If step is not in hub, return undefined
+         * @param {Entity} e 
+         * @param {SequenceStep} stepToCheck 
+         * @returns {Number}
+         */
+        static #getIndexOfStep(e, stepToCheck) {
+
+            const hub = this.load(e)
+            if (!hub) return undefined
+
+            for (let i = 0; i < hub.length; i++) {
+                if (JSON.stringify(hub[i]) === JSON.stringify(stepToCheck)) return i
+            }
+            return undefined
+        }
+        /**
+         * Replaces a step in a hub with a new one
+         * @param {Entity} e 
+         * @param {SequenceStep} stepToReplace 
+         * @param {SequenceStep} stepToReplaceWith 
+         * @returns {Boolean}
+         */
+        static replaceStepWith(e, stepToReplace, stepToReplaceWith) {
+            const hub = this.load(e)
+            const index = this.#getIndexOfStep(e, stepToReplace)
+            if (index === undefined) {
+                console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved.`)
+                return false
+            }
+            hub[index] = stepToReplaceWith
+            this.save(e, hub)
+            return true
+        }
+        /**
+         * Adds a new step to stepHub
+         * @param {Entity} e 
+         * @param {SequenceStep} step 
+         */
+        static addStep(e, step) {
+            const hub = this.load(e)
+            hub.push(step)
+            this.save(e, hub)
+        }
+        /**
+         * Removes given step.
+         * If no step provided, clears all the stepHub
+         * @param {Entity} e 
+         * @param {SequenceStep} [step]
+         */
+        static removeStep(e, step) {
+            const index = this.#getIndexOfStep(e, step)
+            if (index === undefined) {
+                console.warn(`Cannot remove a step ${step} that is not in the hub rn`)
+                return
+            }
+            const hub = this.load(e)
+            hub.splice(index, 1)
+            this.save(e, hub)
+        }
+        /**
+         * Clears stephub for an entity
+         * @param {Entity} e 
+         */
+        static reset(e) {
+            this.save(e, undefined)
+        }
+        /** 
+         * @param {Entity} e
+         * @returns {StepHub}
+         */
+        static load(e) { return e.gDP(dPPrefix + 'stepHub') }
+        /** 
+         * @param {Entity} e
+         * @param {StepHub} stepHub
+         */
+        static save(e, stepHub) { return e.sDP(dPPrefix + 'stepHub', stepHub) }
+        static getNumberOfSteps(e) {
+            const hub = this.load(e)
+            return Array.isArray(hub) ? hub.length : 0
+        }
+        /**
+         * Set and return a new stephub
+         * @param {Entity} e 
+         * @returns {StepHub}
+         */
+        static setToStart(e) {
+            const startHub = [[0]]
+            this.save(e, startHub)
+            return startHub
+        }
+    }
 }
 
 // An entity was loaded. Check for sequences
@@ -1089,3 +1214,71 @@ system.run(() => {
         }
     }
 })
+
+/**
+ * Checks, are the sequences OK.
+ */
+function checkSequences() {
+    function warn(text) {
+        const seqWarnPrefix = `[§eSequenceCheckWarning§r]`
+        console.warn(seqWarnPrefix + ': ' + text)
+    }
+
+    for (const key in sequences) {
+        const seq = sequences[key]
+        // Basic
+        if (!('head' in seq)) {
+            warn(`No head in ${key} sequence`)
+            delete sequences[key]
+            continue
+        }
+        if (!('body' in seq)) {
+            warn(`No body in ${key} sequence`)
+            delete sequences[key]
+            continue
+        }
+        // Add ID
+        seq.head.id = key
+        // Head details
+        if (!seq.head.baitBlockId && seq.body.filter(step => step.type === 'goto').length > 0) {
+            warn(`Goto exist in ${key}, but there is no baitBlockId given`)
+        }
+        // Body details
+        if (!Array.isArray(seq.body)) warn(`Body is not an array in ${key}`)
+        seq.head.lightPostMap = createLightPostMap(seq)
+    }
+}
+/** @typedef {Map<String, SequenceStep>} LightPostMap */
+/**
+ * @param {SequenceObject} sequenceObject 
+ * @returns {LightPostMap}
+ */
+function createLightPostMap(sequenceObject) {
+    /** @type {LightPostMap} */
+    const map = new Map()
+
+    /**
+     * @param {SequenceArrayElement[]} seq 
+     */
+    function createFromSequence(seq, currentStep) {
+        for (const [index, element] of seq.entries()) {
+            const step = [...currentStep, index]
+
+            if (element.type === 'lightPost') {
+                if (!element.name) {
+                    console.warn(`Lightpost on step ${step} has no name!`)
+                    continue
+                }
+                map.set(element.name, step)
+            }
+            if (NPCSequence.isElementAnySubsequence(element)) {
+                createFromSequence(element.sequence, step)
+            }
+        }
+    }
+
+    createFromSequence(sequenceObject.body, [])
+
+    return map
+}
+checkSequences()

@@ -32,12 +32,6 @@
          "sounds/swords/elementall"
       ]
    },
-   "omnios": {
-      "category": "neutral",
-      "sounds": [
-         "sounds/swords/omnios"
-      ]
-   },
    "sword_use_a": {
       "category": "neutral",
       "sounds": [
@@ -86,12 +80,6 @@
          {
             "name": "sounds/items/skill"
          }
-      ]
-   },
-   "mob.rat_eliminator.spawn": {
-      "category": "neutral",
-      "sounds": [
-         "sounds/demon/say2"
       ]
    },
    "shackles.saw": {
