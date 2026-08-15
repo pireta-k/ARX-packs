@@ -5,6 +5,12 @@ import { Chat } from "./chat"
 import { md5 } from "./arxLib/converters"
 import { sDP } from "./arxLib/DPOperations"
 
+/*====================================
+Dynamic NPC Manager (DNPCM)
+Manages Dynamic NPCs behaviour. 
+One of the most complex arx systems.
+====================================*/
+
 const defaultTimeout = 30 // Seconds
 const baitListeningTickSpeed = 2 // Ticks
 const dPPrefix = 'NPCManager:'
@@ -168,6 +174,9 @@ const dPPrefix = 'NPCManager:'
  * @property {SequenceArrayElement[]} body
  */
 
+/** @typedef {Number[]} PathArray */
+/** @typedef {PathArray[]} StepHub */
+
 /** All the sequences
  * @type {Record<String, SequenceObject>}
  */
@@ -250,6 +259,209 @@ const sequences = {
 }
 
 /**
+ * A path in a sequence. 
+ */
+class Path {
+
+    /**
+     * @param {NPCSequence} seqInstance
+     * @param {PathArray} pathArray
+     */
+    constructor(seqInstance, pathArray) {
+        this.#assignPathArray(pathArray)
+        this.sequence = seqInstance
+        this.isValid = this.#isValid() ? true : false
+
+        this.isRoot = Array.isArray(this.pathArray) && this.pathArray.length === 1 // Path is an empty array
+        this.depth = this.pathArray.length - 1 // Root sequence (e.g. [8]) === depth 0
+    }
+
+    #assignPathArray(pathArray) {
+        if (Array.isArray(pathArray) && pathArray.length === 0) {
+            this.pathArray = [0]
+        } else {
+            this.pathArray = pathArray
+        }
+    }
+
+    #isValid() {
+        let result = true
+        if (!Array.isArray(this.pathArray)) result = false
+        if (!this.sequence.doPathExists(this.pathArray)) result = false
+
+        return result
+    }
+
+    isFirst() {
+        return this.pathArray.at(-1) === 0
+    }
+
+    isLast() {
+        return this.getNextPathOnTheSameLevel() === null
+    }
+
+    /**
+     * Get a parent path
+     * @returns {Path | null}
+     */
+    getParentPath() {
+        if (this.isRoot) return null
+        return new Path(this.sequence, this.pathArray.toSpliced(-1, 1))
+    }
+
+    /**
+     * Get a next path (e.g. current is [0, 1, 5], the next will be [0, 1, 6] if it exists. If not, null will be returned)
+     */
+    getNextPathOnTheSameLevel() {
+        const newPath = new Path(this.sequence, this.pathArray.with(-1, this.pathArray.at(-1) + 1))
+
+        if (newPath.isValid) return newPath
+        return null
+    }
+
+    getDeeperPath() {
+        const allow = this.getElement().isSubsequence
+        if (!allow) return null
+        return new Path(this.sequence, [...this.pathArray, 0])
+    }
+
+    /**
+     * Get an element at this path
+     * @returns {Element}
+     */
+    getElement() {
+        return new Element(this)
+    }
+}
+
+/**
+ * Single element of a sequence
+ */
+class Element {
+    /**
+     * @param {Path} path 
+     */
+    constructor(path) {
+        // Check
+        this.isValid = true
+        if (!(path instanceof Path) || !path.isValid) {
+            console.warn('Trying to create an Element with an invalid Path')
+            this.isValid = false
+            return
+        }
+
+        this.path = path
+        this.isSubsequence = this.#isSubsequence()
+
+        /** 
+         * An object of a sequence at the specified path 
+         */
+        this.object = this.#getObject()
+    }
+
+    /** 
+     * Returns new Element that is inside this one. 
+     * If this one is not a container, return null
+     * @returns {Element | null}
+     */
+    dive() {
+        if (!this.isSubsequence) return null
+        return new Element(this.path.getDeeperPath())
+    }
+
+    #isSubsequence() {
+        if (!this.object) return false
+        const subsequenceTypes = ['subsequence', 'cycle', 'merge']
+        return subsequenceTypes.includes(this.object.type)
+    }
+
+    /**
+     * Get SequenceArrayElement
+     * @returns {SequenceArrayElement | null}
+     */
+    #getObject() {
+        let sequenceObject = this.path.sequence.body
+
+        let i = 0
+        for (let index of this.path.pathArray) {
+            const lastIteration = i >= this.path.depth
+
+            if (lastIteration) {
+                sequenceObject = sequenceObject[index]
+            } else {
+                sequenceObject = sequenceObject[index].sequence
+            }
+
+            if (sequenceObject === undefined) return null
+            i++
+        }
+
+        return sequenceObject
+    }
+
+    /**
+     * Execute the element and wait for its end
+     */
+    execute() {
+
+    }
+}
+
+/**
+ * A thread. 
+ * Has only one step.
+ * Creates from a NPC Sequence instance and path
+ */
+class Thread {
+
+    /**
+     * @param {NPCSequence} NPCSequenceInstance
+     * @param {Path} path
+     */
+    constructor(NPCSequenceInstance, path) {
+        this.isValid = true
+
+        // Check
+        {
+            if (!(NPCSequenceInstance instanceof NPCSequence)) {
+                console.warn('Trying to create a thread instance with an invalid NPCSequenceInstance')
+                this.isValid = false
+                return
+            }
+        }
+
+        // Initialize
+        this.path = path
+        this.stepHub = NPCManager.StepHub.get(NPCSequenceInstance.entity)
+        this.sequence = NPCSequenceInstance
+        this.isPending = false
+    }
+
+
+    // === Pending logic ===
+    // Thread can be pended. It means, it waits for something. As example, a thread waits for it's child thread to end. 
+    // Using of Promise system to await child thread is a critical bug: it will break on world reload.
+    static pendingThreads = new Map()
+
+    pend() {
+        this.isPending = true
+        Thread.pendingThreads.set(this.path, this)
+    }
+
+    unpend() {
+        this.isPending = false
+        Thread.pendingThreads.delete(this.path)
+    }
+ 
+    /**
+     * Run the thread and wait for its end
+     */
+    async run() {
+        // TO-DO
+    }
+}
+
+/**
  * A class that represents an action sequence for an NPC
  */
 class NPCSequence {
@@ -276,13 +488,13 @@ class NPCSequence {
     /**
      * Get a step object via step.
      * Processes all kinds of subsequences
-     * @param {SequenceStep} step
+     * @param {PathArray} step
      * @param {boolean} [shutUp=false] - Do not write in log, if the index is non-existent
      * @returns {SequenceArrayElement | null}
      */
-    #getSequenceArrayElement(step, shutUp = false) {
+    getSequenceArrayElement(step, shutUp = false) {
         if (!this.#isStep(step)) {
-            console.warn(`Incorrect step recieved in #getSequenceArrayElement for ${this.id}: ${step}`)
+            console.warn(`Incorrect step recieved in getSequenceArrayElement for ${this.id}: ${step}`)
             return null
         }
 
@@ -327,30 +539,13 @@ class NPCSequence {
     }
 
     /**
-     * Returns a step that is parent to a given one
-     * @param {SequenceStep} step 
-     * @returns {SequenceStep | null}
-     */
-    #getParentStep(step) {
-        if (!this.#isStep(step)) {
-            console.warn('getParentStep: invalid step provided')
-            return null
-        }
-        if (step.length > 1) { // Not root
-            return step.slice(0, -1)
-        } else { // Root
-            return null
-        }
-    }
-
-    /**
      * Get a current value of a cycle counter for a step
      * @param {String} seqId 
-     * @param {SequenceStep} step - Step of a cycle element
+     * @param {PathArray} step - Step of a cycle element
      * @returns {number}
      */
     #getCycleCounter(step) {
-        const element = this.#getSequenceArrayElement(step)
+        const element = this.getSequenceArrayElement(step)
         if (element.type !== "cycle") {
             throw new Error('Trying to get a cycle counter of not-cycle sequence')
         }
@@ -361,7 +556,7 @@ class NPCSequence {
         if (typeof value !== 'number') {
             throw new Error('Trying to set a not-number value to a cycle counter')
         }
-        const element = this.#getSequenceArrayElement(step)
+        const element = this.getSequenceArrayElement(step)
         if (element.type !== "cycle") {
             throw new Error('Trying to set a cycle counter of not-cycle sequence')
         }
@@ -373,12 +568,12 @@ class NPCSequence {
     }
 
     /**
-     * Checks an existance of a step
-     * @param {SequenceStep} step 
+     * Checks an existance of a path
+     * @param {PathArray} path
      * @returns {Boolean}
      */
-    #doStepExists(step) {
-        return !!this.#getSequenceArrayElement(step, true)
+    doPathExists(path) {
+        return !!this.getSequenceArrayElement(path, true)
     }
 
     /**
@@ -396,20 +591,27 @@ class NPCSequence {
     }
 
     /** @typedef {'finishThread' | 'success' | 'fail' | Record<any, any>} SequenceElementResponce */
-    /** @typedef {'doNotClearSequenceData' | undefined} SequenceResponce */
+
+    /** @typedef {Record<PathArray, ThreadResponceData>} ThreadResponce */
+    /**
+     * @typedef {Object} ThreadResponceData
+     * @property {'sucess' | 'fail'} status
+     * @property {Boolean} [clearSequenceData=true]
+     */
 
     /**
      * Runs a single thread and waits for it's end
      * Adds and removes steps to stepHub by itself.
      * Can create new threads
-     * @param {SequenceStep} step
+     * @param {PathArray} step
+     * @returns {ThreadResponce}
      */
     async #runThread(step) {
         console.warn(`A thread ${step} has §arunned`)
         const e = this.entity
 
         // Check step
-        if (!this.#doStepExists(step)) {
+        if (!this.doPathExists(step)) {
             console.warn(`NPCSequence.#runThread(): Unexistent step ${step} has gotten from an entity. A thread was killed`)
             return 'fail'
         }
@@ -447,14 +649,14 @@ class NPCSequence {
                 break
             }
             if (typeof responce === 'object' && responce.forceNextStep) {
-                if (!this.#doStepExists(responce.forceNextStep)) console.warn(`Forced a non-existent step ${responce.forceNextStep}`)
+                if (!this.doPathExists(responce.forceNextStep)) console.warn(`Forced a non-existent step ${responce.forceNextStep}`)
                 newStep = responce.forceNextStep
             }
             else {
                 const nextStepOnTheSameLevel = [...step]
                 nextStepOnTheSameLevel[nextStepOnTheSameLevel.length - 1] += 1
 
-                if (!this.#doStepExists(nextStepOnTheSameLevel)) break // End of a level sequence
+                if (!this.doPathExists(nextStepOnTheSameLevel)) break // End of a level sequence
                 newStep = nextStepOnTheSameLevel
             }
 
@@ -467,17 +669,21 @@ class NPCSequence {
 
         stepHub.removeStep(step)
         console.warn(`A thread ${step} has §cended`)
+
+        // Thread end
+        {
+
+        }
         return 'success'
     }
 
     /**
      * === The main function of this class ===
      * Runs a sequence from a last-saved ?? start step(s)
-     * @returns {SequenceResponce}
      */
     async start() {
         const e = this.entity
-        const stepHub = new NPCManager.StepHub(e)
+        const stepHub = NPCManager.StepHub.get(e)
 
         // == Threads processing ===
         for (const step of stepHub.hub) {
@@ -502,7 +708,7 @@ class NPCSequence {
         const e = this.entity
 
         /** @type {SequenceArrayElement} */
-        const seqElement = this.#getSequenceArrayElement(step)
+        const seqElement = this.getSequenceArrayElement(step)
         if (!seqElement) {
             console.error(`Trying to run non-existent step ${step} for ${this.id}`)
             return 'fail'
@@ -1025,9 +1231,6 @@ export class NPCManager {
      */
     static StepHub = class {
 
-        /** @typedef {Number[]} SequenceStep */
-        /** @typedef {SequenceStep[]} StepHub */
-
         /** @returns {StepHub} */
         static getNewStepHub() {
             return [[0]]
@@ -1072,7 +1275,7 @@ export class NPCManager {
 
         /**
          * Get an index of the provided step in entity's stephub. If step is not in hub, return undefined
-         * @param {SequenceStep} stepToCheck 
+         * @param {PathArray} stepToCheck 
          * @returns {Number}
          */
         #getIndexOfStep(stepToCheck) {
@@ -1084,8 +1287,8 @@ export class NPCManager {
 
         /**
          * Replaces a step in a hub with a new one
-         * @param {SequenceStep} stepToReplace 
-         * @param {SequenceStep} stepToReplaceWith 
+         * @param {PathArray} stepToReplace 
+         * @param {PathArray} stepToReplaceWith 
          * @returns {Boolean}
          */
         replaceStepWith(stepToReplace, stepToReplaceWith) {
@@ -1101,7 +1304,7 @@ export class NPCManager {
 
         /**
          * Adds a new step to stepHub
-         * @param {SequenceStep} step 
+         * @param {PathArray} step 
          */
         addStep(step) {
             if (this.#getIndexOfStep(step) !== undefined) {
@@ -1116,7 +1319,7 @@ export class NPCManager {
         /**
          * Removes given step.
          * If no step provided, clears all the stepHub
-         * @param {SequenceStep} [step]
+         * @param {PathArray} [step]
          */
         removeStep(step) {
             const index = this.#getIndexOfStep(step)
@@ -1209,7 +1412,7 @@ function checkSequences() {
         seq.head.lightPostMap = createLightPostMap(seq)
     }
 }
-/** @typedef {Map<String, SequenceStep>} LightPostMap */
+/** @typedef {Map<String, PathArray>} LightPostMap */
 /**
  * @param {SequenceObject} sequenceObject 
  * @returns {LightPostMap}
