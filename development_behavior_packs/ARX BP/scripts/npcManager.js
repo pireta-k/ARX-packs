@@ -175,7 +175,7 @@ const dPPrefix = 'NPCManager:'
  */
 
 /** @typedef {Number[]} PathArray */
-/** @typedef {PathArray[]} StepHub */
+/** @typedef {PathArray[]} ThreadTable */
 
 /** All the sequences
  * @type {Record<String, SequenceObject>}
@@ -259,6 +259,23 @@ const sequences = {
 }
 
 /**
+ * @typedef {Object} ElementDeclaration
+ * @property {Function} run
+ * @property {Boolean} [isContainer=false]
+ * @property {'always', 'never', 'auto'} [isAsync='auto']
+ */
+/**
+ * @type {Record<String, ElementDeclaration>}
+ */
+const elementsRegistry = {
+    goto: {
+        run: (data, thread) => {
+
+        }
+    }
+}
+
+/**
  * A path in a sequence. 
  */
 class Path {
@@ -276,6 +293,7 @@ class Path {
         this.depth = this.pathArray.length - 1 // Root sequence (e.g. [8]) === depth 0
     }
 
+    /** @param {PathArray} pathArray  */
     #assignPathArray(pathArray) {
         if (Array.isArray(pathArray) && pathArray.length === 0) {
             this.pathArray = [0]
@@ -284,6 +302,7 @@ class Path {
         }
     }
 
+    /** @returns {Boolean} */
     #isValid() {
         let result = true
         if (!Array.isArray(this.pathArray)) result = false
@@ -292,10 +311,12 @@ class Path {
         return result
     }
 
+    /** @returns {Boolean} */
     isFirst() {
         return this.pathArray.at(-1) === 0
     }
 
+    /** @returns {Boolean} */
     isLast() {
         return this.getNextPathOnTheSameLevel() === null
     }
@@ -311,6 +332,7 @@ class Path {
 
     /**
      * Get a next path (e.g. current is [0, 1, 5], the next will be [0, 1, 6] if it exists. If not, null will be returned)
+     * @returns {Path | null}
      */
     getNextPathOnTheSameLevel() {
         const newPath = new Path(this.sequence, this.pathArray.with(-1, this.pathArray.at(-1) + 1))
@@ -319,6 +341,7 @@ class Path {
         return null
     }
 
+    /** @returns {Path | null} */
     getDeeperPath() {
         const allow = this.getElement().isSubsequence
         if (!allow) return null
@@ -359,7 +382,7 @@ class Element {
         this.object = this.#getObject()
     }
 
-    /** 
+    /**
      * Returns new Element that is inside this one. 
      * If this one is not a container, return null
      * @returns {Element | null}
@@ -432,7 +455,7 @@ class Thread {
 
         // Initialize
         this.path = path
-        this.stepHub = NPCManager.StepHub.get(NPCSequenceInstance.entity)
+        this.threadTable = NPCManager.ThreadTable.get(NPCSequenceInstance.entity)
         this.sequence = NPCSequenceInstance
         this.isPending = false
     }
@@ -601,7 +624,7 @@ class NPCSequence {
 
     /**
      * Runs a single thread and waits for it's end
-     * Adds and removes steps to stepHub by itself.
+     * Adds and removes steps to threadTable by itself.
      * Can create new threads
      * @param {PathArray} step
      * @returns {ThreadResponce}
@@ -616,7 +639,7 @@ class NPCSequence {
             return 'fail'
         }
 
-        const stepHub = NPCManager.StepHub.get(e).addStep(step)
+        const threadTable = NPCManager.ThreadTable.get(e).addStep(step)
 
         while (true) {
             let newStep
@@ -645,7 +668,7 @@ class NPCSequence {
             // Responce
             if (responce === 'fail') console.warn(`A sequence ${this.id} element on step ${step} has reported a failure`)
             if (responce === 'finishThread') {
-                stepHub.removeStep(step)
+                threadTable.removeStep(step)
                 break
             }
             if (typeof responce === 'object' && responce.forceNextStep) {
@@ -661,13 +684,13 @@ class NPCSequence {
             }
 
             // Save new step
-            stepHub.replaceStepWith(step, newStep)
+            threadTable.replaceStepWith(step, newStep)
 
             // Assign step to run a new cycle iteration
             step = newStep
         }
 
-        stepHub.removeStep(step)
+        threadTable.removeStep(step)
         console.warn(`A thread ${step} has §cended`)
 
         // Thread end
@@ -683,10 +706,10 @@ class NPCSequence {
      */
     async start() {
         const e = this.entity
-        const stepHub = NPCManager.StepHub.get(e)
+        const threadTable = NPCManager.ThreadTable.get(e)
 
         // == Threads processing ===
-        for (const step of stepHub.hub) {
+        for (const step of threadTable.hub) {
             await this.#runThread(step)
         }
 
@@ -1054,7 +1077,7 @@ export class NPCManager {
     static clearSequence(e) {
         if (e && e.isValid) {
             NPCManager.setSequenceId(e, undefined)
-            NPCManager.StepHub.get(e).reset()
+            NPCManager.ThreadTable.get(e).reset()
 
             // Clear cycle data
             const cycleCounterPrefix = dPPrefix + 'cycleCounter'
@@ -1138,7 +1161,7 @@ export class NPCManager {
             try {
                 responce = await seq.start()
             } catch (error) {
-                console.warn(`NPCManager - ${error.stack}${error}`)
+                console.error(`NPCManager - ${error.stack}${error}`)
             } finally {
                 if (responce !== 'doNotClearSequenceData') {
                     NPCManager.clearSequence(e)
@@ -1229,39 +1252,39 @@ export class NPCManager {
     /**
      * A hub that keeps all the active threads. Saves to entity
      */
-    static StepHub = class {
+    static ThreadTable = class {
 
-        /** @returns {StepHub} */
-        static getNewStepHub() {
+        /** @returns {ThreadTable} */
+        static getNewThreadTable() {
             return [[0]]
         }
 
         static #map = new WeakMap()
 
         /**
-         * Get a stepHub for an entity
+         * Get a threadTable for an entity
          * @param {Entity} e 
-         * @returns {InstanceType<NPCManager.StepHub>}
+         * @returns {InstanceType<NPCManager.ThreadTable>}
          */
         static get(e) {
-            return this.#map.get(e) || this.#map.set(e, new NPCManager.StepHub(e)).get(e)
+            return this.#map.get(e) || this.#map.set(e, new NPCManager.ThreadTable(e)).get(e)
         }
 
         /** 
-         * Load a stepHub from entity's DP
-         * @returns {StepHub}
+         * Load a threadTable from entity's DP
+         * @returns {ThreadTable}
          */
         #load() {
-            return this.e.gDP(dPPrefix + 'stepHub')
+            return this.e.gDP(dPPrefix + 'threadTable')
         }
 
         /** 
-         * Save a stepHub to entity's DP
-         * Executes automatically in stepHub's function after changing stepHub
-         * @param {StepHub} stepHub
+         * Save a threadTable to entity's DP
+         * Executes automatically in threadTable's function after changing threadTable
+         * @param {ThreadTable} threadTable
          */
         #save() {
-            this.e.sDP(dPPrefix + 'stepHub', this.hub)
+            this.e.sDP(dPPrefix + 'threadTable', this.hub)
             return this
         }
 
@@ -1269,8 +1292,8 @@ export class NPCManager {
         constructor(e) {
             /** @type {Entity} */
             this.e = e
-            /** @type {StepHub} */
-            this.hub = this.#load() || NPCManager.StepHub.getNewStepHub()
+            /** @type {ThreadTable} */
+            this.hub = this.#load() || NPCManager.ThreadTable.getNewThreadTable()
         }
 
         /**
@@ -1294,7 +1317,7 @@ export class NPCManager {
         replaceStepWith(stepToReplace, stepToReplaceWith) {
             const index = this.#getIndexOfStep(stepToReplace)
             if (index === undefined) {
-                console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved to stepHub.`)
+                console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved to threadTable.`)
                 return false
             }
             this.hub[index] = stepToReplaceWith
@@ -1303,7 +1326,7 @@ export class NPCManager {
         }
 
         /**
-         * Adds a new step to stepHub
+         * Adds a new step to threadTable
          * @param {PathArray} step 
          */
         addStep(step) {
@@ -1318,7 +1341,7 @@ export class NPCManager {
 
         /**
          * Removes given step.
-         * If no step provided, clears all the stepHub
+         * If no step provided, clears all the threadTable
          * @param {PathArray} [step]
          */
         removeStep(step) {
@@ -1335,7 +1358,7 @@ export class NPCManager {
          * Clears stephub for an entity
          */
         reset() {
-            this.hub = NPCManager.StepHub.getNewStepHub()
+            this.hub = NPCManager.ThreadTable.getNewThreadTable()
             this.#save()
         }
 
