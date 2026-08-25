@@ -979,6 +979,20 @@ system.beforeEvents.startup.subscribe(initEvent => {
             system.run(() => { infoScreen(player) })
         }
     )
+
+    // Suicide
+    ccr.registerCommand(
+        {
+            name: 'arx:suicide',
+            description: 'Die forever',
+            permissionLevel: CommandPermissionLevel.Any,
+            cheatsRequired: false,
+        },
+        origin => {
+            const player = origin.initiator ?? origin.sourceEntity
+            system.run(() => { Knockout.suicide(player) })
+        }
+    )
 })
 
 // Попадание сняряда по сущности

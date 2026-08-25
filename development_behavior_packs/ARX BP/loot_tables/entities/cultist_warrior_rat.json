@@ -5,40 +5,6 @@
             "entries": [
                 {
                     "type": "item",
-                    "name": "arx:cult_nasty_gift_bomb",
-                    "weight": 1
-                },
-                {
-                    "type": "item",
-                    "name": "arx:cult_nasty_gift_poison",
-                    "weight": 1
-                },
-                {
-                    "type": "item",
-                    "name": "arx:cult_nasty_gift_iron_pie",
-                    "weight": 1
-                },
-                {
-                    "type": "item",
-                    "name": "arx:cult_nasty_gift_harakiri_sword",
-                    "weight": 1
-                }
-            ]
-        },
-        {
-            "rolls": 1,
-            "entries": [
-                {
-                    "type": "item",
-                    "name": "arx:cultists_letter_ii"
-                }
-            ]
-        },
-        {
-            "rolls": 1,
-            "entries": [
-                {
-                    "type": "item",
                     "name": "arx:cult_warrior_sword",
                     "weight": 1,
                     "functions": [

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Details/Лут рун.md",
+                "file": "Blocks/💛 Moderate.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Лут рун"
+              "title": "💛 Moderate"
             }
           }
         ]
@@ -187,18 +187,18 @@
   },
   "active": "8f79372269b3dfdb",
   "lastOpenFiles": [
-    "Blocks/❤️ Crucial.md",
-    "Blocks/💙 Optional.md",
-    "Details/Лут рун.md",
+    "Blocks/💚 Done.md",
     "Blocks/💛 Moderate.md",
+    "Details/Убрать меч для харакири.md",
+    "Blocks/💙 Optional.md",
+    "Details/Полностью переделать нокаут через перехват урона.md",
+    "Blocks/❤️ Crucial.md",
+    "Details/Баг опции камеры.md",
+    "Details/Лут рун.md",
     "Details/Переработать руны.md",
     "Arx Ultima 1.x stable release planning.md",
-    "Blocks/💚 Done.md",
     "Details/Улучшить чатовые сообщения.md",
-    "Details/Полностью переделать нокаут через перехват урона.md",
     "Details/Проверить работу статистики.md",
-    "Details/Баг опции камеры.md",
-    "Details/Убрать меч для харакири.md",
     "Details/Ошибка возврата в лобби.md",
     "Details/лут в данжах.md",
     "Details/Система управления сущностями.md",

@@ -1,9 +1,10 @@
 import { Player, system, world, ItemStack } from "@minecraft/server";
-import { sl } from "./lang/fetchLocalization";
+import { fl, sl } from "./lang/fetchLocalization";
 import { sendItems } from "./items/sendItems";
 import { sDP, iDP, DPManager } from "./arxLib/DPOperations";
 import { wipeSkillsProgress } from "./skillsOperations"
 import { random } from "./arxLib/random";
+import { ActionFormData } from "@minecraft/server-ui";
 
 export class Knockout {
     /**
@@ -153,5 +154,33 @@ export class Knockout {
         const item = new ItemStack("arx:slot_blocker", 1)
         item.lockMode = "slot"
         return item
+    }
+
+    /**
+     * Kill your current character forever
+     * @param {Player} p 
+     */
+    static suicide(p) {
+        const suicideTitle = '§c' + fl(p, 'suicide.title')
+
+        const form = new ActionFormData()
+            .title(suicideTitle)
+            .body(fl(p, 'suicide.body', [p.RPName]))
+            .button(fl(p, 'suicide.confirm'))
+            .button(fl(p, 'suicide.deny'))
+            .show(p).then((r2) => {
+                if (r2.selection === 0) {
+                    const formConfirm = new ActionFormData()
+                        .title(suicideTitle)
+                        .body(fl(p, 'suicide.thinkTwice.body'))
+                        .button("§c" + fl(p, 'suicide.thinkTwice.confirm', [p.RPName]))
+                        .button(fl(p, 'suicide.thinkTwice.deny'))
+                        .show(p).then((r2) => {
+                            if (r2.selection === 0) {
+                                this.RPDeath(p)
+                            }
+                        })
+                }
+            })
     }
 }

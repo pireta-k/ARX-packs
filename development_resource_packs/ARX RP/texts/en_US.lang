@@ -1574,14 +1574,6 @@ item.arx:cultists_letter_ii=§r§fПриказ крыс-культистов §b
 item.arx:chrupie_flake=§r§fОсколок хрупи §e[Legendary]\n§o§7Осколок панциря монстра, живущего в подземельях.\nОн холодный наощупть, будто состоит из металла
 item.arx:demonic_staff_fragment=§r§fФрагмент демонического посоха §e[Legendary]\n§o§7Посоха демона из ада,\nкоторый вы безжалостно разломали
 
-
-item.arx:harakiri_sword=§r§fМеч для харакири §b[Rare]\n§o§7Используйте, чтобы §cнавсегда убить себя§7.\n// После этого вы сможете создать нового персонажа
-
-item.arx:cult_nasty_gift_bomb=§r§fПодарок от культа §b[Rare]\n§o§7Внутри что-то твёрдое и тяжёлое
-item.arx:cult_nasty_gift_poison=§r§fПодарок от культа §b[Rare]\n§o§7Внутри какая-то жидкость
-item.arx:cult_nasty_gift_iron_pie=§r§fПодарок от культа §b[Rare]\n§o§7Внутри что-то мягкое. Пахнет выпечкой
-item.arx:cult_nasty_gift_harakiri_sword=§r§fПодарок от культа §b[Rare]\n§o§7Внутри что-то длинное и твёрдое
-
 item.arx:towel=§r§fПолотенце §b[Rare]\n§o§7Позволяет избавиться от намокания.\nЭффективнее работает без верхней одежды
 
 ## SB

@@ -389,6 +389,14 @@ export const enLocalization = {
     "chat.messageType.whisper": 'Whisper',
     "chat.messageType.action": 'Action',
 
+    "suicide.title": 'Suicide',
+    "suicide.body": 'Hold on!\n\nYou are going to kill §a$0$§f FOREVER. You could NEVER play this character again. \nAre you sure you want to do this?',
+    "suicide.confirm": 'Yes, the time has come',
+    "suicide.deny": 'No-no-no!',
+    "suicide.thinkTwice.body": "Are you sure..?",
+    "suicide.thinkTwice.confirm": "Goodbye, $0$",
+    "suicide.thinkTwice.deny": 'On the second thought, no',
+
     "eve.name": 'Eve',
     "chat.eve.hello": "Hi! I'm Eve.",
 }

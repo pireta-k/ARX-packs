@@ -46,34 +46,6 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
             }
             break
 
-        // Крысиные подарки
-        case "arx:cult_nasty_gift_bomb":
-            player.runCommand('clear @s arx:cult_nasty_gift_bomb 0 1')
-            player.dimension.playSound('random.explode', player.location)
-            player.dimension.spawnParticle('arx:dirty_fog', player.location)
-            player.dimension.spawnParticle('arx:force_explosion', player.location)
-            player.runCommand('damage @a[r=5] 10 block_explosion')
-            player.runCommand('camerashake add @a[r=8] 2 0.5')
-            player.runCommand("damage @s 40 block_explosion")
-            break
-        case "arx:cult_nasty_gift_poison":
-            player.runCommand('clear @s arx:cult_nasty_gift_poison 0 1')
-            player.runCommand("give @s arx:rounded_bottle_water_fiuli_wolf_death")
-            break
-        case "arx:cult_nasty_gift_iron_pie":
-            player.runCommand('clear @s arx:cult_nasty_gift_iron_pie 0 1')
-            const randNastyGift = Math.random()
-            if (randNastyGift > 0.5) {
-                player.runCommand("give @s arx:pie")
-            } else {
-                player.runCommand("give @s arx:iron_pie")
-            }
-            break
-        case "arx:cult_nasty_gift_harakiri_sword":
-            player.runCommand('clear @s arx:cult_nasty_gift_harakiri_sword 0 1')
-            player.runCommand("give @s arx:harakiri_sword")
-            break
-
         // КНИГИ
         // Книги, дропающие чар книги
         case 'arx:book_case_a':

@@ -719,9 +719,6 @@
         "arx:demonic_staff_fragment": {
             "textures": "textures/items/other/demonic_staff_fragment.png"
         },
-        "arx:harakiri_sword": {
-            "textures": "textures/items/other/harakiri_sword.png"
-        },
         "arx:myterious_eye": {
             "textures": "textures/items/other/myterious_eye.png"
         },

@@ -1,10 +1,15 @@
+import { Block, Entity, ItemStack, World } from "@minecraft/server"
 import { str2obj, obj2str } from "./converters"
 
 const specialDataTypePrefix = 'JSON$'
 
-// Safely Set Dynamic Property
-// Saves value to Dynamic Property with extended data types
-// object - the object we should save DP on
+/**
+ * Set Dynamic Property
+ * Saves value to Dynamic Property with extended data types
+ * @param {Entity | Block | ItemStack | World} object 
+ * @param {string} DPName 
+ * @param {*} value 
+ */
 export function sDP(object, DPName, value) {
     if (!object || !DPName) {
         console.warn(`Called sDP() without necessary vars`)
@@ -41,9 +46,9 @@ export function sDP(object, DPName, value) {
 
 /** Increase Dyncamic Property
  * If you will try to increase non-existent DP, it will be set to the value that you are trying to add to this DP.
- * @param {Object} object 
+ * @param {Entity | Block | ItemStack | World} object 
  * @param {String} DPName 
- * @param {String | Number} valueToIncrease 
+ * @param {*} valueToIncrease 
  * @returns Result value of DP
  */
 export function iDP(object, DPName, valueToIncrease = 1) {
@@ -93,9 +98,14 @@ export function iDP(object, DPName, valueToIncrease = 1) {
     }
 }
 
-// Get Dynamic Property
-// Supports arrays and objects
-// Fallback will be returned, if result = undefined
+/**
+ * Get Dynamic Property
+ * Supports arrays and objects
+ * @param {Entity | Block | ItemStack | World} object 
+ * @param {string} DPName 
+ * @param {*} fallback - Fallback will be returned, if result = undefined
+ * @returns {*}
+ */
 export function gDP(object, DPName, fallback = undefined) {
     // Check input
     if (!object || !DPName) {
