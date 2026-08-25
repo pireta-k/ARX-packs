@@ -818,9 +818,6 @@
         "arx:maledictio": {
             "textures": "textures/items/runes/maledictio.png"
         },
-        "arx:minima": {
-            "textures": "textures/items/runes/minima.png"
-        },
         "arx:mobilitas": {
             "textures": "textures/items/runes/mobilitas.png"
         },

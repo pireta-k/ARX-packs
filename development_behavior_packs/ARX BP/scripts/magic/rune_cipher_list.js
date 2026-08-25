@@ -32,7 +32,6 @@ export const runeCiphers = {
 
     // Руны пост-модификации (опционально). Стоят всегда в конце заклинания. Модифицируют его значение
     "magna": "AP", // Strengthen the spell. Megger's rune
-    "minima": "AN", // Weaken the spell. Lowie's rune
     "durata": "AS", // Lengthen spell's effect. Sakiifori's rune
     "area": "AD", // Area effect. Disortari's rune
     "alternus": "AL", // Alternative action. Kotoka's rune

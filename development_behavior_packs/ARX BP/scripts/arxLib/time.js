@@ -2,7 +2,7 @@
 
 import { system, world } from "@minecraft/server";
 
-/** Sleep for specified number of ticks.
+/** Sleep for a specified number of ticks.
  * ASYNC function.
  * @param {Number} ticks
  */

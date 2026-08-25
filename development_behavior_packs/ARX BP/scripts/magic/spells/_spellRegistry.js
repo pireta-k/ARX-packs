@@ -431,7 +431,7 @@ export let spellRegistry = {
         handler: (player) => { classicTossing(player, 10) }
     },
 
-    "rattum illusio minima": {
+    "rattum illusio": {
         mpCost: 30,
         color: '#6e20d4',
         description: 'заклинание успокоения всех крыс, у которых есть спокойная фаза',
@@ -584,7 +584,7 @@ export let spellRegistry = {
     },
 
 
-    'illusio minima': {
+    'non invocatio visus': {
         mpCost: 60,
         color: '#9f3d69',
         description: 'заклинание невидимой головы на 60 секунд',

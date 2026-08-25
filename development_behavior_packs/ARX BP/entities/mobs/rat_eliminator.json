@@ -59,9 +59,6 @@
 				"is_pushable_by_piston": true
 			},
 			"minecraft:conditional_bandwidth_optimization": {},
-			"minecraft:on_hurt_by_player": {
-				"event": "become_agressive"
-			},
 			"minecraft:behavior.nearest_attackable_target": {
 				"priority": 3,
 				"must_see": true,
@@ -126,13 +123,9 @@
 			"minecraft:shooter": {
 				"def": "minecraft:fireball"
 			},
-			"minecraft:on_hurt": {
-				"event": "minecraft:on_hurt_event",
-				"target": "self"
-			},
 			"minecraft:boss": {
 				"hud_range": 40,
-				"name": "§c§lТеракрыса",
+				"name": "§c§lThe Scarlet Hunger",
 				"should_darken_sky": false
 			}
 		},
@@ -165,18 +158,6 @@
 				"add": {
 					"component_groups": [
 						"arx:despawn_as_ghost"
-					]
-				}
-			},
-			"arx:transform_to_istribitor": {
-				"add": {
-					"component_groups": [
-						"arx:despawn_as_ghost"
-					]
-				},
-				"queue_command": {
-					"command": [
-						"summon arx:gasgolder_istribitor"
 					]
 				}
 			}

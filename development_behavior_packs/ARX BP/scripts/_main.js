@@ -48,6 +48,8 @@ import { Rob } from "./rob"
 import { Knockout } from "./knockout"
 import { UI } from "./arxLib/UI"
 import { infoScreen } from "./info/_infoScreen"
+import { sleep } from "./arxLib/time"
+import { Vector } from "./arxLib/math"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -1242,4 +1244,22 @@ export function getEntityFamilies(entity) {
 // Food catch
 world.afterEvents.itemCompleteUse.subscribe((event) => {
     onConsume(event.source, event.itemStack)
+})
+
+// Entity dies
+world.afterEvents.entityDie.subscribe(async event => {
+    const e = event.deadEntity
+
+    if (e.typeId === 'arx:rat_ghost') {
+
+        const locationToFart = Vector.upLift(e.location)
+        const initialLocation = e.location
+        const d = e.dimension
+
+        d.spawnParticle('arx:rat_eliminator_spawn_outward', locationToFart)
+        await sleep(40)
+        d.spawnParticle('arx:rat_eliminator_spawn_inward', locationToFart)
+        await sleep(100)
+        d.spawnEntity('arx:rat_eliminator', initialLocation)
+    }
 })

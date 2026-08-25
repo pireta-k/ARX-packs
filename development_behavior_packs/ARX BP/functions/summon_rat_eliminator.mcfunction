@@ -1,1 +1,0 @@
-summon arx:rat_eliminator ~ ~ ~ facing @p
