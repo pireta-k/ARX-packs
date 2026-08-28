@@ -1,99 +1,20 @@
-// Arx pack updates — version migrations and first-time world setup
+import { setScore } from "../arxLib/scoresOperations"
+import { createProspectionTarget, runProspection, validateTickingAreaLoading } from "../sb/prospect"
+import { loadACSS } from "../sb/structureBuilder"
+import { acssStorage } from "../sb/acssStorage"
+import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
+import { sleep } from "../arxLib/time";
+import { world } from "@minecraft/server";
+import { sDP } from "../arxLib/DPOperations"
+import { vKey } from "./_update"
 
-import { world, system } from "@minecraft/server";
-import { VERSION } from "./_main"
-import { gDP, sDP } from "./arxLib/DPOperations"
-import { getAdmins } from "./arxLib/admin";
-import { setScore } from "./arxLib/scoresOperations"
-import { createProspectionTarget, runProspection, validateTickingAreaLoading } from "./sb/prospect"
-import { loadACSS } from "./sb/structureBuilder"
-import { acssStorage } from "./sb/acssStorage"
-import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
-import { sleep } from "./arxLib/time";
-
-// === Version helpers ===
-// VERSION and latestV are arrays [major, minor, patch], keys in updates use "0,1,19" format
-
-function vKey(v) {
-    return `${v[0]},${v[1]},${v[2]}`
-}
-
-function parseVKey(key) {
-    return key.split(',').map(Number)
-}
-
-function compareVersion(a, b) {
-    const len = Math.max(a.length, b.length, 3)
-    for (let i = 0; i < len; i++) {
-        const diff = (a[i] ?? 0) - (b[i] ?? 0)
-        if (diff !== 0) return diff < 0 ? -1 : 1
-    }
-    return 0
-}
-
-function versionLess(a, b) {
-    return compareVersion(a, b) < 0
-}
-
-function versionEqual(a, b) {
-    return compareVersion(a, b) === 0
-}
-
-// Which migration steps to run between saved latestV and current pack VERSION (inclusive)
-function getVersionsToApply(fromV, toV) {
-    return Object.keys(updates)
-        .map(parseVKey)
-        .filter(v => !versionLess(v, fromV) && !versionLess(toV, v))
-        .sort(compareVersion)
-}
-
-// Migrations finished — latestV on world matches current pack VERSION
-// Needs for external usage
-export function isArxWorldReady() {
-    return versionEqual(gDP(world, 'latestV', [0, 0, 0]), VERSION)
-}
-
-// === Update detection ===
-// Runs on worldLoad. Compares world DP latestV with VERSION from _main.js
-
-export async function detectUpdate() {
-    const currentV = VERSION
-    const latestV = gDP(world, 'latestV', [0, 0, 0])
-
-    // Pack version unchanged — nothing to do
-    if (versionEqual(currentV, latestV)) return
-
-    // Downgrade (older pack on newer world data) — don't run migrations, only sync latestV
-    if (versionLess(currentV, latestV)) {
-        console.warn(`Arx: downgrade ${vKey(latestV)} -> ${vKey(currentV)}, skipping updates`)
-        sDP(world, 'latestV', currentV)
-        return
-    }
-
-    await applyUpdates(currentV, latestV)
-}
-
-// Run every migration in order, then remember the pack version on the world
-async function applyUpdates(currentV, latestV) {
-    const versionsToRun = getVersionsToApply(latestV, currentV)
-
-    for (const v of versionsToRun) {
-        const fn = updates[vKey(v)]
-        if (typeof fn !== 'function') {
-            console.warn(`Arx update [${vKey(v)}]: no function registered`)
-            continue
-        }
-        try {
-            await fn({ from: latestV, to: currentV, version: v })
-        } catch (e) {
-            console.warn(`Arx update [${vKey(v)}] failed: ${e}`)
-        }
-    }
-
-    sDP(world, 'latestV', currentV)
-    getAdmins().forEach(p => {
-        p.sendMessage(`Arx update detected: ${vKey(latestV)} -> ${vKey(currentV)}`)
-    })
+// Update registry
+export const updateRegistry = {
+    [vKey([0, 0, 0])]: async () => {
+        await runArxFirstLoad()
+    },
+    [vKey([0, 1, 17])]: () => console.warn('Arx update: 0.1.17'),
+    [vKey([0, 1, 18])]: () => console.warn('Arx update: 0.1.18'),
 }
 
 // === Update 0.0.0 — first-time Arx setup ===
@@ -245,17 +166,3 @@ async function waitUntilHosterIsLoaded(hoster) {
         await waitUntilHosterIsLoaded(hoster)
     }
 }
-
-// Migration registry — add a new key for each pack version that needs world/player changes
-const updates = {
-    // Wrapper: applyUpdates passes migration context, not a player
-    [vKey([0, 0, 0])]: async () => { await runArxFirstLoad() },
-    [vKey([0, 1, 17])]: () => console.warn('Arx update: 0.1.17'),
-    [vKey([0, 1, 18])]: () => console.warn('Arx update: 0.1.18'),
-    [vKey([0, 1, 19])]: () => console.warn('Arx update: 0.1.19'),
-    [vKey([0, 1, 24])]: () => console.warn('Arx update: 0.1.24'),
-}
-
-world.afterEvents.worldLoad.subscribe(() => {
-    detectUpdate()
-})

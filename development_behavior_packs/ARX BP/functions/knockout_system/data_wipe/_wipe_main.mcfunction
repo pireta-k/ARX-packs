@@ -22,10 +22,3 @@
 
 #Возвращаем family в нормальное состояние
     event entity @s arx:set_default_family_data
-
-#Класс
-    scoreboard players set @s class 0
-
-#Временные статы
-    scoreboard players set @s freezing 0
-    scoreboard players set @s poisoning 0

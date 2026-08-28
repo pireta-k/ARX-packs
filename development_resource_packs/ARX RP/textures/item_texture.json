@@ -740,9 +740,6 @@
         "arx:scroll_of_oblivion": {
             "textures": "textures/items/other/scroll_of_oblivion.png"
         },
-        "arx:scroll_of_reborning": {
-            "textures": "textures/items/other/scroll_of_reborning.png"
-        },
         "arx:scroll_of_water_blocking": {
             "textures": "textures/items/other/scroll_of_water_blocking.png"
         },

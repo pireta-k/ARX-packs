@@ -756,11 +756,11 @@ export const coreFramework = {
                 }
 
                 // Поверхность, ночь (рядом с источником света)
-                else if (player.location.y > 54 && !isDay() && getScore(player, 'no_dark_fog') == 0 && player.lightLevel < 6) {
+                else if (player.location.y > 54 && !isDay() && player.lightLevel < 6) {
                     player.runCommand(`fog @s push arx:overworld_night_fog "night"`)
                 }
                 // Поверхность, ночь (далеко от источника света)
-                else if (player.location.y > 54 && !isDay() && getScore(player, 'no_dark_fog') == 0 && !player.lightLevel < 6) {
+                else if (player.location.y > 54 && !isDay() && !player.lightLevel < 6) {
                     player.runCommand(`fog @s push arx:overworld_night_bright_fog "nightbright"`)
                 }
             }
@@ -1509,6 +1509,17 @@ export const coreFramework = {
                 }
             }
         }
+    },
+
+    smallHeadSpellImplementation: {
+        tickSpeed: 20,
+        operations: (data) => {
+            for (const p of data.players) {
+                if (gDP(p, 'spellOfSmallHead')) {
+                    p.runCommand('playanimation @s animation.player.invisible_head')
+                }
+            }
+        }
     }
 }
 
@@ -1614,6 +1625,7 @@ const dynamicPropertiesToDecrease = {
     'allowArchilight': '§6Действие архисвета закончилось',
     'allowMagilight': '§6Действие магисвета закончилось',
     'foodCD': '§aВы снова не против перекусить',
+    'spellOfSmallHead': 'Заклинание маленькой головы закончилось',
     // Ultima Potions
     'maxMPBonusFromPotion': '§eБонус максимальной маны (+15) от зелья закончился',
     'maxMPBonusFromPotionImproved': '§eБонус максимальной маны (+45) от зелья закончился',

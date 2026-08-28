@@ -390,12 +390,14 @@ export const enLocalization = {
     "chat.messageType.action": 'Action',
 
     "suicide.title": 'Suicide',
-    "suicide.body": 'Hold on!\n\nYou are going to kill §a$0$§f FOREVER. You could NEVER play this character again. \nAre you sure you want to do this?',
+    "suicide.body": 'Hold on!\n\nYou are going to kill §a$0$§f FOREVER. You could NEVER play this character again.\nAfter that, you will be able to create a new character.\n\nAre you sure you want to do this?',
     "suicide.confirm": 'Yes, the time has come',
     "suicide.deny": 'No-no-no!',
     "suicide.thinkTwice.body": "Are you sure..?",
     "suicide.thinkTwice.confirm": "Goodbye, $0$",
     "suicide.thinkTwice.deny": 'On the second thought, no',
+
+    "item.bannedWasReplaced": "The item you've just picked up §8(id: $0$)§f is prohibited in Arx. It was replaced with it's ingredients.",
 
     "eve.name": 'Eve',
     "chat.eve.hello": "Hi! I'm Eve.",

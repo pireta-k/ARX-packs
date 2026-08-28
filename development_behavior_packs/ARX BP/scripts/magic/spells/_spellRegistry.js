@@ -590,7 +590,7 @@ export let spellRegistry = {
         description: 'заклинание невидимой головы на 60 секунд',
         onlyOnPlayers: true,
         handler: (player) => {
-            setScore(player, 'spell_of_small_head', 60)
+            sDP(player, 'spellOfSmallHead', 60)
         }
     },
 

@@ -134,7 +134,7 @@ export class Rob {
             return
         }
         if (!itemHash || typeof itemHash !== 'string') {
-            initiator?.sendMessage('§cInvalid item hash')
+            initiator?.sendMessage('§cInvalid item data')
             return
         }
 

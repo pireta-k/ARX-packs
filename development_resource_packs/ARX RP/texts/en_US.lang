@@ -763,7 +763,6 @@ item.arx:small_stone=§r§fНебольшой камень §7[Common]
 
 
 item.arx:elder_cross_rune=§r§fДревняя руна-крест §c[Mythical]
-item.arx:scroll_of_reborning=§r§fСвиток перерождения §d[Divine]\n§o§7Призрак может перевоплотиться назад в живого,\nиспользовав этот свиток
 
 item.arx:scroll_of_bane_removing=§r§fСвиток исцеления от проклятия §e[Legendary]
 item.arx:scroll_of_water_blocking=§r§fСвиток ненамокания §e[Legendary]\n§o§7Вы моментально высыхаете, а так же становитесь ненамокаемым на 30 секунд

@@ -7,11 +7,9 @@ import { castJSSpell, prepareSpellData } from './castJSSpell'
 import { findSpell } from "./findSpell"
 import { getActiveStaffChannel } from './getActiveStaffChannel'
 
-import { getScore, setScore } from "../arxLib/scoresOperations";
 import { increaseSkillProgress } from "../skillsOperations";
 
 import { manageCD } from "../manageCD";
-import { queueCommand } from "../commandQueue";
 import { gDP, iDP, sDP } from "../arxLib/DPOperations";
 import { spellRegistry } from "./spells/_spellRegistry";
 import { getItem } from '../items/getItem'

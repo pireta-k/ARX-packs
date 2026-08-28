@@ -6,53 +6,19 @@
 
 # Различные переменные рандома
     scoreboard objectives add custom_random dummy Спец_ранд 
-    scoreboard objectives add custom_random_b dummy Спец_ранд_b
-    scoreboard objectives add custom_random_c dummy Спец_ранд_c
-
-scoreboard objectives add drugs_delay dummy Наркозавис.
-
-scoreboard objectives add time_h dummy "Часы игры"
-scoreboard objectives add time_m dummy Минуты-игры.
-
-scoreboard objectives add no_dark_fog dummy no_dark_fog
-
-scoreboard objectives add poit_mp_reg dummy poit_mp_reg
-
-scoreboard objectives add weather dummy Погода
-scoreboard objectives add weather_cond dummy Тип_погоды
-scoreboard players set @s weather_cond 0
-
-scoreboard objectives add day_history dummy Лог_дня
-scoreboard objectives add day_delta dummy Дельта_дня
-
-scoreboard objectives add invisible dummy Невидимость
-
-scoreboard objectives add teleport_def dummy Обычн_тп
-scoreboard objectives add teleport_dmg dummy Тп_с_уроном
-
-scoreboard objectives add in_portal dummy in_portal
 
 scoreboard objectives add no_fog dummy no_fog
-
-scoreboard objectives add nightvis_saki dummy nightvis_saki
-
-scoreboard objectives add item_control dummy item_control
-
-
 
 # Константы (для команд scoreboard players operation...)
     scoreboard objectives add const_0 dummy Константа_0
     scoreboard players set @s const_0 0
 
 #ТИКИ
-scoreboard objectives add tick_sempra_dps dummy маг.ур.в.сек
 scoreboard objectives add tick dummy такт
 scoreboard objectives add sec dummy секунда
 
 scoreboard players set @s tick 0
 scoreboard players set @s sec 0
-
-scoreboard objectives setdisplay list time_h
 
 # Высокотехнологичное
     scoreboard objectives add battery_avail dummy battery_avail
@@ -85,16 +51,6 @@ scoreboard objectives add saturation dummy saturation
     # Блоки
         scoreboard objectives add count_broken_blocks dummy count_broken_blocks
         scoreboard objectives add count_placed_blocks dummy count_placed_blocks
-
-# Дебаг верификаций
-    scoreboard objectives add debug_verify dummy debug_verify
-
-scoreboard objectives add uni_cool_down dummy uni_cool_down
-
-scoreboard objectives add spell_of_small_head dummy spell_of_small_head
-
-# Обучение
-    scoreboard objectives add learning dummy Этап_обучения
 
 scoreboard objectives add weighLoading dummy weighLoading
 

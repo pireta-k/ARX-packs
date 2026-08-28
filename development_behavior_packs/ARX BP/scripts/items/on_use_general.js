@@ -1,5 +1,5 @@
 // Imports - Minecraft
-import { world, EntityComponentTypes, ItemComponentTypes, EquipmentSlot, system } from "@minecraft/server";
+import { world, EntityComponentTypes, ItemComponentTypes, EquipmentSlot, system, TicksPerSecond } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 
 import { setScore } from "../arxLib/scoresOperations";
@@ -33,21 +33,26 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
             onUseSBHammer(player)
             break
 
-        // АЛХИМИЯ
-        // Сигареты
+        // Cigarettes
         case "arx:cigarette_kavra":
             if (manageCD(player)) {
-                player.runCommand("function alchemy/cigarettes/cigarette_kavra")
+                player.runCommand("execute at @s facing ^ ^ ^0.5 positioned ^ ^ ^0.5 run particle arx:cigarette_smoke ~ ~1.6 ~")
+                player.runCommand("playanimation @s animation.player.smoke")
+                player.runCommand("clear @s arx:cigarette_fiolix 0 1")
+                player.addEffect('regeneration', 8 * TicksPerSecond)
             }
             break
         case "arx:cigarette_fiolix":
             if (manageCD(player)) {
-                player.runCommand("function alchemy/cigarettes/cigarette_fiolix")
+                player.runCommand("execute at @s facing ^ ^ ^0.5 positioned ^ ^ ^0.5 run particle arx:cigarette_smoke ~ ~1.6 ~")
+                player.runCommand("playanimation @s animation.player.smoke")
+                player.runCommand("clear @s arx:cigarette_fiolix 0 1")
+                player.addEffect('night_vision', 8 * TicksPerSecond)
             }
             break
 
-        // КНИГИ
-        // Книги, дропающие чар книги
+        // BOOKS
+        // Book cases
         case 'arx:book_case_a':
             player.runCommand('clear @s arx:book_case_a')
             player.runCommand('loot give @s loot "custom/book_case_a"')
@@ -65,7 +70,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
             player.runCommand('loot give @s loot "custom/book_case_d"')
             break
 
-        // Читаемые
+        // Readable
         case "arx:cultists_letter":
             player.sendMessage("§lПисьмо без названия\n§r§fВнимание! Вы вторглись на чужие земли без разрешения. Ваше грязное присутствие оскверняет великого Раттекса. Предупреждаем: не смейте общаться с разумными крысами, иначе ваша гниль заразит их. Убирайтесь с этих земель, пока мы еще настроены на мирное решение.\n\n§oСтражи священного порядка")
             break

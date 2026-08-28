@@ -5,7 +5,7 @@ import { world } from "@minecraft/server"
 import { fl, setPlayerLanguage } from "./lang/fetchLocalization"
 import { showLanguageForm } from "./lang/form"
 import { RELEASE } from "./_main"
-import { isArxWorldReady } from "./update"
+import { isArxWorldReady } from "./update/_update"
 
 const thirstRegStep = 10
 

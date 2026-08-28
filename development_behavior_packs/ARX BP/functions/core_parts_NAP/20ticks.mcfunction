@@ -1,20 +1,5 @@
 # ЭТА ФУНКЦИЯ ЗАПУСКАЕТСЯ АВТОМАТИЧЕСКИ КАЖДЫЕ 20 тактов (= 1 секунда)
 
-
-# Вычисление доступности батарей 
-    tag @a[hasitem={item=arx:battery_large}, scores={battery_avail=0}] add battery_avail
-    tag @a[hasitem={item=arx:battery_small}, scores={battery_avail=0}] add battery_avail
-    tag @a[hasitem={item=arx:battery_ultra}, scores={battery_avail=0}] add battery_avail
-    tag @a[hasitem={item=arx:battery_homemade}, scores={battery_avail=0}] add battery_avail
-    tellraw @a[tag=battery_avail] { "rawtext": [ { "text": "§aВы открыли особый навык: §bТеория аккумуляторов!" } ] }
-    tellraw @a[tag=battery_avail] { "rawtext": [ { "text": "Доступны новые сведения в <§cОбщие данные о персонаже§f>!" } ] }
-    tellraw @a[tag=battery_avail] { "rawtext": [ { "text": "Доступны новые иконки в <§1Помощь по иконкам§f>!" } ] }
-    scoreboard players set @a[tag=battery_avail] battery_avail 1
-    tag @a remove battery_avail
-
-# ЗАПУСК ФУНКЦИИ БАТАРЕЙ
-    execute as @a[scores={battery_avail=1}] at @s run function core_parts_NAP/battery_logic
-
 # Ломаем лодки мобами
     execute at @e[family=boat_destroyer] run damage @e[family=boat, r=1] 1000
 
@@ -47,12 +32,6 @@
         tag @a remove heating_by_heater_block_control
 
 # Одежда
-    effect @a[tag=electrical_engineering_available, hasitem={item=arx:night_vision_device, location=slot.armor.head}] night_vision 12 0 true
-
-# Маленькая голова (закл)
-    scoreboard players add @a[scores={spell_of_small_head=1..}] spell_of_small_head -1 
-    playanimation @a[scores={spell_of_small_head=1..}] animation.player.invisible_head
-
     effect @a[hasitem={item=arx:amul_ruby, location=slot.armor.legs}, scores={freezing=!..-1001}] fire_resistance 1 0 true
 
 # Обнаружение и автофикс некоторых ошибок

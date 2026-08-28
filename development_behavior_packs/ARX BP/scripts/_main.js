@@ -1,7 +1,7 @@
 // ARX javascript
 
 // Imports - Minecraft
-import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus } from "@minecraft/server"
+import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond } from "@minecraft/server"
 import { ActionFormData } from "@minecraft/server-ui"
 
 import './vanillaPrototypes'
@@ -11,7 +11,6 @@ import { getScore, incScore, setScore } from './arxLib/scoresOperations'
 import { increaseSkillProgress, wipeSkillsProgress } from './skillsOperations'
 import { onConsume } from './food/onConsume'
 import { registerCharacter } from "./registerCharacter"
-import { executeCommandDelayed } from "./executeCommandDelayed"
 import { showDialog } from './dialogues'
 import { isEntityInCube } from './core/music_core'
 import { interactWithViciousDemonSpawner } from './bosses/vicious_demon'
@@ -27,7 +26,7 @@ import './stabilityTesting'
 import './camera/processCamera'
 import './sb/structureBuilder'
 import './blocksHistory'
-import './update'
+import './update/_update'
 import './arxLib/weather'
 
 import { registerPlayerVars } from "./registerPlayerVars"
@@ -50,6 +49,9 @@ import { UI } from "./arxLib/UI"
 import { infoScreen } from "./info/_infoScreen"
 import { sleep } from "./arxLib/time"
 import { Vector } from "./arxLib/math"
+import { playSound } from "./arxLib/audio"
+import { random } from "./arxLib/random"
+import { bannedItems } from "./items/banned"
 
 // Type of release. 
 // Available: alpha, beta, special, stable
@@ -95,6 +97,22 @@ world.afterEvents.playerInventoryItemChange.subscribe((event) => {
     const p = event.player
     const item = event.itemStack
     if (item) {
+        if (item.typeId in bannedItems) {
+            const inventory = p.getComponent('minecraft:inventory')
+            const container = inventory.container
+
+            if (!container.isValid) return
+
+            container.setItem(event.slot, undefined)
+            const bannedItemData = bannedItems[item.typeId]
+            sl(p, 'item.bannedWasReplaced', [item.typeId])
+            for (const ingredient in bannedItemData) {
+                container.addItem(new ItemStack(ingredient, bannedItemData[ingredient]))
+            }
+
+            return // Exit
+        }
+
         // Анализ поднимаемного игроком веса
         weighAnalysis(p)
 
@@ -556,10 +574,12 @@ system.beforeEvents.startup.subscribe(initEvent => {
 
                 // Капкан
                 case "arx:iron_trap":
-                    event.player.runCommand(executeOnBlockPosition + "function blocks/iron_trap/iron_trap_collapse_by_interaction")
+                    b.setType('arx:iron_trap_collapsed')
+                    playSound('armor.equip_iron', b.dimension, b.location)
                     break
                 case "arx:iron_trap_collapsed":
-                    event.player.runCommand(executeOnBlockPosition + "function blocks/iron_trap/iron_trap_open")
+                    b.setType('arx:iron_trap')
+                    playSound('armor.equip_iron', b.dimension, b.location)
                     break
 
                 // Меч порочного демона
@@ -577,7 +597,9 @@ system.beforeEvents.startup.subscribe(initEvent => {
 
                 // Мусорка
                 case "arx:trash_can":
-                    event.player.runCommand(executeOnBlockPosition + "function high_tec/talk_with_trash_can")
+                    const picked = random.int(0, 10) // Second number is a number of different trash can phrases.
+                    sl(event.player, 'trashCan.' + picked, [], '§7§o')
+                    event.player.sendMessage('\n')
                     break
 
                 // Табличка у порочного демона
@@ -613,21 +635,29 @@ system.beforeEvents.startup.subscribe(initEvent => {
     initEvent.blockComponentRegistry.registerCustomComponent('arx:onEntityStepOn', {
         onStepOn(event) { // Наступаение на блок
             const b = event.block
+            const e = event.entity
             let executeOnBlockPosition = `execute positioned ${b.location.x} ${b.location.y} ${b.location.z} run `
             switch (b.type.id) {
 
-                // Таблички
+                // Mushrooms
                 case "arx:mushroom":
                 case "arx:mp_mushroom":
                 case "arx:fly_agaric":
-                    if (event.entity.typeId === "minecraft:player") {
+                    if (e.typeId === "minecraft:player") {
                         b.setType('minecraft:air')
                     }
                     break
 
-                // Капкан
+                // Iron trap
                 case "arx:iron_trap":
-                    event.entity.runCommand(executeOnBlockPosition + "function blocks/iron_trap/iron_trap_collapse_by_step")
+                    if (e) {
+                        b.setType('arx:iron_trap_collapsed')
+                        e.addEffect('slowness', 5 * TicksPerSecond)
+                        e.applyDamage(15, { cause: 'contact' })
+                        playSound('random.anvil_land', b.dimension, b.location)
+
+                        event.entity.runCommand(executeOnBlockPosition + "function blocks/iron_trap/iron_trap_collapse_by_step")
+                    }
                     break
             }
         }
