@@ -456,6 +456,12 @@
          "sounds/meca/long_beep"
       ]
    },
+   "the_scarlet_hunger.summon": {
+      "category": "neutral",
+      "sounds": [
+         "sounds/the_scarlet_hunger/summon"
+      ]
+   },
    "heartbeat.default": {
       "category": "music",
       "sounds": [

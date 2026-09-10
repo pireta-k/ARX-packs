@@ -5,25 +5,27 @@
 			"initial_state": "idle",
 			"states": {
 				"idle": {
-					"animations": [
-						"stay",
-						{"attack": "variable.attack_time > 0.0"}
-					],
+					"animations": ["stay"],
 					"transitions": [
-						{"walking": "q.ground_speed > 1.0"}
+						{"walking": "q.ground_speed > 1.0"},
+						{"attack": "variable.attack_time > 0.0"}
 					],
 					"blend_transition": 0.2
 				},
 				"walking": {
-					"animations": [
-						"stay",
-						"walk",
+					"animations": ["stay", "walk"],
+					"transitions": [
+						{"idle": "q.ground_speed < 0.5"},
 						{"attack": "variable.attack_time > 0.0"}
 					],
-					"transitions": [
-						{"idle": "q.ground_speed < 0.5"}
-					],
 					"blend_transition": 0.3
+				},
+				"attack": {
+					"animations": ["stay", "attack"],
+					"transitions": [
+						{"idle": "query.anim_time > 3"}
+					],
+					"blend_transition": 0.1
 				}
 			}
 		}

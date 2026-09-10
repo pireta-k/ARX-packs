@@ -1,5 +1,5 @@
 // Imports - Minecraft
-import { world, EntityComponentTypes, ItemComponentTypes, EquipmentSlot, system, TicksPerSecond } from "@minecraft/server";
+import { world, EntityComponentTypes, ItemComponentTypes, EquipmentSlot, system, TicksPerSecond, MolangVariableMap } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 
 import { setScore } from "../arxLib/scoresOperations";
@@ -14,6 +14,7 @@ import { onUseSBHammer } from "../sb/structureBuilder";
 import { prospect, runProspection } from '../sb/prospect'
 import { sleep } from "../arxLib/time";
 import { Quest } from '../quests'
+import { Vector } from "../arxLib/math";
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
@@ -21,10 +22,16 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
     const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Mainhand)
     switch (event.itemStack.typeId) {
 
-        // Тест
+        // Test
         case "arx:mod_sword":
             if (manageCD(player)) {
-                // sDP(world, 'latestV', [0, 0, 0])
+                const molang = new MolangVariableMap()
+                molang.setColorRGB('color', { red: 1, green: 0.2, blue: 0.8 })
+                molang.setFloat('lifetime', 10)
+                molang.setFloat('intensity', 20)
+                molang.setFloat('range', 4)
+
+                player.dimension.spawnParticle('arx:3d_fog__material_add', Vector.upLift(player.location), molang)
             }
             break
 

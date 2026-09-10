@@ -1472,7 +1472,7 @@ export const coreFramework = {
         operations: () => {
             const d = world.getDimension('minecraft:overworld')
             for (const entity of d.getEntities()) {
-                if (getEntityFamilies(entity).includes('despawn_as_ghost')) {
+                if (getEntityFamilies(entity).includes('despawn_as_ghost') && entity.dimension.isChunkLoaded(entity.location)) {
                     for (let i = 0; i < 3; i++) {
                         d.spawnParticle('arx:rat_ghost_despawn', { x: entity.location.x, y: entity.location.y + 1.5, z: entity.location.z })
                         playSound('undemon', d, entity.location)

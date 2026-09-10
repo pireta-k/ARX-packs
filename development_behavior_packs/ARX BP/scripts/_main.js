@@ -1296,14 +1296,40 @@ world.afterEvents.entityDie.subscribe(async event => {
 
     if (e.typeId === 'arx:rat_ghost') {
 
-        const locationToFart = Vector.upLift(e.location)
+        const locationToFartParticles = Vector.upLift(e.location)
+        const locationToFartParticlesHigh = Vector.upLift(locationToFartParticles)
         const initialLocation = e.location
         const d = e.dimension
 
-        d.spawnParticle('arx:rat_eliminator_spawn_outward', locationToFart)
+        d.spawnParticle('arx:rat_eliminator_spawn_outward', locationToFartParticles)
+        // TO-DO Play scary sound
+        // Spawn red fog
+        {
+            const molang = new MolangVariableMap()
+            molang.setColorRGB('color', { red: 0.95, green: 0.1, blue: 0.1 })
+            molang.setFloat('lifetime', 7)
+            molang.setFloat('intensity', 30)
+            molang.setFloat('range', 4)
+            d.spawnParticle('arx:3d_fog__material_add', locationToFartParticles, molang)
+        }
         await sleep(40)
-        d.spawnParticle('arx:rat_eliminator_spawn_inward', locationToFart)
-        await sleep(100)
+        d.spawnParticle('arx:rat_eliminator_spawn_inward', locationToFartParticles)
+
+        await sleep(90)
+        playSound('the_scarlet_hunger.summon', d, locationToFartParticles)
+        d.spawnParticle('arx:rat_eliminator_gate', locationToFartParticlesHigh)
+        await sleep(10)
+        // TO-DO Play stunning sound
+        // Spawn red fog
+        {
+            const molang = new MolangVariableMap()
+            molang.setColorRGB('color', { red: 0.95, green: 0.1, blue: 0.1 })
+            molang.setFloat('lifetime', 0.5)
+            molang.setFloat('intensity', 120)
+            molang.setFloat('range', 1.5)
+            d.spawnParticle('arx:3d_fog__material_add', locationToFartParticles, molang)
+        }
         d.spawnEntity('arx:rat_eliminator', initialLocation)
+        d.spawnParticle('arx:rat_eliminator_spawn_end', locationToFartParticlesHigh)
     }
 })

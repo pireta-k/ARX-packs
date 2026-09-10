@@ -5,7 +5,7 @@
       "identifier": "arx:rat_eliminator",
       "min_engine_version": "1.8.0",
       "materials": {
-        "default": "entity_alphatest"
+        "default": "entity_emissive_alpha"
       },
       "textures": {
         "default": "textures/entity/mobs/rat_eliminator"
