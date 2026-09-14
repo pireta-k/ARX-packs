@@ -2,8 +2,7 @@ import { ModalFormData, MessageFormData, ActionFormData } from "@minecraft/serve
 import { getScore, setScore } from "./arxLib/scoresOperations"
 import { gDP, sDP } from "./arxLib/DPOperations"
 import { world } from "@minecraft/server"
-import { fl, setPlayerLanguage } from "./lang/fetchLocalization"
-import { showLanguageForm } from "./lang/form"
+import { fl } from "./lang/fetchLocalization"
 import { RELEASE } from "./_main"
 import { isArxWorldReady } from "./update/_update"
 
@@ -42,17 +41,10 @@ export async function registerCharacter(player) {
     else {
         // Version notification check
         if (RELEASE != 'stable' && !gDP(player, 'hasAlreadySeenVersionWarning')) sDP(player, 'registerCharacterStage', -9)
-        // Language check
-        if (gDP(player, 'language') === undefined) sDP(player, 'registerCharacterStage', -10)
 
         switch (player.getDynamicProperty('registerCharacterStage')) {
 
             case undefined:
-            case -10: // Language
-                const responce = await showLanguageForm(player)
-                if (responce) setRegWindow(player, thirstRegStep)
-                break
-
             case -9: // Warning
                 const formWarning = new ModalFormData()
                     .title(fl(player, 'lobby.registration.notStableRelease.title'))

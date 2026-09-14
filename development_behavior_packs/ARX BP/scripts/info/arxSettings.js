@@ -1,6 +1,6 @@
 import { ModalFormData, ActionFormData } from "@minecraft/server-ui"
 import { gDP, sDP } from "../arxLib/DPOperations"
-import { fl } from "../lang/fetchLocalization"
+import { fl, getPlayerLanguage, langMap } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
 import { world } from "@minecraft/server"
 import { coreFramework, coreErrorCounts, corePing } from "../core/core"
@@ -49,7 +49,7 @@ function buildCoreReviewBody(p) {
 
         // Add line to text
         lines.push(`§r§f${key}\n§f${status}§f ${tick}t ${pingColor}${ping}§fms`)
-    
+
         // Errors of this block
         lines.push(fl(p, 'info.dev_options.core_review.block_errors', [errsMsg]))
     }
@@ -86,22 +86,25 @@ export function arxSettings(p) {
     if (chatPrefixes === 'full') chatPrefixesDefaultDropdownPos = 0
     if (chatPrefixes === 'short') chatPrefixesDefaultDropdownPos = 1
 
+    const gameLangs = Object.keys(langMap)
+    const playerLang = getPlayerLanguage(p)
+    const langDefaultDropdownPos = gameLangs.indexOf(playerLang) ?? 0
+
     const canSeeServerSpeedInInfoBookDefaultTogglePos = p.getDynamicProperty('myRule:canSeeServerSpeedInInfoBook')
     const devModeDefaultTogglePos = p.getDynamicProperty('myRule:devMode')
 
     const form = new ModalFormData()
-    form.title("Настройки Аркса")
-
-    form.dropdown('Не забудьте нажать кнопку §aсохранить§f внизу этого экрана!\n\nОтображение §bманы', ['Натуральные числа', 'Десятичные дроби', '§cНе отображать'], { defaultValueIndex: manaDisplayModeDefaultDropdownPos })
-    form.dropdown('Отображение §cотката атаки', ['Секунды, целые числа', 'Секунды, десятичные дроби', 'Такты (сек/20)', 'Линия', '§cНе отображать'], { defaultValueIndex: showAttackCDModeDefaultDropdownPos })
-    form.dropdown('Префиксы §aчатов', ['Полные §f[§aЛокал.§f]', 'Сокращённые §f[§aЛ§f]'], { defaultValueIndex: chatPrefixesDefaultDropdownPos })
-    form.toggle("Отображение производительности в <Инфо>", { defaultValue: canSeeServerSpeedInInfoBookDefaultTogglePos })
+    form.title(fl(p, 'info.settings.title'))
+    form.dropdown(fl(p, 'info.settings.save_is_necessary') + '\n\n' + '\uE10D ' + fl(p, 'info.settings.mana_display'), [fl(p, 'info.settings.mana_display.natural_numbers'), fl(p, 'info.settings.mana_display.decimal'), '§c' + fl(p, 'info.settings.mana_display.not')], { defaultValueIndex: manaDisplayModeDefaultDropdownPos })
+    form.dropdown('\uE10A ' + fl(p, 'info.settings.attack_cd_display'), [fl(p, 'info.settings.attack_cd_display.seconds_integers'), fl(p, 'info.settings.attack_cd_display.seconds_fractional'), fl(p, 'info.settings.attack_cd_display.ticks'), fl(p, 'info.settings.attack_cd_display.line'), fl(p, 'info.settings.attack_cd_display.not')], { defaultValueIndex: showAttackCDModeDefaultDropdownPos })
+    form.dropdown(fl(p, 'info.settings.chat_prefixes'), [fl(p, 'info.settings.chat_prefixes.full'), fl(p, 'info.settings.chat_prefixes.short')], { defaultValueIndex: chatPrefixesDefaultDropdownPos })
+    form.toggle(fl(p, 'info.settings.performance'), { defaultValue: canSeeServerSpeedInInfoBookDefaultTogglePos })
     if (isAdmin) {
-        form.toggle("Режим разработчика", { defaultValue: devModeDefaultTogglePos, tooltip: 'Вы сможете видеть технические данные.' })
+        form.toggle(fl(p, 'info.settings.dev_mode'), { defaultValue: devModeDefaultTogglePos, tooltip: fl(p, 'info.settings.dev_mode.tooltip') })
     }
 
 
-    form.submitButton('Сохранить')
+    form.submitButton(fl(p, 'info.settings.submit'))
 
     form.show(p).then(response => {
 

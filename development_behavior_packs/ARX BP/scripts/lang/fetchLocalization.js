@@ -1,14 +1,14 @@
 // Imports
-import { ruLocalization } from './ru'
-import { enLocalization } from './en'
+import { ruLocalization } from './ru_RU'
+import { enLocalization } from './en_US'
 import { sDP } from '../arxLib/DPOperations'
 import { Entity, Player } from '@minecraft/server'
 
 // Vars
-export const defaultLanguage = 'en'
+export const defaultLanguage = 'en_US'
 export const langMap = {
-    'ru': ruLocalization,
-    'en': enLocalization
+    'en_US': enLocalization,
+    'ru_RU': ruLocalization
 }
 const insertionsLimit = 64
 
@@ -28,11 +28,9 @@ export function fl(e, textId, insertions = [], errorBehaviour = 'sendString') {
     // Wrong usage
     if (!e || !e.isValid) {
         throw new Error(`Called fl() without textId object for invalid entity`)
-        return
     }
     if (!textId) {
         throw new Error(`Called fl() without textId object for e ${e.typeId} with RPName ${e.RPName}`)
-        return
     }
 
     const langId = e instanceof Player ? getPlayerLanguage(e) : defaultLanguage
@@ -100,18 +98,18 @@ export function checkLocalization(key, language = defaultLanguage) {
     return key in langMap[language]
 }
 
-// Returns player's language as 'en' or 'ru' etc.
-// Returns default as fallback
+/**
+ * Get players Arx language
+ * Returns player's language as 'en' or 'ru' etc.
+ * Returns default lang as fallback
+ * @param {Player} player 
+ * @returns {string}
+ */
 export function getPlayerLanguage(player) {
-    const language = player.getDynamicProperty('language')
+    const language = player.clientSystemInfo.locale
+    if (!language || typeof language !== 'string') {
+        console.warn(`getPlayerLanguage: Unexpected player.clientSystemInfo.locale value got from player ${player.name}: ${language}`)
+        return defaultLanguage
+    }
     return language in langMap ? language : defaultLanguage
-}
-
-export function setPlayerLanguage(player, lang) {
-    if (Object.keys(langMap).includes(lang)) {
-        sDP(player, 'language', lang)
-    }
-    else {
-        console.warn(`Attempt to set non-existent lang ${lang} to player`)
-    }
 }

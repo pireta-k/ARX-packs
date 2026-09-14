@@ -178,6 +178,27 @@ export const enLocalization = {
     'info.dev_options.back': 'Back',
     'info.dev_options.update': 'Update',
 
+    'info.settings.title': 'Arx settings',
+    'info.settings.save_is_necessary': 'Press the button §aSave§f below!',
+    'info.settings.mana_display': '§bMana§f display',
+    'info.settings.mana_display.natural_numbers': 'Natural numbers',
+    'info.settings.mana_display.decimal': 'Decimals',
+    'info.settings.mana_display.not': 'Do not display',
+    'info.settings.attack_cd_display': '§cAttack cd§f display',
+    'info.settings.attack_cd_display.seconds_integers': 'Seconds, integer',
+    'info.settings.attack_cd_display.seconds_fractional': 'Seconds, decimal',
+    'info.settings.attack_cd_display.ticks': 'Ticks (sec/20)',
+    'info.settings.attack_cd_display.line': 'Line',
+    'info.settings.attack_cd_display.not': 'Do not display',
+    'info.settings.chat_prefixes': '§aChat§f prefixes',
+    'info.settings.chat_prefixes.full': 'Full §f[§aLocal§f]',
+    'info.settings.chat_prefixes.short': 'Short §f[§aL§f]',
+    'info.settings.performance': 'Show performance in Arx menu',
+    'info.settings.dev_mode': 'Developer mode',
+    'info.settings.dev_mode.tooltip': 'You\'ll be able to see technical data',
+    'info.settings.submit': 'Save',
+
+
     'quest.ui.title': 'Quests',
     'quest.ui.active': '§aActive',
     'quest.ui.completed': '§dCompleted',
@@ -397,7 +418,7 @@ export const enLocalization = {
     "suicide.thinkTwice.confirm": "Goodbye, $0$",
     "suicide.thinkTwice.deny": 'On the second thought, no',
 
-    "item.bannedWasReplaced": "The item you've just picked up §8(id: $0$)§f is prohibited in Arx. It was replaced with it's ingredients.",
+    "item.bannedWasReplaced": "The item you've just picked up §8(id: $0$)§f is prohibited in Arx. It was replaced with its ingredients.",
 
     "eve.name": 'Eve',
     "chat.eve.hello": "Hi! I'm Eve.",
