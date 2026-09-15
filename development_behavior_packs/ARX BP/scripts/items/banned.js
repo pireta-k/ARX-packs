@@ -51,6 +51,16 @@ export const bannedItems = {
         'minecraft:stick': 1
     },
 
+    'minecraft:netherite_boots': { 'minecraft:diamond': 4, 'minecraft:netherite_ingot': 1 },
+    'minecraft:netherite_chestplate': { 'minecraft:diamond': 8, 'minecraft:netherite_ingot': 1 },
+    'minecraft:netherite_helmet': { 'minecraft:diamond': 5, 'minecraft:netherite_ingot': 1 },
+    'minecraft:netherite_leggings': { 'minecraft:diamond': 7, 'minecraft:netherite_ingot': 1 },
+    'minecraft:netherite_sword': {
+        'minecraft:diamond': 2,
+        'minecraft:stick': 1, 
+        'minecraft:netherite_ingot': 1
+    },
+
     'minecraft:shield': {
         'planks': 6,
         'iron_ingot': 1

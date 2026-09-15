@@ -15,6 +15,8 @@ import { prospect, runProspection } from '../sb/prospect'
 import { sleep } from "../arxLib/time";
 import { Quest } from '../quests'
 import { Vector } from "../arxLib/math";
+import { consumeFiolix } from "../food/fiolix";
+import { random } from "../arxLib/random";
 
 // Использование предметов
 world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
@@ -54,7 +56,7 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
                 player.runCommand("execute at @s facing ^ ^ ^0.5 positioned ^ ^ ^0.5 run particle arx:cigarette_smoke ~ ~1.6 ~")
                 player.runCommand("playanimation @s animation.player.smoke")
                 player.runCommand("clear @s arx:cigarette_fiolix 0 1")
-                player.addEffect('night_vision', 8 * TicksPerSecond)
+                consumeFiolix(player, random.int(50, 70))
             }
             break
 

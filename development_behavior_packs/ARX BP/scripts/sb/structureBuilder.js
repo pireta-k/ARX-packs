@@ -409,7 +409,7 @@ class BlocksMegaArray {
 
     // Iterator, like main iterator, but with runJob optimizaion. TO-DO
     runJob() {
-        
+
     }
 
     // Main blocks iterator
@@ -450,13 +450,14 @@ class BlocksMegaArray {
         // Start ticking
         async startTick() {
             await this.delTick()
-            await validateTickingAreaLoading(this.parent.dimension, { x: this.absPos.x, z: this.absPos.z }, { x: this.absPos.x + 31, z: this.absPos.z + 31 }, 'sb')
+            await validateTickingAreaLoading(this.parent.dimension, { x: this.absPos.x, z: this.absPos.z }, { x: this.absPos.x + 31, z: this.absPos.z + 31 }, 'sb', true)
         }
 
-        // Delete ticking
+        // Stop ticking
         async delTick() {
-            this.parent.dimension.runCommand(`tickingarea remove sb`)
-            await sleep(1)
+            try {
+                world.tickingAreaManager.removeTickingArea('sb')
+            } catch (error) { } // removeTickingArea throws an error if a tickingarea with desired id does not exist. Ignore.
         }
 
         // Can the chunk be loaded without custom tickingarea?

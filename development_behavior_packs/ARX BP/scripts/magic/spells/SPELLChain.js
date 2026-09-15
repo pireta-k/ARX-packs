@@ -3,6 +3,7 @@ import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { useStaff } from '../on_use_magic_items'
 import { system } from "@minecraft/server"
 import { fl, sl } from '../../lang/fetchLocalization'
+import { sleep } from '../../arxLib/time'
 
 /*
 Цепь хранится в виде
@@ -10,7 +11,7 @@ DP chainSpell = 1:2:4:9, где цифры - это каналы, а ":" - ра�
 */
 
 // Ключевая фукнция заклинания
-export function chain(player) {
+export async function chain(player) {
     if (player.isSneaking) {
         // Отложим выполнение до следующего тика
         system.runTimeout(() => {
@@ -18,11 +19,11 @@ export function chain(player) {
         }, 0);
     } else {
         // Отложим выполнение до следующего тика
-        system.runTimeout(() => {
+        system.run(async () => {
             sl(player, 'magic.chain.started')
-            executeChain(player);
+            await executeChain(player);
             sl(player, 'magic.chain.ended')
-        }, 0);
+        })
     }
 }
 
@@ -107,16 +108,17 @@ function createBodyText(player) {
 }
 
 // Исполнить цепь
-function executeChain(player) {
+async function executeChain(player) {
     let chainDP = player.getDynamicProperty('chainSpell')
+
     if (chainDP === undefined) {
         sl(player, 'magic.chain.empty_execute')
         return
-    } else {
-        chainDP = String(chainDP)
-        const arrayOfChannels = chainDP.split(':')
-        for (const channel of arrayOfChannels) {
-            useStaff(player, channel)
-        }
+    }
+
+    chainDP = String(chainDP)
+    const arrayOfChannels = chainDP.split(':')
+    for (const channel of arrayOfChannels) {
+        useStaff(player, channel)
     }
 }

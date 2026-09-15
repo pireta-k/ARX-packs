@@ -121,8 +121,9 @@ world.afterEvents.playerInventoryItemChange.subscribe((event) => {
 // A player has spawned
 world.afterEvents.playerSpawn.subscribe(async (event) => {
     const player = event.player; // Получаем объект игрока
-    player.nameTag = ""
     player.runCommand("function javascript/scores_autoreg")
+
+    player.nameTag = player.RPName
 
     // Restart music
     sDP(player, 'musicLocation', undefined)
@@ -978,6 +979,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
                 return
             }
             player.sDP('name', arg0)
+            player.nameTag = arg0
             sl(player, 'custom_commands.setName.success', [arg0])
         }
     )

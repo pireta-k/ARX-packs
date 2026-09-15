@@ -100,7 +100,7 @@ export function checkLocalization(key, language = defaultLanguage) {
 
 /**
  * Get players Arx language
- * Returns player's language as 'en' or 'ru' etc.
+ * Returns player's language as 'en_US' or 'ru_RU' etc.
  * Returns default lang as fallback
  * @param {Player} player 
  * @returns {string}

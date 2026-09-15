@@ -1,6 +1,7 @@
 import { acquireTrait, checkForTrait } from "../traits/traitsOperations"
 import { sDP, iDP, gDP } from "../arxLib/DPOperations"
 import { sl, fl } from '../lang/fetchLocalization'
+import { consumeFiolix } from "./fiolix"
 
 // Potions, alcohol and consumables with unusual effect
 
@@ -11,85 +12,85 @@ import { sl, fl } from '../lang/fetchLocalization'
 
 export const potionsRegistry = {
     // === ALCOHOL ===
-    'arx:ale': (player => player.addEffect('regeneration', 160)),
-    'arx:beer': (player => player.addEffect('regeneration', 300)),
-    'arx:cider': (player => player.addEffect('speed', 400)),
-    'arx:mead': (player => iDP(player, 'stress', -300)),
-    'arx:rum': (player => iDP(player, 'MPSmoothAccrue', 15)),
-    'arx:vodka': (player => {
-        player.addEffect('strength', 400)
-        player.addEffect('nausea', 600)
+    'arx:ale': (p => p.addEffect('regeneration', 160)),
+    'arx:beer': (p => p.addEffect('regeneration', 300)),
+    'arx:cider': (p => p.addEffect('speed', 400)),
+    'arx:mead': (p => iDP(p, 'stress', -300)),
+    'arx:rum': (p => iDP(p, 'MPSmoothAccrue', 15)),
+    'arx:vodka': (p => {
+        p.addEffect('strength', 400)
+        p.addEffect('nausea', 600)
     }),
-    'arx:wine': (player => player.addEffect('night_vision', 400)),
+    'arx:wine': (p => p.addEffect('night_vision', 400)),
 
     // === POTIONS ===
-    'arx:potion_blindness': (player => player.addEffect('blindness', 600)),
-    'arx:potion_blindness_d_upgrade': (player => player.addEffect('blindness', 3600)),
+    'arx:potion_blindness': (p => p.addEffect('blindness', 600)),
+    'arx:potion_blindness_d_upgrade': (p => p.addEffect('blindness', 3600)),
 
-    'arx:potion_happiness': (player => iDP(player, 'stress', -1000)),
-    'arx:potion_happiness_p_upgrade': (player => iDP(player, 'stress', -2000)),
+    'arx:potion_happiness': (p => iDP(p, 'stress', -1000)),
+    'arx:potion_happiness_p_upgrade': (p => iDP(p, 'stress', -2000)),
 
-    'arx:potion_haste': (player => player.addEffect('haste', 3600)),
-    'arx:potion_haste_d_upgrade': (player => player.addEffect('haste', 9600)),
-    'arx:potion_haste_p_upgrade': (player => player.addEffect('haste', 3600, { amplifier: 1 })),
+    'arx:potion_haste': (p => p.addEffect('haste', 3600)),
+    'arx:potion_haste_d_upgrade': (p => p.addEffect('haste', 9600)),
+    'arx:potion_haste_p_upgrade': (p => p.addEffect('haste', 3600, { amplifier: 1 })),
 
-    'arx:potion_instant_mp': (player => iDP(player, 'MPSmoothAccrue', 30)),
-    'arx:potion_instant_mp_p_upgrade': (player => iDP(player, 'MPSmoothAccrue', 90)),
+    'arx:potion_instant_mp': (p => iDP(p, 'MPSmoothAccrue', 30)),
+    'arx:potion_instant_mp_p_upgrade': (p => iDP(p, 'MPSmoothAccrue', 90)),
 
-    'arx:potion_mp_max': (player => sDP(player, 'maxMPBonusFromPotion', 180)),
-    'arx:potion_mp_max_d_upgrade': (player => sDP(player, 'maxMPBonusFromPotion', 480)),
-    'arx:potion_mp_max_p_upgrade': (player => sDP(player, 'maxMPBonusFromPotionImproved', 180)),
+    'arx:potion_mp_max': (p => sDP(p, 'maxMPBonusFromPotion', 180)),
+    'arx:potion_mp_max_d_upgrade': (p => sDP(p, 'maxMPBonusFromPotion', 480)),
+    'arx:potion_mp_max_p_upgrade': (p => sDP(p, 'maxMPBonusFromPotionImproved', 180)),
 
-    'arx:potion_mp_regen': (player => sDP(player, 'MPRegenBonusFromPotion', 180)),
-    'arx:potion_mp_regen_d_upgrade': (player => sDP(player, 'MPRegenBonusFromPotion', 480)),
-    'arx:potion_mp_regen_p_upgrade': (player => sDP(player, 'MPRegenBonusFromPotionImproved', 180)),
+    'arx:potion_mp_regen': (p => sDP(p, 'MPRegenBonusFromPotion', 180)),
+    'arx:potion_mp_regen_d_upgrade': (p => sDP(p, 'MPRegenBonusFromPotion', 480)),
+    'arx:potion_mp_regen_p_upgrade': (p => sDP(p, 'MPRegenBonusFromPotionImproved', 180)),
 
-    'arx:potion_no_freezing': (player => sDP(player, 'freezingBlockByPotion', 300)),
-    'arx:potion_no_freezing_d_upgrade': (player => sDP(player, 'freezingBlockByPotion', 1200)),
+    'arx:potion_no_freezing': (p => sDP(p, 'freezingBlockByPotion', 300)),
+    'arx:potion_no_freezing_d_upgrade': (p => sDP(p, 'freezingBlockByPotion', 1200)),
 
-    'arx:potion_perm_mp_max': (player => processPermanentPotion(player, 'arx:potion_perm_mp_max')),
-    'arx:potion_perm_mp_regen': (player => processPermanentPotion(player, 'arx:potion_perm_mp_regen')),
-    'arx:potion_perm_weight_limit_bonus': (player => processPermanentPotion(player, 'arx:potion_perm_weight_limit_bonus')),
+    'arx:potion_perm_mp_max': (p => processPermanentPotion(p, 'arx:potion_perm_mp_max')),
+    'arx:potion_perm_mp_regen': (p => processPermanentPotion(p, 'arx:potion_perm_mp_regen')),
+    'arx:potion_perm_weight_limit_bonus': (p => processPermanentPotion(p, 'arx:potion_perm_weight_limit_bonus')),
 
-    'arx:potion_remove_negative_effects': (player => {
-        player.removeEffect('slowness')
-        player.removeEffect('mining_fatigue')
-        player.removeEffect('instant_damage')
-        player.removeEffect('nausea')
-        player.removeEffect('blindness')
-        player.removeEffect('hunger')
-        player.removeEffect('weakness')
-        player.removeEffect('poison')
-        player.removeEffect('fatal_poison')
-        player.removeEffect('wither')
-        player.removeEffect('darkness')
-        player.removeEffect('infested')
-        player.removeEffect('oozing')
-        player.removeEffect('weaving')
-        player.removeEffect('wind_charged')
+    'arx:potion_remove_negative_effects': (p => {
+        p.removeEffect('slowness')
+        p.removeEffect('mining_fatigue')
+        p.removeEffect('instant_damage')
+        p.removeEffect('nausea')
+        p.removeEffect('blindness')
+        p.removeEffect('hunger')
+        p.removeEffect('weakness')
+        p.removeEffect('poison')
+        p.removeEffect('fatal_poison')
+        p.removeEffect('wither')
+        p.removeEffect('darkness')
+        p.removeEffect('infested')
+        p.removeEffect('oozing')
+        p.removeEffect('weaving')
+        p.removeEffect('wind_charged')
     }),
 
-    'arx:potion_stress': (player => iDP(player, 'stress', 1000)),
-    'arx:potion_stress_p_upgrade': (player => iDP(player, 'stress', 2000)),
+    'arx:potion_stress': (p => iDP(p, 'stress', 1000)),
+    'arx:potion_stress_p_upgrade': (p => iDP(p, 'stress', 2000)),
 
-    'arx:potion_trait_negative': (player => acquireTrait(player, [0, 0, 1])),
-    'arx:potion_trait_neutral': (player => acquireTrait(player, [0, 1, 0])),
-    'arx:potion_trait_positive': (player => acquireTrait(player, [1, 0, 0])),
+    'arx:potion_trait_negative': (p => acquireTrait(p, [0, 0, 1])),
+    'arx:potion_trait_neutral': (p => acquireTrait(p, [0, 1, 0])),
+    'arx:potion_trait_positive': (p => acquireTrait(p, [1, 0, 0])),
 
-    'arx:potion_weight_limit_bonus': (player => sDP(player, 'weighLimitBonusByPotion', 180)),
-    'arx:potion_weight_limit_bonus_d_upgrade': (player => sDP(player, 'weighLimitBonusByPotion', 480)),
-    'arx:potion_weight_limit_bonus_p_upgrade': (player => sDP(player, 'weighLimitBonusByPotionImproved', 180)),
+    'arx:potion_weight_limit_bonus': (p => sDP(p, 'weighLimitBonusByPotion', 180)),
+    'arx:potion_weight_limit_bonus_d_upgrade': (p => sDP(p, 'weighLimitBonusByPotion', 480)),
+    'arx:potion_weight_limit_bonus_p_upgrade': (p => sDP(p, 'weighLimitBonusByPotionImproved', 180)),
 
     // === OTHER ===
-    'arx:le_fishe_au_chocolat': (player => {
-        player.runCommand(`playsound le_fishe_au_chocolat @s ~ ~ ~ 0.5`)
+    'arx:le_fishe_au_chocolat': (p => {
+        p.runCommand(`playsound le_fishe_au_chocolat @s ~ ~ ~ 0.5`)
     }),
-    'arx:fiolix': (player => {
-        // ?
+    'arx:fiolix': (p => {
+        consumeFiolix(p, 150)
     }),
-    'arx:iron_pie': (player => {
-        sl(player, 'food.iron_pie')
-        player.runCommand(`effect @s fatal_poison infinite 255 true`)
+    'arx:iron_pie': (p => {
+        sl(p, 'food.iron_pie')
+        p.runCommand(`effect @s fatal_poison infinite 255 true`)
     }),
 }
 

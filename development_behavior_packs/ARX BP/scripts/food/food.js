@@ -240,9 +240,6 @@ export const foodRegistry = {
     }
 }
 
-// All possible tastes
-const tasteTypes = Object.keys(foodRegistry)
-
 // Get food type
 function getFoodType(foodId) {
     for (const key of Object.keys(foodRegistry)) {

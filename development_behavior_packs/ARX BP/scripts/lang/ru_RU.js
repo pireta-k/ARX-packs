@@ -50,12 +50,14 @@ export const ruLocalization = {
     'magic.modified_moving.blocked': '§cЧто-то блокирует ваше заклинание',
     'magic.dispel_magic.no_magic_on_self': '§6На мне нет магии, которую можно рассеять',
     'magic.dispel_effects.no_effects_on_self': '§6На мне нет эффектов, которые можно рассеять',
+    'magic.thirst_multichannel_staff': "Вы держите §aмногоканальный посох§f! Чтобы выбрать канал магии, присядьте и поворачивайте камерой вверх-вниз. Чтобы зафиксировать выбранный канал, встанье.",
     'magic.din_hijo.blocked_initiator': '§e$0$ блокирует моё заклинание запроса!',
     'magic.din_hijo.blocked_target': '§e$0$ пытался узнать мои заготовленые заклинания!',
     'magic.din_hijo.prepared.self': 'У меня в §d$0$§f канале заготовлено §6$1$',
     'magic.din_hijo.empty.self': 'У меня в §d$0$§f канале не заготовлено заклинаний',
     'magic.din_hijo.prepared.target': 'У цели в §d$0$§f канале заготовлено §6$1$',
     'magic.din_hijo.empty.target': 'У цели в §d$0$§f канале не заготовлено заклинаний',
+    'magic.channel': 'канал',
 
     'info.dev_options.title': 'Опции разработчика',
     'info.dev_options.enable_ambience_core': 'Ядро эмбиента',
@@ -106,6 +108,12 @@ export const ruLocalization = {
     'info.settings.dev_mode': 'Режим разработчика',
     'info.settings.dev_mode.tooltip': 'Вы сможете видеть технические данные',
     'info.settings.submit': 'Сохранить',
+
+    'info.devs.title': 'Разработчики Аркса',
+    'info.devs.lead': 'Ведущий разработчик Аркса',
+    'info.devs.music': 'Внутриигровая музыка',
+    'info.devs.thanks': 'Особая благодарность',
+    'info.devs.links': 'Ссылки',
 
     // Weapon skills
     'weapon_skill.damage.name': 'Урон',

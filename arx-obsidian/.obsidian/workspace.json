@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "2fece2b81cda73d1",
+        "id": "8809d67628e17366",
         "type": "tabs",
         "children": [
           {
-            "id": "8f79372269b3dfdb",
+            "id": "320c3bb69e289173",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -185,13 +185,14 @@
       "bases:Create new base": false
     }
   },
-  "active": "8f79372269b3dfdb",
+  "active": "320c3bb69e289173",
   "lastOpenFiles": [
-    "Blocks/💙 Optional.md",
+    "Blocks/❤️ Crucial.md",
+    "Details/Иногда при смерти в шахтах, игрок возрождается на поверхности.md",
     "Blocks/💚 Done.md",
     "Blocks/💛 Moderate.md",
+    "Blocks/💙 Optional.md",
     "Arx Ultima 1.x stable release planning.md",
-    "Blocks/❤️ Crucial.md",
     "Details/Убрать меч для харакири.md",
     "Details/Полностью переделать нокаут через перехват урона.md",
     "Details/Баг опции камеры.md",
@@ -204,7 +205,6 @@
     "Details/Система управления сущностями.md",
     "Details/Сделать чат удобным.md",
     "Details/Добавить больше эмбиэнт-партиклов.md",
-    "Details/Иногда при смерти в шахтах, игрок возрождается на поверхности.md",
     "Details/Механика ветра.md",
     "Details/Пофиксить анимацию размера груди.md",
     "Details/Доработать зарытое сокровище.md",

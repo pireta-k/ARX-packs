@@ -1637,10 +1637,22 @@ const dynamicPropertiesToDecrease = {
 
     'weighLimitBonusByPotion': '§6Бонус к весу (+2) от зелья закончился',
     'weighLimitBonusByPotionImproved': '§6Бонус к весу (+6) от зелья закончился',
+
+    'fiolix': undefined,
 };
 
-// Канал магии в action bar (мана — на HUD)
+// Mana display
 export function displayMPAndAdjacent(player) {
+
+    // Определяем, как нам показать ману
+    let manaStr = ''
+
+    if (player.getDynamicProperty("myRule:manaDisplayMode") === 'integers') {
+        manaStr = Math.floor(player.getDynamicProperty("mp"))
+    }
+    else {
+        manaStr = player.getDynamicProperty("mp").toFixed(1)
+    }
 
     // Определяем, что у нас за предмет
     const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Mainhand)
@@ -1661,34 +1673,25 @@ export function displayMPAndAdjacent(player) {
 
         if (staffChannelNum > 1 && !player.getDynamicProperty('hasEverHoldedMultiChannelStaff')) {
             sDP(player, 'hasEverHoldedMultiChannelStaff', true)
-            msgFromGuide(player, 'Вы держите §aмногоканальный посох§f! Чтобы выбрать канал магии, присядьте и поворачивайте камерой вверх-вниз. Чтобы зафиксировать выбранный канал, встанье.')
+            msgFromGuide(player, fl(player, 'magic.thirst_multichannel_staff'))
         }
 
         const activeChannel = getActiveStaffChannel(player, staffChannelNum)
         const activeTarget = player.getDynamicProperty(`channel_${activeChannel}_target`)
 
-        sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]} канал`, 2)
+        sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]} ` + fl(player, 'magic.channel'), 2)
+        sendToActionBar(player, 'MP', `${manaStr} `, 2)
     }
     // Мы держим руну
     else if (itemTags?.includes('is_rune')) {
 
         // Определяем каналы
-        let channels = undefined
-        if (itemTags?.includes('plumbum_rune')) channels = 4
-        else if (itemTags?.includes('naginitis_rune')) channels = 6
-        else if (itemTags?.includes('forfacorite_rune')) channels = 10
-        else if (itemTags?.includes('special_rune')) channels = 10
-        else if (itemTags?.includes('malafiotironite_rune')) channels = 8
-
-        // Не удалось определить каналы
-        if (channels === undefined) {
-            console.warn(`Не удалось считать количество каналов на руне. Игрок ${player}, предмет ${item.typeId}`)
-            return undefined
-        }
+        const channels = 10
 
         const activeChannel = getActiveStaffChannel(player, channels, false)
 
-        sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]} канал`, 2)
+        sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]} ` + fl(player, 'magic.channel'), 2)
+        sendToActionBar(player, 'MP', `${manaStr} `, 2)
     }
     // Мы держим волшебную палочку
     else if (itemTags?.includes('is_wand')) {
@@ -1713,6 +1716,7 @@ export function displayMPAndAdjacent(player) {
         const targetRuOpposite = player.getDynamicProperty(currentChannel) === 1 ? '§6на другого' : '§aна себя'
 
         sendToActionBar(player, 'magicChannel', `§d${channelRomanNums[activeChannel - 1]}§f канал ${targetRuCurrent}§f -> §o${targetRuOpposite}`, 2)
+        sendToActionBar(player, 'MP', `${manaStr}`, 2)
     }
     // У нас амулет гиперсинергии
     else if (checkForItem(player, "Legs", 'arx:amul_hypersynergy') || checkForItem(player, "Legs", 'arx:amul_hypersynergy_improved') || checkForItem(player, "Legs", 'arx:amul_hypersynergy_superior')) {
@@ -1726,5 +1730,9 @@ export function displayMPAndAdjacent(player) {
         const activeChannel = getActiveStaffChannel(player, channels, false)
 
         sendToActionBar(player, 'magicChannel', `§7${channelRomanNums[activeChannel - 1]} канал`, 2)
+        sendToActionBar(player, 'MP', `${manaStr}`, 2)
     }
+
+    // Выводим ману в любом случае
+    sendToActionBar(player, 'MP', `${manaStr}`, 2)
 }

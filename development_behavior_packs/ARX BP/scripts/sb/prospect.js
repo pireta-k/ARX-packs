@@ -1,5 +1,7 @@
+import { Dimension, world } from "@minecraft/server"
 import { obj2str } from "../arxLib/converters"
 import { sleep } from "../arxLib/time"
+import { Vector } from "../arxLib/math"
 
 const PROSPECTIONSTEP = 16
 const PROSP_PARALLEL = 8
@@ -444,7 +446,7 @@ function isProspectAvoided(x, z, avoid) {
 
 /** Run prospection — expanding rays from initialPos
  * @param {Dimension} d
- * @param {VectorXZ} initialPos
+ * @param {import("@minecraft/server").Vector2} initialPos
  * @param {Function} target returns true or Promise<true> when location fits
  * @param {number} [minDistance=0]
  * @param {number} [maxIterations=0] 0 = no limit
@@ -453,7 +455,7 @@ function isProspectAvoided(x, z, avoid) {
  * @param {number|boolean} [forceStep=false] number = custom step; true = exact minDistance on first ring
  * @param {string|Array<{x:number,z:number}>|{rays:Array,symmetric?:boolean}} [directions] ray shape; preset name or custom rays
  * @param {boolean} [symmetricDirections=true] mirror each ray to all quadrants
- * @returns {Vector3|undefined}
+ * @returns {import("@minecraft/server").Vector3 | undefined}
  */
 export async function runProspection(
     d,
@@ -513,14 +515,27 @@ export async function runProspection(
     return undefined
 }
 
-export async function validateTickingAreaLoading(d, pos1, pos2, name, timeout = 200) {
-    d.runCommand(`tickingarea add ${pos1.x} 0 ${pos1.z} ${pos2.x} 0 ${pos2.z} ${name} true`)
-    let iteration = 0
-    while (true) {
-        await sleep(1)
-        const isLoaded = d.isChunkLoaded({ x: pos1.x, y: 0, z: pos1.z }) && d.isChunkLoaded({ x: pos2.x, y: 0, z: pos2.z })
-        if (isLoaded) return true
-        iteration++
-        if (iteration >= timeout) return false
+/**
+ * Creates a tickingarea and validates it
+ * @param {Dimension} d 
+ * @param {import("@minecraft/server").Vector3 | import("@minecraft/server").Vector2} pos1
+ * @param {import("@minecraft/server").Vector3 | import("@minecraft/server").Vector2} pos2
+ * @param {string} name 
+ * @param {boolean} [force=false]
+ */
+export async function validateTickingAreaLoading(d, pos1, pos2, name, force = false) {
+    pos1.y ??= 0
+    pos2.y ??= 0
+
+    const areas = world.tickingAreaManager.getAllTickingAreas().map(area => area.identifier)
+    if (areas.includes(name)) {
+        if (force) {
+            world.tickingAreaManager.removeTickingArea(name)
+        } else {
+            console.warn(`validateTickingAreaLoading: cannot create tickingarea ${name} because it already exists`)
+            return undefined
+        }
     }
+
+    await world.tickingAreaManager.createTickingArea(name, { dimension: d, from: pos1, to: pos2 })
 }

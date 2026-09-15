@@ -1,390 +1,395 @@
 {
   "tiers": [
     {
-      "trades": [
-        //ПРОДАЖА
-        //Сигареты 
+      "total_exp_required": 0,
+      "groups": [
         {
-          "wants": [
+          "trades": [
+            //ПРОДАЖА
+            //Сигареты 
             {
-              "item": "arx:rat_coin"
-            }
-          ],
-          "gives": [
+              "wants": [
+                {
+                  "item": "arx:rat_coin"
+                }
+              ],
+              "gives": [
+                {
+                  "item": "arx:cigarette_fiolix",
+                  "quantity": 4
+                }
+              ]
+            },
+            //Камни
             {
-              "item": "arx:cigarette_fiolix",
-              "quantity": 4
-            }
-          ]
-        },
-        //Камни
-        {
-          "wants": [
-            {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 10,
-                "max": 30
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
+              "wants": [
                 {
-                  "item": "arx:aquamarine_gem"
-                },
+                  "item": "arx:rat_coin",
+                  "quantity": {
+                    "min": 5,
+                    "max": 15
+                  }
+                }
+              ],
+              "gives": [
                 {
-                  "item": "arx:beryl_gem"
-                },
-                {
-                  "item": "arx:chrysolite_gem"
-                },
-                {
-                  "item": "arx:cornelian_gem"
-                },
-                {
-                  "item": "arx:olivine_gem"
-                },
-                {
-                  "item": "arx:ruby_gem"
-                },
-                {
-                  "item": "arx:sapphire_gem"
-                },
-                {
-                  "item": "arx:topaz_gem"
-                },
-                {
-                  "item": "arx:zircon_gem"
-                },
-                {
-                  "item": "arx:small_stone",
-                  "functions": [
+                  "choice": [
                     {
-                      "function": "set_name",
-                      "name": "§r§fВолшебный камень"
+                      "item": "arx:aquamarine_gem"
+                    },
+                    {
+                      "item": "arx:beryl_gem"
+                    },
+                    {
+                      "item": "arx:chrysolite_gem"
+                    },
+                    {
+                      "item": "arx:cornelian_gem"
+                    },
+                    {
+                      "item": "arx:olivine_gem"
+                    },
+                    {
+                      "item": "arx:ruby_gem"
+                    },
+                    {
+                      "item": "arx:sapphire_gem"
+                    },
+                    {
+                      "item": "arx:topaz_gem"
+                    },
+                    {
+                      "item": "arx:zircon_gem"
+                    },
+                    {
+                      "item": "arx:small_stone",
+                      "functions": [
+                        {
+                          "function": "set_name",
+                          "name": "§r§fВолшебный камень"
+                        }
+                      ]
                     }
                   ]
                 }
-              ]
-            }
-          ],
-          "max_uses": 1
-        },
-        // Древние ошмётки
-        {
-          "wants": [
+              ],
+              "max_uses": 1
+            },
+            // Древние ошмётки
             {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 12,
-                "max": 24
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
+              "wants": [
                 {
-                  "item": "arx:damaged_electronics"
-                },
-                {
-                  "item": "arx:battery_broken"
-                },
-                {
-                  "item": "arx:small_motor"
-                },
-                {
-                  "item": "arx:cooler"
-                },
-                {
-                  "item": "arx:catushka"
-                },
-                {
-                  "item": "arx:copper_provoloka"
-                },
-                {
-                  "item": "arx:wire"
-                },
-                {
-                  "item": "arx:power_wire"
-                },
-                {
-                  "item": "arx:contacts"
-                },
-                {
-                  "item": "arx:shlafe"
-                },
-                {
-                  "item": "arx:antenna"
-                },
-                {
-                  "item": "arx:processor"
-                },
-                {
-                  "item": "arx:textolite"
+                  "item": "arx:rat_coin",
+                  "quantity": {
+                    "min": 12,
+                    "max": 24
+                  }
                 }
-              ]
-            }
-          ],
-          "max_uses": 1
-        },
-        // Алюм кольца
-        {
-          "wants": [
-            {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 6,
-                "max": 12
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
+              ],
+              "gives": [
                 {
-                  "item": "arx:ring_gold_aquamarine:30",
-                  "functions": [
+                  "choice": [
                     {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_aluminum_beryl:30",
-                  "functions": [
+                      "item": "arx:damaged_electronics"
+                    },
                     {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_aluminum_chrysolite:30",
-                  "functions": [
+                      "item": "arx:battery_broken"
+                    },
                     {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_aluminum_cornelian:30",
-                  "functions": [
+                      "item": "arx:small_motor"
+                    },
                     {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_aluminum_sapphire:30",
-                  "functions": [
+                      "item": "arx:cooler"
+                    },
                     {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_aluminum_topaz:30",
-                  "functions": [
+                      "item": "arx:catushka"
+                    },
                     {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_aluminum_zircon:30",
-                  "functions": [
+                      "item": "arx:copper_provoloka"
+                    },
                     {
-                      "function": "enchant_randomly"
+                      "item": "arx:wire"
+                    },
+                    {
+                      "item": "arx:power_wire"
+                    },
+                    {
+                      "item": "arx:contacts"
+                    },
+                    {
+                      "item": "arx:shlafe"
+                    },
+                    {
+                      "item": "arx:antenna"
+                    },
+                    {
+                      "item": "arx:processor"
+                    },
+                    {
+                      "item": "arx:textolite"
                     }
                   ]
                 }
-              ]
-            }
-          ],
-          "max_uses": 1
-        },
-        //Золотые кольца + ценовые аналоги
-        {
-          "wants": [
+              ],
+              "max_uses": 1
+            },
+            // Алюм кольца
             {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 15,
-                "max": 25
-              }
-            }
-          ],
-          "gives": [
+              "wants": [
+                {
+                  "item": "arx:rat_coin",
+                  "quantity": {
+                    "min": 2,
+                    "max": 4
+                  }
+                }
+              ],
+              "gives": [
+                {
+                  "choice": [
+                    {
+                      "item": "arx:ring_gold_aquamarine:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_aluminum_beryl:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_aluminum_chrysolite:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_aluminum_cornelian:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_aluminum_sapphire:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_aluminum_topaz:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_aluminum_zircon:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "max_uses": 1
+            },
+            //Золотые кольца + ценовые аналоги
             {
-              "choice": [
+              "wants": [
                 {
-                  "item": "arx:steampunk_glasses:150"
-                },
+                  "item": "arx:rat_coin",
+                  "quantity": {
+                    "min": 6,
+                    "max": 12
+                  }
+                }
+              ],
+              "gives": [
                 {
-                  "item": "arx:steampunk_pants:150"
-                },
-                {
-                  "item": "arx:ring_gold_aquamarine:30",
-                  "functions": [
+                  "choice": [
                     {
-                      "function": "enchant_randomly"
+                      "item": "arx:steampunk_glasses:150"
+                    },
+                    {
+                      "item": "arx:steampunk_pants:150"
+                    },
+                    {
+                      "item": "arx:ring_gold_aquamarine:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_gold_beryl:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_gold_chrysolite:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_gold_cornelian:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_gold_ruby:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_gold_sapphire:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_gold_topaz:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:ring_gold_zircon:30",
+                      "functions": [
+                        {
+                          "function": "enchant_randomly"
+                        }
+                      ]
+                    },
+                    {
+                      "item": "arx:xp_megashard"
                     }
                   ]
-                },
+                }
+              ],
+              "max_uses": 1
+            },
+            //Дорогой товар
+            {
+              "wants": [
                 {
-                  "item": "arx:ring_gold_beryl:30",
-                  "functions": [
+                  "item": "arx:rat_coin",
+                  "quantity": {
+                    "min": 10,
+                    "max": 20
+                  }
+                }
+              ],
+              "gives": [
+                {
+                  "choice": [
                     {
-                      "function": "enchant_randomly"
+                      "item": "arx:leave_axe:100"
+                    },
+                    {
+                      "item": "arx:hiperprocessor"
+                    },
+                    {
+                      "item": "arx:belt_lamp"
+                    },
+                    {
+                      "item": "arx:plush_gasgolder"
                     }
                   ]
-                },
+                }
+              ],
+              "max_uses": 1
+            },
+            //Очень дорогой товар
+            {
+              "wants": [
                 {
-                  "item": "arx:ring_gold_chrysolite:30",
-                  "functions": [
+                  "item": "arx:rat_coin_gold",
+                  "quantity": {
+                    "min": 1,
+                    "max": 2
+                  }
+                }
+              ],
+              "gives": [
+                {
+                  "choice": [
                     {
-                      "function": "enchant_randomly"
+                      "item": "arx:caryite_ingot"
+                    },
+                    {
+                      "item": "arx:forfactorite_ingot"
                     }
                   ]
-                },
+                }
+              ],
+              "max_uses": 1
+            },
+            // СКУПКА
+            // Мясо
+            {
+              "wants": [
                 {
-                  "item": "arx:ring_gold_cornelian:30",
-                  "functions": [
-                    {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
+                  "item": "arx:forcemeat",
+                  "quantity": {
+                    "min": 10,
+                    "max": 20
+                  }
+                }
+              ],
+              "gives": [
                 {
-                  "item": "arx:ring_gold_ruby:30",
-                  "functions": [
-                    {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_gold_sapphire:30",
-                  "functions": [
-                    {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_gold_topaz:30",
-                  "functions": [
-                    {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:ring_gold_zircon:30",
-                  "functions": [
-                    {
-                      "function": "enchant_randomly"
-                    }
-                  ]
-                },
-                {
-                  "item": "arx:xp_megashard"
+                  "item": "arx:rat_coin"
                 }
               ]
-            }
-          ],
-          "max_uses": 1
-        },
-        //Дорогой товар
-        {
-          "wants": [
+            },
+            //Вкид
             {
-              "item": "arx:rat_coin",
-              "quantity": {
-                "min": 18,
-                "max": 40
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
+              "wants": [
                 {
-                  "item": "arx:leave_axe:100"
-                },
+                  "item": "arx:fioletic",
+                  "quantity": {
+                    "min": 12,
+                    "max": 24
+                  }
+                }
+              ],
+              "gives": [
                 {
-                  "item": "arx:hiperprocessor"
-                },
-                {
-                  "item": "arx:belt_lamp"
-                },
-                {
-                  "item": "arx:plush_gasgolder"
+                  "item": "arx:rat_coin"
                 }
               ]
-            }
-          ],
-          "max_uses": 1
-        },
-        //Очень дорогой товар
-        {
-          "wants": [
-            {
-              "item": "arx:rat_coin_gold",
-              "quantity": {
-                "min": 3,
-                "max": 5
-              }
-            }
-          ],
-          "gives": [
-            {
-              "choice": [
-                {
-                  "item": "arx:caryite_ingot"
-                },
-                {
-                  "item": "arx:forfactorite_ingot"
-                }
-              ]
-            }
-          ],
-          "max_uses": 1
-        },
-        // СКУПКА
-        // Мясо
-        {
-          "wants": [
-            {
-              "item": "arx:forcemeat",
-              "quantity": {
-                "min": 15,
-                "max": 30
-              }
-            }
-          ],
-          "gives": [
-            {
-              "item": "arx:rat_coin"
-            }
-          ]
-        },
-        //Вкид
-        {
-          "wants": [
-            {
-              "item": "arx:fioletic",
-              "quantity": {
-                "min": 15,
-                "max": 35
-              }
-            }
-          ],
-          "gives": [
-            {
-              "item": "arx:rat_coin"
             }
           ]
         }

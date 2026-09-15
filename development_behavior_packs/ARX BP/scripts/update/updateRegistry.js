@@ -156,7 +156,7 @@ async function createLobby(d, hoster) {
     d.spawnEntity('arx:lobby_character_creation', { x: -9999.5, y: 4, z: -9993 }, { initialRotation: 180 })
     d.spawnEntity('arx:carved_bench', { x: -9994.5, y: 4, z: -10003.5 }, { initialRotation: 90 })
     d.spawnEntity('arx:statue_of_sinriada', { x: -9991.5, y: 8, z: -9997.0 }, { initialRotation: 90 })
-    d.runCommand('tickingarea remove lobbyReg')
+    world.tickingAreaManager.removeTickingArea('lobbyReg')
 }
 
 async function waitUntilHosterIsLoaded(hoster) {

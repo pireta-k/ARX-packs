@@ -86,6 +86,8 @@ export const enLocalization = {
     'magic.chain.current_empty': 'Current chain is empty',
     'magic.chain.current_channels': 'Current channels in chain:\n$0$',
     'magic.chain.empty_execute': '§6The chain is empty. Add something to it by casting the chain spell while sneaking.',
+    'magic.thirst_multichannel_staff': "You're holding a §amultichannel staff§f! To pick a channel, sneak and tilt your camera up or down. To fixate the cannel, stop sneaking.",
+    'magic.channel': 'channel',
 
     'magic.magilight.extended': 'Magilight duration extended (§a$0$§f min)',
     'magic.magilight.gained': 'You gain magilight! (for §a$0$§f min)',

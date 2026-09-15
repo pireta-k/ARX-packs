@@ -330,7 +330,7 @@ export let spellRegistry = {
         color: '#86decf',
         description: 'заклинание цепи заклинаний',
         rayCast: false,
-        handler: (player) => { chain(player) }
+        handler: async (player) => { await chain(player) }
     },
 
     // Стрельба с лука
@@ -479,7 +479,6 @@ export let spellRegistry = {
         mpCost: 20,
         color: '#a0c313',
         description: 'заклинание отравления',
-        onlyOnPlayers: true,
         handler: (player) => {
             player.runCommand('effect @s poison 5 0 true')
         }
@@ -488,7 +487,6 @@ export let spellRegistry = {
         mpCost: 60,
         color: '#a0c313',
         description: 'заклинание длительного отравления',
-        onlyOnPlayers: true,
         handler: (player) => {
             player.runCommand('effect @s poison 15 0 true')
         }
@@ -497,7 +495,6 @@ export let spellRegistry = {
         mpCost: 40,
         color: '#a0c313',
         description: 'заклинание усиленного отравления',
-        onlyOnPlayers: true,
         handler: (player) => {
             player.runCommand('effect @s poison 5 1 true')
         }
@@ -506,7 +503,6 @@ export let spellRegistry = {
         mpCost: 120,
         color: '#a0c313',
         description: 'заклинание усиленного длительного отравления',
-        onlyOnPlayers: true,
         handler: (player) => {
             player.runCommand('effect @s poison 5 1 true')
         }
