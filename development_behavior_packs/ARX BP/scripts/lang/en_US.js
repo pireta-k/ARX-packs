@@ -424,4 +424,10 @@ export const enLocalization = {
 
     "eve.name": 'Eve',
     "chat.eve.hello": "Hi! I'm Eve.",
+
+    "update.played_world_form.title": 'Arx installation',
+    "update.played_world_form.body": '[§cVERY IMPORTANT§f]\nIt looks like you\'ve already played this world for a while without §6Arx Ultima§f add-on. Arx installation will §cSEVERELY CHANGE§f this world. §cDO NOT§f install Arx here if you cherish this world. For best experience, install Arx only in new worlds. \n\nDo you want to install Arx into this world?',
+    "update.played_world_form.continue": '§v>>§f §8Install Arx §v<<§f',
+    "update.played_world_form.decline": '§a>>§f §8Decline [Recommended] §a<<§f',
+    "update.played_world_form.cancelled": 'Arx installation §ccancelled§f. Arx cannot properly work without installation, so, remove Arx packs from this world or re-enter this world and §aconfirm§f Arx installation.',
 }

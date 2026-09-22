@@ -1,10 +1,12 @@
 // Arx pack updates — version migrations and first-time world setup
 
-import { world } from "@minecraft/server";
+import { Player, system, world } from "@minecraft/server";
 import { VERSION } from "../_main"
 import { gDP, sDP } from "../arxLib/DPOperations"
 import { getAdmins } from "../arxLib/admin";
 import { updateRegistry } from "./updateRegistry";
+import { MessageFormData } from "@minecraft/server-ui";
+import { fl } from "../lang/fetchLocalization";
 
 // === Version helpers ===
 // VERSION and latestV are arrays [major, minor, patch], keys in updates use "0,1,19" format
@@ -92,6 +94,77 @@ async function applyUpdates(currentV, latestV) {
 }
 
 // Run
-world.afterEvents.worldLoad.subscribe(() => {
-    detectUpdate()
+world.afterEvents.worldLoad.subscribe(async () => {
+    // Check, should we start Arx
+    const version = gDP(world, 'latestV')
+
+    // Thirst arx load
+    if (version === undefined) {
+        await waitForPlayers()
+
+        const players = world.getPlayers()
+        const playedThisWorldTicks = world.getAbsoluteTime()
+
+        console.log('Version: ' + version + ', AllPlayers = ' + players.length + ', playedThisWorldTicks = ' + playedThisWorldTicks)
+
+        if (playedThisWorldTicks > 3600) { // More then 3 minutes
+            for (const p of players) {
+                playedWorldNotification(p)
+            }
+        }
+        else {
+            console.log('Arx installation was started automatically, playedThisWorldTicks looks OK')
+            detectUpdate()
+        }
+    }
+    else {
+        console.log('Arx installation was started automatically, arx version is not undefined')
+        detectUpdate()
+    }
 })
+
+/**
+ * Show a player a window, that suggests them to remove Arx pack from a played world
+ * @param {Player} p 
+ */
+function playedWorldNotification(p) {
+    let f = new MessageFormData().title(fl(p, 'update.played_world_form.title'))
+
+    f.body(fl(p, 'update.played_world_form.body'))
+
+    f.button1(fl(p, 'update.played_world_form.continue'))
+    f.button2(fl(p, 'update.played_world_form.decline'))
+    f.show(p).then(data => {
+        //If the form was not shown
+        if (data.cancelationReason == "UserBusy") {
+            //Canceling a function and trying to display the form again
+            return system.runTimeout(() => {
+                playedWorldNotification(p)
+            }, 10)
+        }
+        //Code if the form was shown
+        if (data.selection === 0) {
+            console.log('Arx installation was started by a form')
+            detectUpdate()
+        } else {
+            console.log('Arx installation was cancelled by a form')
+            p.sendMessage(fl(p, 'update.played_world_form.cancelled'))
+        }
+    })
+}
+
+/**
+ * Makes Arx to wait for at least one player to enter
+ */
+async function waitForPlayers() {
+    return new Promise((resolve) => {
+        const checkPlayers = () => {
+            if (world.getPlayers().length > 0) {
+                resolve(true);
+            } else {
+                system.runTimeout(checkPlayers, 2)
+            }
+        };
+        checkPlayers()
+    })
+}

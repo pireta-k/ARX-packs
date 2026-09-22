@@ -501,17 +501,6 @@ export const coreFramework = {
     time: {
         tickSpeed: 20,
         operations: (data) => {
-            // Rewrite global playtime panel
-            try {
-                world.scoreboard.removeObjective('playtime_display')
-            }
-            catch { }
-            world.scoreboard.addObjective('playtime_display', "§a§lHours played")
-            for (const player of data.players) {
-                setScore(player, 'playtime_display', gDP(player, 'playTimeH'))
-            }
-            world.scoreboard.setObjectiveAtDisplaySlot('List', { objective: world.scoreboard.getObjective('playtime_display'), sortOrder: 1 })
-
             // Every player's time
             for (const player of data.players) {
                 // Playtime (doesn't depend on character existance)

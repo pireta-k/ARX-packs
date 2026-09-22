@@ -24,12 +24,12 @@ export const bannedItems = {
         'minecraft:stick': 1
     },
 
-    'minecraft:golden_boots': { 'minecraft:golden_ingot': 4 },
-    'minecraft:golden_chestplate': { 'minecraft:golden_ingot': 8 },
-    'minecraft:golden_helmet': { 'minecraft:golden_ingot': 5 },
+    'minecraft:golden_boots': { 'minecraft:gold_ingot': 4 },
+    'minecraft:golden_chestplate': { 'minecraft:gold_ingot': 8 },
+    'minecraft:golden_helmet': { 'minecraft:gold_ingot': 5 },
     'minecraft:golden_leggings': { 'minecraft:golden': 7 },
     'minecraft:golden_sword': {
-        'minecraft:golden_ingot': 2,
+        'minecraft:gold_ingot': 2,
         'minecraft:stick': 1
     },
 

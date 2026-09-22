@@ -123,7 +123,7 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
     const player = event.player; // Получаем объект игрока
     player.runCommand("function javascript/scores_autoreg")
 
-    player.nameTag = player.RPName
+    player.nameTag = player.RPName ?? ''
 
     // Restart music
     sDP(player, 'musicLocation', undefined)
