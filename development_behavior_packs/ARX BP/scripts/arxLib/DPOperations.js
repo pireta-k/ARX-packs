@@ -1,4 +1,4 @@
-import { Block, Entity, ItemStack, World } from "@minecraft/server"
+import { Block, Entity, ItemStack, Player, World } from "@minecraft/server"
 import { str2obj, obj2str } from "./converters"
 
 const specialDataTypePrefix = 'JSON$'
@@ -16,13 +16,16 @@ export function sDP(object, DPName, value) {
         return undefined
     }
     if (typeof value === 'function') {
-        console.warn('Cannot write function to DP with sDP()')
+        console.warn('sDP(): cannot write function')
         return undefined
     }
     if (typeof value === 'string' && value.startsWith(specialDataTypePrefix)) {
         console.warn(`sDP(): cannot write a string that starts with ${specialDataTypePrefix}`)
         return undefined
     }
+    // if (isNaN(value)) {
+    //     console.warn(`sDP(): cannot write a NaN`)
+    // }
 
     // Get the old value of this DP
     const oldValue = object.getDynamicProperty(DPName)
@@ -36,8 +39,13 @@ export function sDP(object, DPName, value) {
         try { // I use try - catch, because sometimes system can throw an error when trying to sDP at imcopletely loaded player. It just can be ignored
             object.setDynamicProperty(DPName, value)
         }
-        catch {
-            console.log(`sDP(): an unexpected problem with writing DP to Entity`)
+        catch (error) {
+            let objData = 'unknown'
+            if (object instanceof World) objData = 'world'
+            else if (object instanceof Player) objData = `player ${object.name}`
+            else if (object instanceof Entity) objData = `entity ${object.typeId}`
+            else if (object instanceof ItemStack) objData = `item ${object.type}`
+            console.log(`sDP(): an unexpected problem with writing DP to Object: ${error}${error.stack}\nObject data: ${objData}\nSetting ${value} to DP ${DPName}`)
         }
     }
 

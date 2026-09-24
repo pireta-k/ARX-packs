@@ -1,4 +1,4 @@
-import { system } from "@minecraft/server"
+import { Player, system } from "@minecraft/server"
 
 // Config
 const LOAD_CHECK = {
@@ -8,12 +8,12 @@ const LOAD_CHECK = {
 };
 
 /**
- * Проверяет, загрузился ли игрок, с ожиданием синхронизации свойства
- * @param {Object} player - объект игрока
- * @param {Object} [options] - переопределение настроек
+ * Waits to player to be loaded
+ * @param {Player} player
+ * @param {Object} [options]
  * @param {number} [options.timeout] - макс. время ожидания в мс
  * @param {number} [options.interval] - интервал опроса в мс
- * @returns {Promise<boolean>} - true если игрок загружен, false если таймаут/ошибка
+ * @returns {Promise<boolean>} - true когда игрок загружен, false если таймаут/ошибка
  */
 export async function isPlayerCompletelyLoaded(player, options = {}) {
     const timeout = options.timeout ?? LOAD_CHECK.timeout;

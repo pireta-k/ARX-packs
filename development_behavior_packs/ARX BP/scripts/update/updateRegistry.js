@@ -6,16 +6,54 @@ import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
 import { sleep } from "../arxLib/time";
 import { world } from "@minecraft/server";
 import { sDP } from "../arxLib/DPOperations"
-import { vKey } from "./_update"
 
-// Update registry
-export const updateRegistry = {
-    [vKey([0, 0, 0])]: async () => {
-        await runArxFirstLoad()
+/**
+ * @typedef {Object} SingleUpdate
+ * @property {import("../_main").ArxVersion} version
+ * @property {Function} do
+ */
+
+/**
+ * Updates must be strictly sorted in ascending order
+ * @typedef {SingleUpdate[]} UpdateRegistry 
+ */
+
+/** @type {UpdateRegistry} */
+export const updateRegistry = [
+    // Set settings to the default values
+    {
+        'version': [0, 0, 1],
+        'do': async () => {
+            // Gamerules default settings
+            world.gameRules.sendCommandFeedback = false
+            world.gameRules.doInsomnia = false
+            world.gameRules.doWeatherCycle = false
+            world.gameRules.showDeathMessages = false
+            world.gameRules.doImmediateRespawn = true
+            world.gameRules.locatorBar = false
+            world.gameRules.spawnRadius = 0
+            world.gameRules.showTags = false
+            world.gameRules.naturalRegeneration = true
+            world.gameRules.recipesUnlock = false
+
+            // Arx default settings
+            sDP(world, 'generateGrass', true)
+            sDP(world, 'anticheat', true)
+            sDP(world, 'allowArxCameras', false)
+            sDP(world, 'enableWorldBorder', false)
+            sDP(world, 'worldBorderRange', 5000)
+            sDP(world, 'enableAmbienceCore', true)
+            sDP(world, 'enableFogs', true)
+        }
     },
-    [vKey([0, 1, 17])]: () => console.warn('Arx update: 0.1.17'),
-    [vKey([0, 1, 18])]: () => console.warn('Arx update: 0.1.18'),
-}
+    // Create lobby
+    {
+        'version': [0, 0, 5],
+        'do': () => {
+            console.warn('Update 0.0.2')
+        }
+    }
+]
 
 // === Update 0.0.0 — first-time Arx setup ===
 // Full first load: wait for hoster, then scores, lobby, prospected open-world spawn
@@ -30,7 +68,6 @@ async function runArxFirstLoad() {
         else await sleep(1)
     }
 
-    console.log('Initializing Arx...')
     d.runCommand("function world_reg/_world_reg") // Register scores
 
     await waitUntilHosterIsLoaded(hoster)
@@ -40,26 +77,7 @@ async function runArxFirstLoad() {
 
     world.setDefaultSpawnLocation({ x: -10000, y: 4, z: -10000 })
 
-    // Gamerules default settings
-    world.gameRules.sendCommandFeedback = false
-    world.gameRules.doInsomnia = false
-    world.gameRules.doWeatherCycle = false
-    world.gameRules.showDeathMessages = false
-    world.gameRules.doImmediateRespawn = true
-    world.gameRules.locatorBar = false
-    world.gameRules.spawnRadius = 0
-    world.gameRules.showTags = false
-    world.gameRules.naturalRegeneration = true
-    world.gameRules.recipesUnlock = false
 
-    // Arx default settings
-    sDP(world, 'generateGrass', true)
-    sDP(world, 'anticheat', true)
-    sDP(world, 'allowArxCameras', false)
-    sDP(world, 'enableWorldBorder', false)
-    sDP(world, 'worldBorderRange', 5000)
-    sDP(world, 'enableAmbienceCore', true)
-    sDP(world, 'enableFogs', true)
 
     // Load lobby chunks before hoster teleports there
     await validateTickingAreaLoading(d, { x: -9980, z: -9980 }, { x: -10020, z: -10020 }, 'lobbyReg')

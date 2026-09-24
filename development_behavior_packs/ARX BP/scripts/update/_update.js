@@ -1,96 +1,93 @@
 // Arx pack updates — version migrations and first-time world setup
 
 import { Player, system, world } from "@minecraft/server";
-import { VERSION } from "../_main"
+import { isArxVersionValid, VERSION } from "../_main"
 import { gDP, sDP } from "../arxLib/DPOperations"
-import { getAdmins } from "../arxLib/admin";
 import { updateRegistry } from "./updateRegistry";
 import { MessageFormData } from "@minecraft/server-ui";
 import { fl } from "../lang/fetchLocalization";
 
-// === Version helpers ===
-// VERSION and latestV are arrays [major, minor, patch], keys in updates use "0,1,19" format
+export const ZEROVERSION = [0, 0, 0]
 
-export function vKey(v) {
-    return `${v[0]},${v[1]},${v[2]}`
-}
+/** @typedef { 'newer' | 'older' | 'equal' | undefined } VersionComparsionResponce */
 
-function parseVKey(key) {
-    return key.split(',').map(Number)
-}
+/**
+ * Compares two versions
+ * @param {import("../_main").ArxVersion} versionA
+ * @param {import("../_main").ArxVersion} versionB
+ * @returns {VersionComparsionResponce}
+ */
+function compareVersions(versionA, versionB) {
+    if (!isArxVersionValid(versionA)) return undefined
+    if (!isArxVersionValid(versionB)) return undefined
 
-function compareVersion(a, b) {
-    const len = Math.max(a.length, b.length, 3)
-    for (let i = 0; i < len; i++) {
-        const diff = (a[i] ?? 0) - (b[i] ?? 0)
-        if (diff !== 0) return diff < 0 ? -1 : 1
+    for (let i = 0; i < 3; i++) {
+        if (versionA[i] < versionB[i]) return 'older' // Version A is older than version B
+        if (versionA[i] > versionB[i]) return 'newer'
     }
-    return 0
+
+    return 'equal'
 }
 
-function versionLess(a, b) {
-    return compareVersion(a, b) < 0
-}
-
-function versionEqual(a, b) {
-    return compareVersion(a, b) === 0
-}
-
-// Which migration steps to run between saved latestV and current pack VERSION (inclusive)
-function getVersionsToApply(fromV, toV) {
-    return Object.keys(updateRegistry)
-        .map(parseVKey)
-        .filter(v => !versionLess(v, fromV) && !versionLess(toV, v))
-        .sort(compareVersion)
-}
-
-// Migrations finished — latestV on world matches current pack VERSION
-// Needs for external usage
+/**
+ * Is Arx update finished?
+ * @returns {boolean}
+ */
 export function isArxWorldReady() {
-    return versionEqual(gDP(world, 'latestV', [0, 0, 0]), VERSION)
+    return ['equal', 'newer'].includes(compareVersions(gDP(world, 'latestV', ZEROVERSION), VERSION))
 }
 
-// === Update detection ===
-// Runs on worldLoad. Compares world DP latestV with VERSION from _main.js
+/**
+ * === Main Update function ===
+ * It searches for updates and implements them
+ */
+async function update() {
+    let installedVersion = gDP(world, 'latestV')
+    // Check current version
+    if (installedVersion === undefined || !isArxVersionValid(installedVersion)) {
+        sDP(world, 'latestV', ZEROVERSION)
+        installedVersion = ZEROVERSION
+    }
+    const comparsionResult = compareVersions(installedVersion, VERSION)
 
-export async function detectUpdate() {
-    const currentV = VERSION
-    const latestV = gDP(world, 'latestV', [0, 0, 0])
+    // Pack version unchanged
+    if (comparsionResult === 'equal') return
 
-    // Pack version unchanged — nothing to do
-    if (versionEqual(currentV, latestV)) return
+    // Pack version is older
+    else if (comparsionResult === 'newer') {
+        console.warn(`Looks like Arx packs were downgraded (${installedVersion} -> ${VERSION}). Doing nothing.`)
+    }
 
-    // Downgrade (older pack on newer world data) — don't run migrations, only sync latestV
-    if (versionLess(currentV, latestV)) {
-        console.warn(`Arx: downgrade ${vKey(latestV)} -> ${vKey(currentV)}`)
-        sDP(world, 'latestV', currentV)
+    // Pack version is newer (UPDATE!!!)
+    else if (comparsionResult === 'older') {
+
+        const elementsToApply = updateRegistry.filter(elem => compareVersions(elem.version, installedVersion) === 'newer')
+        if (elementsToApply.length === 0) {
+            console.log('No element to apply in this update')
+        }
+        else {
+            // Implement updates
+            for (const element of elementsToApply) {
+                try {
+                    await element.do()
+                } catch (error) {
+                    console.error(`[§cUpdate system§f]: Cannot install an update for an element for version ${element.version}. \nError: ${error.stack}${error}`)
+                    console.warn(`A §ccritical§f error occured during current Arx update. Try re-entering the world or message Arx developers (you can find contacts in menu -> devs)`)
+                    return // Immediately stop
+                }
+                sDP(world, 'latestV', element.version)
+            }
+            console.warn(`This world was §asucessfully§f updated for Arx Ultima ${VERSION} o§8(installed ${elementsToApply.length} updates)`)
+        }
+        // After an update was finished, set world version to Arx pack version
+        sDP(world, 'latestV', VERSION)
+    }
+
+    // Error in comparsion
+    else {
+        console.error(`An unknown error occured while checking for updates. Versions: installedVersion = ${installedVersion}, VERSION = ${VERSION}`)
         return
     }
-
-    await applyUpdates(currentV, latestV)
-}
-
-// Run every migration in order, then remember the pack version on the world
-async function applyUpdates(currentV, latestV) {
-    const versionsToRun = getVersionsToApply(latestV, currentV)
-
-    for (const v of versionsToRun) {
-        const fn = updateRegistry[vKey(v)]
-        if (typeof fn !== 'function') {
-            console.warn(`Arx update [${vKey(v)}]: no function registered`)
-            continue
-        }
-        try {
-            await fn({ from: latestV, to: currentV, version: v })
-        } catch (e) {
-            console.warn(`Arx update [${vKey(v)}] failed: ${e}`)
-        }
-    }
-
-    sDP(world, 'latestV', currentV)
-    getAdmins().forEach(p => {
-        p.sendMessage(`Arx updated: ${vKey(latestV)} -> ${vKey(currentV)}`)
-    })
 }
 
 // Run
@@ -108,18 +105,16 @@ world.afterEvents.worldLoad.subscribe(async () => {
         console.log('Version: ' + version + ', AllPlayers = ' + players.length + ', playedThisWorldTicks = ' + playedThisWorldTicks)
 
         if (playedThisWorldTicks > 3600) { // More then 3 minutes
-            for (const p of players) {
-                playedWorldNotification(p)
-            }
+            playedWorldNotification(players[0])
         }
         else {
-            console.log('Arx installation was started automatically, playedThisWorldTicks looks OK')
-            detectUpdate()
+            console.log('Arx updating was started automatically, playedThisWorldTicks looks OK')
+            update()
         }
     }
     else {
-        console.log('Arx installation was started automatically, arx version is not undefined')
-        detectUpdate()
+        console.log('Arx updating was started automatically, arx version is not undefined')
+        update()
     }
 })
 
@@ -144,10 +139,10 @@ function playedWorldNotification(p) {
         }
         //Code if the form was shown
         if (data.selection === 0) {
-            console.log('Arx installation was started by a form')
-            detectUpdate()
+            console.log('Arx updating was started by a form')
+            update()
         } else {
-            console.log('Arx installation was cancelled by a form')
+            console.log('Arx updating was cancelled by a form')
             p.sendMessage(fl(p, 'update.played_world_form.cancelled'))
         }
     })

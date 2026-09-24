@@ -9,7 +9,7 @@ import { infoAboutStatistics } from "./infoAboutStatistics"
 import { infoAboutAchievements } from "./infoAboutAchievements"
 import { knownSpellsBook } from "./knownSpellsBook"
 import { infoAboutTraits } from "./infoAboutTraits"
-import { arxSettings, arxGlobalSettings, devOptions } from "./arxSettings"
+import { arxSettings, arxGlobalSettings, simpleDevOptions } from "./arxSettings"
 import { infoAboutArxDevs } from "./devs"
 import { questsInfo } from '../quests'
 
@@ -99,7 +99,7 @@ export function infoScreen(player) {
         devOptions: {
             condition: () => isAdmin(player) && gDP(player, 'myRule:devMode'),
             icon: 'textures/ui/info/devOptions',
-            exe: () => devOptions(player)
+            exe: () => simpleDevOptions(player)
         },
     },
         'info',

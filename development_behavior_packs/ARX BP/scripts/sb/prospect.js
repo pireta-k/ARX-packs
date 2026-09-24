@@ -127,7 +127,7 @@ async function prospectSlots(d, points) {
     try {
         await Promise.all(
             slice.map((p, i) =>
-                validateTickingAreaLoading(d, { x: p.x, z: p.z }, { x: p.x, z: p.z }, names[i])
+                validateTickingAreaLoading(d, { x: p.x, z: p.z }, { x: p.x, z: p.z }, names[i], true)
             )
         )
 
@@ -229,7 +229,6 @@ export async function measureHilliness(d, center, options = {}) {
     const customName = options.tickingAreaName
     const lockName = customName ?? await acquireTerrainAreaName()
     const name = lockName ?? PROSP_TERRAIN_AREA
-    const timeout = options.timeout ?? 200
     const cx = Math.floor(center.x)
     const cz = Math.floor(center.z)
     const centerY = Math.floor(center.y)
@@ -241,7 +240,7 @@ export async function measureHilliness(d, center, options = {}) {
             { x: cx - radius, z: cz - radius },
             { x: cx + radius, z: cz + radius },
             name,
-            timeout
+            true
         )
         if (!loaded) return getHillinessStats(heights, centerY)
 

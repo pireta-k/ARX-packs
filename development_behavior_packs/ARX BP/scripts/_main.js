@@ -51,11 +51,35 @@ import { playSound } from "./arxLib/audio"
 import { random } from "./arxLib/random"
 import { bannedItems } from "./items/banned"
 
-// Type of release. 
-// Available: alpha, beta, special, stable
+/**
+ * Type of an Arx release
+ * @typedef { 'alpha' | 'beta' | 'special' | 'stable' } ArxReleaseType
+ */
+/** @type {ArxReleaseType} */
 export const RELEASE = 'alpha'
+/** 
+ * Requires 3 numbers, like [1, 5, 53]
+ * @typedef { number[] } ArxVersion 
+ */
+/** @type {ArxVersion} */
 export const VERSION = [0, 2, 2]
 export const REPOSITORY = 'https://github.com/pireta-k/ARX-packs'
+
+// Version check
+/**
+ * Checks, is the provided variable looks like an Arx version
+ * @param {ArxVersion} version
+ * @returns {boolean}
+ */
+export function isArxVersionValid(version) {
+    if (!Array.isArray(version)) return false
+    if (version.length !== 3) return false
+    if (!version.every(v => typeof v === 'number')) return false
+    return true
+}
+if (!isArxVersionValid(VERSION)) {
+    console.warn(`Arx version, provided in _main.js, doesn't look valid`)
+}
 
 world.afterEvents.playerButtonInput.subscribe((event) => {
     const button = event.button

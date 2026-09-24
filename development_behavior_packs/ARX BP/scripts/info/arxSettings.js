@@ -1,8 +1,10 @@
-import { ModalFormData, ActionFormData } from "@minecraft/server-ui"
+import { UI } from "../arxLib/UI"
+import { RELEASE, VERSION } from "../_main"
+import { ModalFormData, ActionFormData, FormCancelationReason } from "@minecraft/server-ui"
 import { gDP, sDP } from "../arxLib/DPOperations"
 import { fl, getPlayerLanguage, langMap } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
-import { world } from "@minecraft/server"
+import { Player, world } from "@minecraft/server"
 import { coreFramework, coreErrorCounts, corePing } from "../core/core"
 import {
     getReviewLanguages,
@@ -216,7 +218,7 @@ export function devLocalizationReview(p) {
             return
         }
 
-        devOptions(p)
+        simpleDevOptions(p)
     })
 }
 
@@ -232,68 +234,66 @@ export function devCoreReview(p) {
     })
 }
 
-/** @param {import("@minecraft/server").Player} p @param {string} [tab] вкладка для будущего расширения */
-export function devOptions(p, tab = 'main') {
 
-    /** @type {{ tab: string, dp: string, label: string, tooltip: string, value: boolean }[]} */
-    const toggles = [
+/**
+ * Show dev options screen to player
+ * This one is updated. The old one was made with AI and I utterly hate it (fuck cursor)
+ * @param {Player} p 
+ */
+export function simpleDevOptions(p) {
+    UI.dynamicActionFormData(p,
         {
-            tab: 'main',
-            dp: 'enableAmbienceCore',
-            label: 'info.dev_options.enable_ambience_core',
-            tooltip: 'info.dev_options.enable_ambience_core.tooltip',
-            value: gDP(world, 'enableAmbienceCore') ?? true,
+            devWorldSettings: {
+                icon: 'textures/ui/info/dev_options/worldSettings',
+                exe: () => {
+                    devWorldSettings(p)
+                }
+            },
+            coreReview: {
+                icon: 'textures/ui/info/dev_options/core',
+                exe: () => {
+                    devCoreReview(p)
+                }
+            },
+            localizationReview: {
+                icon: 'textures/ui/info/dev_options/lang',
+                exe: () => {
+                    devLocalizationReview(p)
+                }
+            },
         },
+        "info.dev_options",
         {
-            tab: 'main',
-            dp: 'enableFogs',
-            label: 'info.dev_options.enable_fogs',
-            tooltip: 'info.dev_options.enable_fogs.tooltip',
-            value: gDP(world, 'enableFogs') ?? true,
-        },
-    ].filter(t => t.tab === tab)
-
-    /** @type {{ tab: string, action: string, label: string }[]} */
-    const navButtons = [
-        {
-            tab: 'main',
-            action: 'coreReview',
-            label: 'info.dev_options.core_review',
-        },
-        {
-            tab: 'main',
-            action: 'localizationReview',
-            label: 'info.dev_options.localization_review',
-        },
-    ].filter(b => b.tab === tab)
-
-    const form = new ActionFormData()
-        .title(fl(p, 'info.dev_options.title'))
-
-    for (const t of toggles) {
-        const stateKey = t.value ? 'info.dev_options.on' : 'info.dev_options.off'
-        form.button(`${fl(p, t.label)}: ${fl(p, stateKey)}\n§d§o${fl(p, t.tooltip)}`)
-    }
-
-    for (const b of navButtons) {
-        form.button(fl(p, b.label))
-    }
-
-    form.show(p).then(response => {
-        if (response.canceled) return
-
-        const toggleCount = toggles.length
-
-        if (response.selection < toggleCount) {
-            const selected = toggles[response.selection]
-            if (!selected) return
-            sDP(world, selected.dp, !selected.value)
-            devOptions(p, tab)
-            return
+            title: fl(p, 'info.dev_options.title'),
+            body: `Arx §6Ultima§f v.${VERSION}\nRelease type: ${RELEASE}`
         }
+    )
+}
 
-        const nav = navButtons[response.selection - toggleCount]
-        if (nav?.action === 'coreReview') devCoreReview(p)
-        else if (nav?.action === 'localizationReview') devLocalizationReview(p)
+/**
+ * Show dev world's settings
+ * @param {Player} p 
+ */
+export function devWorldSettings(p) {
+    const ambiencePreviousValue = gDP(world, 'enableAmbienceCore', false)
+    const fogsPreviousValue = gDP(world, 'enableFogs', false)
+    const DNPCMLogPreviousValue = gDP(world, 'enableDNPCMLog', false)
+
+    const f = new ModalFormData()
+        .title(fl(p, 'info.dev_world_settings.title'))
+        .toggle(fl(p, 'info.dev_world_settings.enable_ambience_core'), { defaultValue: ambiencePreviousValue, tooltip: fl(p, 'info.dev_world_settings.enable_ambience_core.tooltip') })
+        .toggle(fl(p, 'info.dev_world_settings.enable_fogs'), { defaultValue: fogsPreviousValue, tooltip: fl(p, 'info.dev_world_settings.enable_fogs.tooltip') })
+        .toggle(fl(p, 'info.dev_world_settings.enable_DNPCM_log'), { defaultValue: DNPCMLogPreviousValue, tooltip: fl(p, 'info.dev_world_settings.enable_DNPCM_log.tooltip') })
+        .submitButton(fl(p, 'info.dev_world_settings.save'))
+
+    f.show(p).then(responce => {
+        const fv = responce.formValues
+        if (fv) {
+            sDP(world, 'enableAmbienceCore', fv[0])
+            sDP(world, 'enableFogs', fv[1])
+            sDP(world, 'enableDNPCMLog', fv[2])
+        }
+        if (responce.cancelationReason === FormCancelationReason.UserClosed) simpleDevOptions(p)
+
     })
 }

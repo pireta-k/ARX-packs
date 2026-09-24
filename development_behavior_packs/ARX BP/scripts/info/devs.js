@@ -25,8 +25,6 @@ function getBodyText(p) {
     bodyText += 'Discord: §bdiscord.gg/CngH7spGbn§f\n'
     bodyText += 'Github: §bgithub.com/pireta-k/ARX-packs§f\n'
     bodyText += '\n'
-    bodyText += 'You can report bugs to §bgithub.com/pireta-k/ARX-packs/issues§f\n'
-    bodyText += '\n'
 
     // Thanks
     bodyText += ('§e' + fl(p, 'info.devs.thanks') + '§f\n')

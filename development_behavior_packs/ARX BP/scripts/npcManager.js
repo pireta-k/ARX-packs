@@ -3,7 +3,7 @@ import { sleep } from "./arxLib/time"
 import { Vector } from "./arxLib/math"
 import { Chat } from "./chat"
 import { md5 } from "./arxLib/converters"
-import { sDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/DPOperations"
 
 /*====================================
 Dynamic NPC Manager (DNPCM)
@@ -374,12 +374,12 @@ class Element {
         }
 
         this.path = path
-        this.isSubsequence = this.#isSubsequence()
 
-        /** 
-         * An object of a sequence at the specified path 
-         */
+        /** An object of a sequence at the specified path */
         this.object = this.#getObject()
+
+        // Requires Object
+        this.isSubsequence = this.#isSubsequence()
     }
 
     /**
@@ -463,7 +463,7 @@ class Thread {
 
     // === Pending logic ===
     // Thread can be pended. It means, it waits for something. As example, a thread waits for it's child thread to end. 
-    // Using of Promise system to await child thread is a critical bug: it will break on world reload.
+    // Using of Promise system to await child thread isn't reliable: it will break on world reload.
     static pendingThreads = new Map()
 
     pend() {
@@ -475,7 +475,7 @@ class Thread {
         this.isPending = false
         Thread.pendingThreads.delete(this.path)
     }
- 
+
     /**
      * Run the thread and wait for its end
      */
@@ -1369,6 +1369,16 @@ export class NPCManager {
         getNumberOfSteps() {
             return this.hub.length
         }
+    }
+
+    /**
+     * Send a message to log
+     * @param {string} msg 
+     */
+    static log(msg) {
+        const NPCManagerLogPrefix = `[§eNPCManager]: `
+
+        if (gDP(world, 'enableDNPCMLog')) console.log(NPCManagerLogPrefix + msg)
     }
 }
 

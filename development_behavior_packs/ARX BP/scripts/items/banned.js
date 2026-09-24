@@ -57,7 +57,7 @@ export const bannedItems = {
     'minecraft:netherite_leggings': { 'minecraft:diamond': 7, 'minecraft:netherite_ingot': 1 },
     'minecraft:netherite_sword': {
         'minecraft:diamond': 2,
-        'minecraft:stick': 1, 
+        'minecraft:stick': 1,
         'minecraft:netherite_ingot': 1
     },
 
@@ -73,4 +73,9 @@ export const bannedItems = {
         'minecraft:planks': 2,
         'minecraft:stick': 1
     },
+
+    'minecraft:chainmail_boots': { 'minecraft:iron_nugget': 4 },
+    'minecraft:chainmail_chestplate': { 'minecraft:iron_nugget': 8 },
+    'minecraft:chainmail_helmet': { 'minecraft:iron_nugget': 5 },
+    'minecraft:chainmail_leggings': { 'minecraft:iron_nugget': 7 },
 }

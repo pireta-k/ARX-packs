@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Blocks/💛 Moderate.md",
+                "file": "Blocks/💚 Done.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "💛 Moderate"
+              "title": "💚 Done"
             }
           }
         ]
@@ -187,11 +187,11 @@
   },
   "active": "320c3bb69e289173",
   "lastOpenFiles": [
+    "Blocks/💛 Moderate.md",
     "Blocks/💚 Done.md",
     "Blocks/💙 Optional.md",
     "Blocks/❤️ Crucial.md",
     "Details/Система управления сущностями.md",
-    "Blocks/💛 Moderate.md",
     "Details/Иногда при смерти в шахтах, игрок возрождается на поверхности.md",
     "Arx Ultima 1.x stable release planning.md",
     "Details/Убрать меч для харакири.md",

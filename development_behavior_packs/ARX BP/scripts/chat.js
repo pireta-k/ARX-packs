@@ -1,8 +1,5 @@
 // Imports
 import { world, EntityComponentTypes, EquipmentSlot, system, Entity } from "@minecraft/server"
-import { emote } from './emote'
-import { getScore } from './arxLib/scoresOperations'
-import { getSkillsData } from './skillsOperations'
 import { queueCommand } from './commandQueue'
 import { checkForItem } from "./items/checkForItem"
 import { sl, fl } from "./lang/fetchLocalization"
@@ -10,14 +7,10 @@ import { sl, fl } from "./lang/fetchLocalization"
 import { runeCiphers } from './magic/rune_cipher_list'
 import { cipherRuneSequence } from './magic/on_use_magic_items'
 
-import { acquireTrait, checkForTrait, clearTraits } from './traits/traitsOperations'
-import { gDP, sDP } from "./arxLib/DPOperations"
+import { sDP } from "./arxLib/DPOperations"
 import { isAdmin, getAdmins } from './arxLib/admin'
-import { Weather } from "./arxLib/weather"
-import { sendItems } from "./items/sendItems"
 import { NPCManager } from "./npcManager"
-import { customDimensionIds, getDistanceBetween, getEntityFamilies } from "./_main"
-import { infoScreen } from "./info/_infoScreen"
+import { getDistanceBetween, getEntityFamilies } from "./_main"
 import { random } from "./arxLib/random"
 
 /**

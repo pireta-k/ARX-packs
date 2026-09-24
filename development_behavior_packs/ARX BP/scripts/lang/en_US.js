@@ -150,6 +150,20 @@ export const enLocalization = {
     'info.global_settings.submit': 'Save',
 
     'info.dev_options.title': 'Developer options',
+    'info.dev_options.option.devWorldSettings': 'Global developer settings',
+    'info.dev_options.option.coreReview': 'Core review',
+    'info.dev_options.option.localizationReview': 'Localization review',
+
+    'info.dev_world_settings.title': 'Global developer settings',
+    'info.dev_world_settings.enable_ambience_core': 'Ambience core',
+    'info.dev_world_settings.enable_ambience_core.tooltip': 'Mostly, biome particles',
+    'info.dev_world_settings.enable_fogs': 'Arx fogs system',
+    'info.dev_world_settings.enable_fogs.tooltip': 'Mines, night, gear. After being disabled, your current fog can stuck on you.',
+    'info.dev_world_settings.enable_DNPCM_log': 'DNPCM log',
+    'info.dev_world_settings.enable_DNPCM_log.tooltip': 'Dynamic NPC Manager log. All actions done by DNPC will be logged. This is needed for debugging.',
+    'info.dev_world_settings.save': 'Save',
+
+    'info.dev_options.title': 'Developer options',
     'info.dev_options.enable_ambience_core': 'Ambience core',
     'info.dev_options.enable_ambience_core.tooltip': 'Biome particles',
     'info.dev_options.enable_fogs': 'Fogs',

@@ -28,32 +28,34 @@ export function weighAnalysis(player) {
     if (checkForItem(player, "Feet", "arx:ring_lamenite_cornelian")) weighLimit += 6
     if (checkForItem(player, "OffHand", "arx:ring_lamenite_cornelian")) weighLimit += 6
 
-    if (gDP(player, 'weighLimitBonusByPotion') > 0) weighLimit += 2
-    if (gDP(player, 'weighLimitBonusByPotionImproved') > 0) weighLimit += 6
+    if (gDP(player, 'weighLimitBonusByPotion', 0) > 0) weighLimit += 2
+    if (gDP(player, 'weighLimitBonusByPotionImproved', 0) > 0) weighLimit += 6
 
     // From perma potions
-    weighLimit += ((gDP(player, 'weightLimitPermanentBonus') / 2) ?? 0)
+    weighLimit += (gDP(player, 'weightLimitPermanentBonus', 0) / 2)
 
     // От черты
     if (checkForTrait(player, 'powerful')) weighLimit += 1
 
     // Увеличение от прокачки
-    weighLimit += (player.getDynamicProperty('skill:endurance_level') ?? 0)
+    weighLimit += (gDP(player, 'skill:endurance_level', 0) ?? 0)
 
     // Увеличение от бонуса фиоликса
-    if (player.getDynamicProperty('statsBonusByFiolix') > 0) { weighLimit += 2 }
+    if (gDP(player, 'statsBonusByFiolix', 0) > 0) { weighLimit += 2 }
 
     // Воздействие стресса
-    if (player.getDynamicProperty('stressLevel') == 4) { weighLimit -= 4 }
-    if (player.getDynamicProperty('stressLevel') == 3) { weighLimit -= 2 }
-    if (player.getDynamicProperty('stressLevel') == 2) { weighLimit -= 1 }
-    if (player.getDynamicProperty('stressLevel') == -2) { weighLimit += 1 }
-    if (player.getDynamicProperty('stressLevel') == -3) { weighLimit += 2 }
-    if (player.getDynamicProperty('stressLevel') == -4) { weighLimit += 3 }
+    const stressLevel = gDP(player, 'stressLevel', 0)
+    if (stressLevel == 4) { weighLimit -= 4 }
+    else if (stressLevel == 3) { weighLimit -= 2 }
+    else if (stressLevel == 2) { weighLimit -= 1 }
+    else if (stressLevel == -2) { weighLimit += 1 }
+    else if (stressLevel == -3) { weighLimit += 2 }
+    else if (stressLevel == -4) { weighLimit += 3 }
 
     // weighLoading - фактическая загруженность игрока
     player.runCommand('function javascript/weigh')
 
+    // Get weighLoading, calculated in "function javascript/weigh"
     let weighLoading = getScore(player, 'weighLoading')
     // От переносимого игрока
     if (player.hasRiders) {
@@ -69,5 +71,6 @@ export function weighAnalysis(player) {
     // Отправляем значения в dynamicProperty
     sDP(player, 'weighLimit', weighLimit)
     sDP(player, 'weighLoading', weighLoading)
-    sDP(player, 'overLoading', weighLoading - weighLimit)
+    const overLoading = weighLoading - weighLimit
+    sDP(player, 'overLoading', overLoading)
 }
