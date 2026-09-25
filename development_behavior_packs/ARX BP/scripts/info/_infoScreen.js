@@ -1,4 +1,3 @@
-import { ActionFormData } from "@minecraft/server-ui"
 import { world } from "@minecraft/server"
 
 import { infoAboutCharacter } from "./infoAboutCharacter"
@@ -9,7 +8,8 @@ import { infoAboutStatistics } from "./infoAboutStatistics"
 import { infoAboutAchievements } from "./infoAboutAchievements"
 import { knownSpellsBook } from "./knownSpellsBook"
 import { infoAboutTraits } from "./infoAboutTraits"
-import { arxSettings, arxGlobalSettings, simpleDevOptions } from "./arxSettings"
+import { arxSettings, arxGlobalSettings } from "./arxSettings"
+import { simpleDevOptions } from "./devOptions"
 import { infoAboutArxDevs } from "./devs"
 import { questsInfo } from '../quests'
 

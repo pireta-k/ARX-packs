@@ -1,7 +1,6 @@
 // Imports
 import { ruLocalization } from './ru_RU'
 import { enLocalization } from './en_US'
-import { sDP } from '../arxLib/DPOperations'
 import { Entity, Player } from '@minecraft/server'
 
 // Vars
@@ -93,13 +92,13 @@ export function slfg(player, textId, insertions = []) {
  */
 export function checkLocalization(key, language = defaultLanguage) {
     if (!Object.keys(langMap).includes(language)) {
-        console.error(`checkLocalization(): non-existent language <${language}> given`)
+        console.error(`checkLocalization(): non-existent language <${language}> provided`)
     }
     return key in langMap[language]
 }
 
 /**
- * Get players Arx language
+ * Get player's Arx language
  * Returns player's language as 'en_US' or 'ru_RU' etc.
  * Returns default lang as fallback
  * @param {Player} player 
