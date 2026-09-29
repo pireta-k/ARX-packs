@@ -286,7 +286,9 @@ const sequences = {
  */
 const elementsRegistry = {
     subsequence: {
-        run: async () => { },
+        run: async (element) => {
+            await new Thread(element.path).run()
+        },
         isSubsequence: true,
     },
     goto: {
@@ -646,20 +648,15 @@ class Element {
 class Thread {
 
     /**
-     * @param {NPCSequence} NPCSequenceInstance
      * @param {Path} path
      */
-    constructor(NPCSequenceInstance, path) {
+    constructor(path) {
         this.isValid = true
 
         // Check
         {
             if (!path.isValid) {
-                console.warn('Trying to create a thread instance with an invalid NPCSequenceInstance')
-                this.isValid = false
-            }
-            if (!(NPCSequenceInstance instanceof NPCSequence)) {
-                console.warn('Trying to create a thread instance with an invalid NPCSequenceInstance')
+                console.warn('Trying to create a thread instance with an invalid Path')
                 this.isValid = false
                 return
             }
@@ -667,10 +664,9 @@ class Thread {
 
         // Initialize
         this.path = path
-        this.sequence = NPCSequenceInstance
         this.isPending = false
 
-        NPCManager.log(`A thread created for path ${path.pathArray}, seq ${NPCSequenceInstance.id}`)
+        NPCManager.log(`A thread created for path <${path.isRoot ? 'Root' : path.pathArray}>, seq ${path.sequence.id}`)
     }
 
 
@@ -697,8 +693,8 @@ class Thread {
      * @returns {Promise<ThreadResponce>}
      */
     async run(fromStep = 0) {
-        NPCManager.log(`A thread RUNNED for sequence ${this.sequence.id}, path ${this.path.pathArray}, from step ${fromStep}`)
-        const e = this.sequence.entity
+        NPCManager.log(`A thread RUNNED for sequence ${this.path.sequence.id}, path ${this.path.pathArray}, from step ${fromStep}`)
+        const e = this.path.sequence.entity
 
         // Thread is not valid
         if (!this.isValid) {
@@ -720,16 +716,18 @@ class Thread {
         }
         // Check, if the entity is in loading list
         if (!NPCManager.isEntityProcessing(e)) {
-            console.warn(`Thread ${this.sequence.id} on path ${this.path.pathArray} started, but the entity is not in the active Entities list.`)
+            console.warn(`Thread ${this.path.sequence.id} on path ${this.path.pathArray} started, but the entity is not in the active Entities list.`)
             return 'doNotClearSequenceData'
         }
 
         /** @type {Path} */
-        let pathToElement = new Path(this.sequence, [...this.path.pathArray, fromStep])
+        let pathToElement = new Path(this.path.sequence, [...this.path.pathArray, fromStep])
         /** @type {Element} */
         let element
         /** @type {SequenceElementResponce} */
         let response
+
+        this.path.sequence.threadTable.addPath(pathToElement.pathArray)
 
         while (true) {
             // Get element
@@ -739,20 +737,20 @@ class Thread {
             response = await element.execute()
 
             // Process responce
-            if (response === 'fail') console.warn(`An sequence ${this.sequence.id} element on path ${pathToElement.pathArray} has reported a failure`)
+            if (response === 'fail') console.warn(`An sequence ${this.path.sequence.id} element on path ${pathToElement.pathArray} has reported a failure`)
             else if (response === 'finishThread') {
                 NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by flag "finishThread"`)
-                this.sequence.threadTable.removePath(pathToElement.pathArray)
+                this.path.sequence.threadTable.removePath(pathToElement.pathArray)
                 return 'success'
             }
 
             if (pathToElement.isLast()) { // Last element
                 NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by last element`)
-                this.sequence.threadTable.removePath(pathToElement.pathArray)
+                this.path.sequence.threadTable.removePath(pathToElement.pathArray)
                 return 'success'
             } else { // Not last
                 const nextPath = pathToElement.getNextPathOnTheSameLevel()
-                this.sequence.threadTable.replacePathWith(pathToElement.pathArray, nextPath.pathArray)
+                this.path.sequence.threadTable.replacePathWith(pathToElement.pathArray, nextPath.pathArray)
                 pathToElement = nextPath
             }
         }
@@ -786,35 +784,6 @@ class NPCSequence {
         NPCManager.log(`New NPCSequence ${this.id} initialized on Entity ${entity.typeId}`)
     }
 
-    /**
-     * Get a current value of a cycle counter for a step
-     * @param {String} seqId 
-     * @param {PathArray} step - Step of a cycle element
-     * @returns {number}
-     */
-    #getCycleCounter(step) {
-        const element = this.getSequenceArrayElement(step)
-        if (element.type !== "cycle") {
-            throw new Error('Trying to get a cycle counter of not-cycle sequence')
-        }
-        const dp = this.#getCycleCounterDp(step)
-        return this.entity.gDP(dp) || 0
-    }
-    #setCycleCounter(step, value) {
-        if (typeof value !== 'number') {
-            throw new Error('Trying to set a not-number value to a cycle counter')
-        }
-        const element = this.getSequenceArrayElement(step)
-        if (element.type !== "cycle") {
-            throw new Error('Trying to set a cycle counter of not-cycle sequence')
-        }
-        const dp = this.#getCycleCounterDp(step)
-        this.entity.sDP(dp, value)
-    }
-    #getCycleCounterDp(step) {
-        return dPPrefix + 'cycleCounter:' + this.id + ':' + step.toString()
-    }
-
     /** @typedef {'finishThread' | 'success' | 'fail' | Record<any, any>} SequenceElementResponce */
 
     /** @typedef {Record<PathArray, ThreadResponceData>} ThreadResponce */
@@ -834,7 +803,7 @@ class NPCSequence {
 
         // == Threads launch ===
         await Promise.all(
-            threadTable.hub.map(path => new Thread(this, new Path(this, path).getParentPath()).run(path.at(-1)))
+            threadTable.hub.map(path => new Thread(new Path(this, path).getParentPath()).run(path.at(-1)))
         )
 
         // Finished
