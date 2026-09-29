@@ -174,7 +174,12 @@ const dPPrefix = 'NPCManager:'
  * @property {SequenceArrayElement[]} body
  */
 
-/** @typedef {Number[]} PathArray */
+/** 
+ * [] - this path points at the whole sequence body. It is the one and only root path.
+ * [3] - this path points at third element at zero depth (starting from 0, not 1).
+ * [2, 4, 1] - this path points at 2nd element of the main sequence, 4th in it, then 1st in it. 
+ * @typedef {Number[]} PathArray 
+ */
 /** @typedef {PathArray[]} ThreadTable */
 
 /** All the sequences
@@ -255,23 +260,176 @@ const sequences = {
             { type: 'wait', seconds: 1 },
             { type: "say", key: "Mmmmh... I'm tired", sayRawKey: true },
         ]
-    }
+    },
+
+    eve_simple: {
+        head: {
+            baitBlockId: 'arx:bait_eve',
+            canBeAppliedOn: ['arx:eve']
+        },
+        body: [
+            { type: "goto", location: { x: 5, y: -60, z: 5 } },
+            { type: 'wait', seconds: 1 },
+            { type: "goto", location: { x: 0, y: -60, z: 0 } },
+        ]
+    },
 }
 
 /**
  * @typedef {Object} ElementDeclaration
- * @property {Function} run
+ * @property {function(Element): Promise<SequenceElementResponce>} run
  * @property {Boolean} [isContainer=false]
- * @property {'always', 'never', 'auto'} [isAsync='auto']
+ * @property {'always' | 'never' | 'auto'} [isAsync='auto']
  */
 /**
  * @type {Record<String, ElementDeclaration>}
  */
 const elementsRegistry = {
+    subsequence: {
+        run: async () => { },
+        isSubsequence: true,
+    },
     goto: {
-        run: (data, thread) => {
+        run: async (element) => {
+            const e = element.path.sequence.entity
 
+            e.triggerEvent('arx:add_bait_sensor')
+            const resolvedLocation = NPCManager.addOffset(e, element.object.location)
+            await new Promise((resolve, reject) => {
+                const b = e.dimension.getBlock(resolvedLocation)
+                if (!b) {
+                    console.warn(`Cannot create a block object while processing a sequence (id: ${NPCManager.getSequenceId(e)}, step ${step}). The entity was teleported to desired location instead of classic navigation`)
+                    e.teleport(resolvedLocation)
+                    resolve(true)
+                    return 'fail'
+                }
+                b.setType(element.path.sequence.baitBlockId)
+
+                let secondsElapsed = 0
+                const intervalId = system.runInterval(() => {
+                    if (!e.isValid) {
+                        system.clearRun(intervalId)
+                        reject('Entity is not valid')
+                        return 'fail'
+                    }
+                    if (secondsElapsed > defaultTimeout) {
+                        system.clearRun(intervalId)
+                        if (b) b.setType('minecraft:air')
+                        e.teleport(resolvedLocation) // Teleport entity to the desired location
+                        resolve(true)
+                        return 'success'
+                    }
+                    if (e.getTags().includes('bait_reached')) {
+                        // console.warn(`Successfully reached the block`)
+                        e.removeTag('bait_reached')
+                        b.setType('air')
+                        system.clearRun(intervalId)
+                        resolve(true)
+                        return 'success'
+                    }
+                    secondsElapsed += 0.05 * baitListeningTickSpeed
+                }, baitListeningTickSpeed)
+            })
         }
+    },
+    wait: {
+        run: async (element) => {
+            const ticks = Math.round(element.object.ticks ?? element.object.seconds * 20)
+            if (!ticks || typeof ticks !== 'number' || ticks < 0) {
+                console.error(`NPCSequence: Wait element ${step} on seq ${element.path.sequence.id}: invalid (ticks | seconds) value provided`)
+            } else {
+                await sleep(ticks)
+            }
+            return 'success'
+        }
+    },
+    playAnimation: {
+        async run(element) {
+            element.path.sequence.entity.playAnimation(element.object.animationId)
+        }
+    },
+    expectChatMessage: {
+        async run(element) {
+
+            const seqElement = element.object
+            const e = element.path.sequence.entity
+            let currentResolve
+
+            try {
+                await new Promise((resolve, reject) => {
+                    currentResolve = resolve
+                    /** @type {ChatListenerOptions} */
+                    const options = {
+                        text: seqElement.text,
+                        mode: seqElement.mode ?? 'includes',
+                        isMessed: seqElement.isMessed ?? 'any',
+                        messageType: seqElement.messageType,
+                        messageTypeExclude: seqElement.messageTypeExclude ?? ['global']
+                    }
+                    NPCManager.registerChatListener(e, options, resolve) // Register chat listener and wait for it to be resolved
+                })
+            } catch (error) {
+                console.error(`An error occoured in expectChatMessage: ${error.stack}${error}`)
+            } finally {
+                if (currentResolve) NPCManager.unregisterChatListener(e, currentResolve)
+            }
+            return 'success'
+        }
+    },
+    say: {
+        async run(element) {
+            const seqElement = element.object
+            const e = element.path.sequence.entity
+
+            if (!seqElement.key) console.warn('Trying to run Say element without key')
+            if (seqElement.sayRawKey === true) { // Just a text message
+                new Chat.Message(e, seqElement.key, { type: seqElement.messageType }).send()
+            } else { // Localization key message
+                new Chat.Message(e, seqElement.key, { type: seqElement.messageType, contentIsLocalizationKey: true }).send()
+            }
+            return 'success'
+        }
+    },
+    setLocalName: {
+        async run(element) {
+            element.path.sequence.entity.sDP('localizationName', element.object.localizationKey)
+        }
+    },
+    transit: {
+        async run(element) {
+            const seqElement = element.object
+            const e = element.path.sequence.entity
+
+            if (!(seqElement.sequenceId in sequences)) {
+                console.error(`Trying to transit to a non-existent sequence ${seqElement.sequenceId} from seq ${element.path.sequence.id}`)
+                return 'fail'
+            }
+            NPCManager.runSequence(e, seqElement.sequenceId, { allowOverride: true })
+            return 'finishThread'
+        }
+    },
+    lightPost: {
+        async run() { } // Do nothing
+    },
+    jumpToLightPost: {
+        async run(element) {
+            const seqElement = element.object
+            const stepToJumpTo = element.path.sequence.lightPostMap.get(seqElement.name)
+
+            if (!stepToJumpTo) {
+                console.warn(`Lightpost with name ${seqElement.name} do not exist on sequence ${element.path.sequence.id}`)
+                return 'fail'
+            }
+            return {
+                forceNextStep: stepToJumpTo
+            }
+        }
+    },
+    cycle: {
+        async run(element) {
+            // TO-DO
+        },
+        isContainer: true
     }
 }
 
@@ -285,40 +443,61 @@ class Path {
      * @param {PathArray} pathArray
      */
     constructor(seqInstance, pathArray) {
-        this.#assignPathArray(pathArray)
+        /** @type {PathArray} */
+        this.pathArray = pathArray
         this.sequence = seqInstance
+        this.isRoot = pathArray?.length === 0 // Path is an empty array
+        this.depth = pathArray?.length // e.g. pathArray [8] === depth 1
+
         this.isValid = this.#isValid() ? true : false
 
-        this.isRoot = Array.isArray(this.pathArray) && this.pathArray.length === 1 // Path is an empty array
-        this.depth = this.pathArray.length - 1 // Root sequence (e.g. [8]) === depth 0
-    }
-
-    /** @param {PathArray} pathArray  */
-    #assignPathArray(pathArray) {
-        if (Array.isArray(pathArray) && pathArray.length === 0) {
-            this.pathArray = [0]
-        } else {
-            this.pathArray = pathArray
-        }
+        NPCManager.log(`Path ${pathArray} was initialised for sequence ${seqInstance.id}`)
     }
 
     /** @returns {Boolean} */
     #isValid() {
         let result = true
         if (!Array.isArray(this.pathArray)) result = false
-        if (!this.sequence.doPathExists(this.pathArray)) result = false
+        if (!this.#exists()) result = false
 
         return result
     }
 
-    /** @returns {Boolean} */
-    isFirst() {
-        return this.pathArray.at(-1) === 0
+    /**
+     * Does this path exists in the sequence?
+     * @returns {boolean}
+     */
+    #exists() {
+        if (this.isRoot) return true
+
+        for (const { path } of walkSequence(this.sequence.body)) {
+            if (arePathArraysEqual(path, this.pathArray)) return true
+        }
+        return false
     }
 
-    /** @returns {Boolean} */
+    /** 
+     * Is the element first on its level?
+     * @returns {Boolean} 
+     */
+    isFirst() {
+        return this.getHeader() === 0
+    }
+
+    /** 
+     * Is the element last on its level?
+     * @returns {Boolean}
+     */
     isLast() {
         return this.getNextPathOnTheSameLevel() === null
+    }
+
+    /**
+     * Get the top index for this path. For path [1, 9, 2, 42] it is 42
+     * @returns {number}
+     */
+    getHeader() {
+        return this.pathArray.at(-1)
     }
 
     /**
@@ -335,7 +514,7 @@ class Path {
      * @returns {Path | null}
      */
     getNextPathOnTheSameLevel() {
-        const newPath = new Path(this.sequence, this.pathArray.with(-1, this.pathArray.at(-1) + 1))
+        const newPath = new Path(this.sequence, this.pathArray.with(-1, this.getHeader() + 1))
 
         if (newPath.isValid) return newPath
         return null
@@ -367,8 +546,8 @@ class Element {
     constructor(path) {
         // Check
         this.isValid = true
-        if (!(path instanceof Path) || !path.isValid) {
-            console.warn('Trying to create an Element with an invalid Path')
+        if (!(path instanceof Path) || !path?.isValid) {
+            console.warn(`Trying to create an Element with an invalid Path (Class = ${path?.constructor?.name}, path validness = ${path?.isValid} path?.pathArray = ${path?.pathArray})`)
             this.isValid = false
             return
         }
@@ -380,6 +559,8 @@ class Element {
 
         // Requires Object
         this.isSubsequence = this.#isSubsequence()
+
+        NPCManager.log(`New Element got for Path ${path.pathArray}`)
     }
 
     /**
@@ -403,30 +584,57 @@ class Element {
      * @returns {SequenceArrayElement | null}
      */
     #getObject() {
-        let sequenceObject = this.path.sequence.body
+        let resultObject = null
 
-        let i = 0
-        for (let index of this.path.pathArray) {
-            const lastIteration = i >= this.path.depth
-
-            if (lastIteration) {
-                sequenceObject = sequenceObject[index]
-            } else {
-                sequenceObject = sequenceObject[index].sequence
+        // If we're getting a root object. It's also sorta container
+        if (this.path.isRoot) {
+            resultObject = {
+                type: 'subsequence',
+                sequence: this.path.sequence.body
             }
-
-            if (sequenceObject === undefined) return null
-            i++
         }
 
-        return sequenceObject
+        // Walk sequence
+        else {
+            for (const { path, element } of walkSequence(this.path.sequence.body)) {
+                if (arePathArraysEqual(path, this.path.pathArray)) {
+                    resultObject = element
+                    break
+                }
+            }
+        }
+
+        if (this.#isObjectValid(resultObject)) {
+            return resultObject
+        } else {
+            console.warn(`Object for Element in seq ${this.path.sequence.id}, path ${this.path.pathArray} is not valid`)
+            this.isValid = false
+            return null
+        }
+    }
+
+    /**
+     * Is Element's object valid?
+     * @param {SequenceArrayElement} sequenceObject 
+     * @returns {boolean}
+     */
+    #isObjectValid(sequenceObject) {
+        return (typeof sequenceObject === 'object' && sequenceObject.type in elementsRegistry)
     }
 
     /**
      * Execute the element and wait for its end
      */
-    execute() {
-
+    async execute() {
+        /** @type {SequenceElementResponce} */
+        let response = 'fail'
+        try {
+            response = await elementsRegistry[this.object.type].run(this)
+        }
+        catch (error) {
+            console.error(`Cannot execute an element at path ${this.path.pathArray}, sequence ${this.path.sequence}, type ${this.object.type}: \n${error}${error.stack}`)
+        }
+        return response
     }
 }
 
@@ -446,6 +654,10 @@ class Thread {
 
         // Check
         {
+            if (!path.isValid) {
+                console.warn('Trying to create a thread instance with an invalid NPCSequenceInstance')
+                this.isValid = false
+            }
             if (!(NPCSequenceInstance instanceof NPCSequence)) {
                 console.warn('Trying to create a thread instance with an invalid NPCSequenceInstance')
                 this.isValid = false
@@ -458,6 +670,8 @@ class Thread {
         this.threadTable = NPCManager.ThreadTable.get(NPCSequenceInstance.entity)
         this.sequence = NPCSequenceInstance
         this.isPending = false
+
+        NPCManager.log(`A thread created for path ${path.pathArray}, seq ${NPCSequenceInstance.id}`)
     }
 
 
@@ -469,18 +683,71 @@ class Thread {
     pend() {
         this.isPending = true
         Thread.pendingThreads.set(this.path, this)
+        NPCManager.log(`A thread was pended for path ${path.pathArray}, seq ${NPCSequenceInstance.id}`)
     }
 
     unpend() {
         this.isPending = false
         Thread.pendingThreads.delete(this.path)
+        NPCManager.log(`A thread was unpended for path ${path.pathArray}, seq ${NPCSequenceInstance.id}`)
     }
 
     /**
      * Run the thread and wait for its end
+     * @param {number} [fromStep=0]
+     * @returns {Promise<ThreadResponce>}
      */
-    async run() {
-        // TO-DO
+    async run(fromStep = 0) {
+        NPCManager.log(`A thread RUNNED for sequence ${this.sequence.id}, path ${this.path.pathArray}, from step ${fromStep}`)
+        const e = this.sequence.entity
+
+        // Thread is not valid
+        if (!this.isValid) {
+            console.warn(`Cannot RUN an invalid thread`)
+            return
+        }
+
+        // Check, if an entity is valid
+        if (!e || !e.isValid) {
+            console.warn('Entity is invalid or is not loaded, stopping sequence')
+            NPCManager.removeEntity(e)
+            NPCManager.unregisterChatListener(e)
+            return 'doNotClearSequenceData'
+        }
+        // Check, if an entity is in an unloaded chunk
+        if (!e.dimension.isChunkLoaded(e.location)) {
+            NPCManager.Freeze.freeze(e)
+            return 'doNotClearSequenceData'
+        }
+        // Check, if the entity is in loading list
+        if (!NPCManager.isEntityProcessing(e)) {
+            console.warn(`Thread ${this.sequence.id} on path ${this.path.pathArray} started, but the entity is not in the active Entities list.`)
+            return 'doNotClearSequenceData'
+        }
+
+        // Get a path to an element
+        const pathToElement = new Path(this.sequence, [...this.path.pathArray, fromStep])
+
+        // Get element
+        const element = new Element(pathToElement)
+
+        // Run element
+        const response = await element.execute()
+
+        // Process responce
+        if (response === 'fail') console.warn(`An sequence ${this.sequence.id} element on path ${pathToElement} has reported a failure`)
+        else if (response === 'finishThread') {
+            this.threadTable.removeStep(this.path.pathArray)
+        }
+
+        // Run next
+        const nextPath = pathToElement.getNextPathOnTheSameLevel()
+        if (!nextPath) {
+            NPCManager.log(`A thread execution FINISHED for sequence ${this.sequence.id}, path ${this.path.pathArray}`)
+            return
+        } else {
+            await this.run(nextPath.getHeader())
+        }
     }
 }
 
@@ -506,59 +773,8 @@ class NPCSequence {
         this.lightPostMap = sequence.head.lightPostMap
 
         this.body = sequence.body
-    }
 
-    /**
-     * Get a step object via step.
-     * Processes all kinds of subsequences
-     * @param {PathArray} step
-     * @param {boolean} [shutUp=false] - Do not write in log, if the index is non-existent
-     * @returns {SequenceArrayElement | null}
-     */
-    getSequenceArrayElement(step, shutUp = false) {
-        if (!this.#isStep(step)) {
-            console.warn(`Incorrect step recieved in getSequenceArrayElement for ${this.id}: ${step}`)
-            return null
-        }
-
-        let currentSequence = this.body
-
-        for (let i = 0; i < step.length; i++) {
-            const sequenceElementIndex = step[i]
-
-            // Step do not exist
-            if (sequenceElementIndex >= currentSequence.length) {
-                if (!shutUp) console.warn(`Trying to adress a non-existent index ${sequenceElementIndex} of sequence ${this.id}`)
-                return null
-            }
-
-            const thisSequenceElement = currentSequence[sequenceElementIndex]
-
-            // This is a target highest-level step
-            if (i === step.length - 1) {
-                return thisSequenceElement
-            }
-
-            // This is not a subsequence, but a step declares that we have to open it as a subsequence. Abort
-            if (!NPCSequence.isElementAnySubsequence(thisSequenceElement)) {
-                console.warn('Subsequence expected but not exists')
-                return null
-            }
-
-            // Dive deeper. Make a currentSequence a deeper subsequence
-            currentSequence = currentSequence[sequenceElementIndex].sequence
-        }
-        return null
-    }
-
-    /**
-     * Check, is a value looks like a SequenceStap
-     * @param {any} step 
-     * @returns {Boolean}
-     */
-    #isStep(step) {
-        if (!Array.isArray(step)) return false
-        return step.every(item => typeof item === 'number')
+        NPCManager.log(`New NPCSequence ${this.id} initialized on Entity ${entity.typeId}`)
     }
 
     /**
@@ -590,29 +806,6 @@ class NPCSequence {
         return dPPrefix + 'cycleCounter:' + this.id + ':' + step.toString()
     }
 
-    /**
-     * Checks an existance of a path
-     * @param {PathArray} path
-     * @returns {Boolean}
-     */
-    doPathExists(path) {
-        return !!this.getSequenceArrayElement(path, true)
-    }
-
-    /**
-     * Checks if an element is a subsequence
-     * @param {SequenceArrayElement} seq 
-     * @returns {Boolean}
-     */
-    static isElementAnySubsequence(seq) {
-        try {
-            const subsequenceTypes = ['subsequence', 'cycle', 'merge']
-            if (subsequenceTypes.includes(seq.type)) return true
-        }
-        catch { }
-        return false
-    }
-
     /** @typedef {'finishThread' | 'success' | 'fail' | Record<any, any>} SequenceElementResponce */
 
     /** @typedef {Record<PathArray, ThreadResponceData>} ThreadResponce */
@@ -623,84 +816,6 @@ class NPCSequence {
      */
 
     /**
-     * Runs a single thread and waits for it's end
-     * Adds and removes steps to threadTable by itself.
-     * Can create new threads
-     * @param {PathArray} step
-     * @returns {ThreadResponce}
-     */
-    async #runThread(step) {
-        console.warn(`A thread ${step} has §arunned`)
-        const e = this.entity
-
-        // Check step
-        if (!this.doPathExists(step)) {
-            console.warn(`NPCSequence.#runThread(): Unexistent step ${step} has gotten from an entity. A thread was killed`)
-            return 'fail'
-        }
-
-        const threadTable = NPCManager.ThreadTable.get(e).addStep(step)
-
-        while (true) {
-            let newStep
-
-            // Check, if an entity is valid
-            if (!e || !e.isValid) {
-                console.warn('Entity is invalid or is not loaded, stopping sequence')
-                NPCManager.removeEntity(e)
-                NPCManager.unregisterChatListener(e)
-                return 'doNotClearSequenceData'
-            }
-            // Check, if an entity is in an unloaded chunk
-            if (!e.dimension.isChunkLoaded(e.location)) {
-                NPCManager.Freeze.freeze(e)
-                return 'doNotClearSequenceData'
-            }
-            // Check, if the entity is in loading list
-            if (!NPCManager.isEntityProcessing(e)) {
-                console.warn(`Sequence ${this.id} step ${step} started, but the entity is not in the active Entities list.`)
-                return 'doNotClearSequenceData'
-            }
-            // Run
-            /** @type {SequenceElementResponce} */
-            const responce = await this.#runStep(step)
-
-            // Responce
-            if (responce === 'fail') console.warn(`A sequence ${this.id} element on step ${step} has reported a failure`)
-            if (responce === 'finishThread') {
-                threadTable.removeStep(step)
-                break
-            }
-            if (typeof responce === 'object' && responce.forceNextStep) {
-                if (!this.doPathExists(responce.forceNextStep)) console.warn(`Forced a non-existent step ${responce.forceNextStep}`)
-                newStep = responce.forceNextStep
-            }
-            else {
-                const nextStepOnTheSameLevel = [...step]
-                nextStepOnTheSameLevel[nextStepOnTheSameLevel.length - 1] += 1
-
-                if (!this.doPathExists(nextStepOnTheSameLevel)) break // End of a level sequence
-                newStep = nextStepOnTheSameLevel
-            }
-
-            // Save new step
-            threadTable.replaceStepWith(step, newStep)
-
-            // Assign step to run a new cycle iteration
-            step = newStep
-        }
-
-        threadTable.removeStep(step)
-        console.warn(`A thread ${step} has §cended`)
-
-        // Thread end
-        {
-
-        }
-        return 'success'
-    }
-
-    /**
      * === The main function of this class ===
      * Runs a sequence from a last-saved ?? start step(s)
      */
@@ -708,169 +823,13 @@ class NPCSequence {
         const e = this.entity
         const threadTable = NPCManager.ThreadTable.get(e)
 
-        // == Threads processing ===
-        for (const step of threadTable.hub) {
-            await this.#runThread(step)
-        }
+        // == Threads launch ===
+        await Promise.all(
+            threadTable.hub.map(path => new Thread(this, new Path(this, path).getParentPath()).run(path.at(-1)))
+        )
 
         // Finished
         NPCManager.clearSequence(e)
-    }
-
-    /**
-     * Execute single sequence step and wait for it to end
-     * @param {Number[]} step
-     * @returns {SequenceElementResponce}
-     */
-    async #runStep(step) {
-        // Check
-        if (!Array.isArray(step)) {
-            console.warn(`#runStep: Invalid step (${step}, type ${typeof step}) provided for seq ${this.id}`)
-        }
-
-        const e = this.entity
-
-        /** @type {SequenceArrayElement} */
-        const seqElement = this.getSequenceArrayElement(step)
-        if (!seqElement) {
-            console.error(`Trying to run non-existent step ${step} for ${this.id}`)
-            return 'fail'
-        }
-        switch (seqElement.type) {
-            case 'goto':
-                e.triggerEvent('arx:add_bait_sensor')
-                const resolvedLocation = NPCManager.addOffset(e, seqElement.location)
-                await new Promise((resolve, reject) => {
-                    const b = e.dimension.getBlock(resolvedLocation)
-                    if (!b) {
-                        console.warn(`Cannot create a block object while processing a sequence (id: ${NPCManager.getSequenceId(e)}, step ${step}). The entity was teleported to desired location instead of classic navigation`)
-                        e.teleport(resolvedLocation)
-                        resolve(true)
-                        return 'fail'
-                    }
-                    b.setType(this.baitBlockId)
-
-                    let secondsElapsed = 0
-                    const intervalId = system.runInterval(() => {
-                        if (!e.isValid) {
-                            system.clearRun(intervalId)
-                            reject('Entity is not valid')
-                            return 'fail'
-                        }
-                        if (secondsElapsed > defaultTimeout) {
-                            system.clearRun(intervalId)
-                            if (b) b.setType('minecraft:air')
-                            e.teleport(resolvedLocation) // Teleport entity to the desired location
-                            resolve(true)
-                            return 'success'
-                        }
-                        if (e.getTags().includes('bait_reached')) {
-                            // console.warn(`Successfully reached the block`)
-                            e.removeTag('bait_reached')
-                            b.setType('air')
-                            system.clearRun(intervalId)
-                            resolve(true)
-                            return 'success'
-                        }
-                        secondsElapsed += 0.05 * baitListeningTickSpeed
-                    }, baitListeningTickSpeed)
-                })
-                break
-
-            case 'wait':
-                const ticks = Math.round(seqElement.ticks ?? seqElement.seconds * 20)
-                if (!ticks || typeof ticks !== 'number' || ticks < 0) {
-                    console.warn(`NPCSequence: Wait element ${step} on seq ${this.id}: invalid (ticks | seconds) value provided`)
-                } else {
-                    await sleep(ticks)
-                }
-                return 'success'
-                break
-
-            case 'playAnimation':
-                e.playAnimation(seqElement.animationId)
-                return 'success'
-                break
-
-            case 'expectChatMessage':
-                let currentResolve
-                try {
-                    await new Promise((resolve, reject) => {
-                        currentResolve = resolve
-                        /** @type {ChatListenerOptions} */
-                        const options = {
-                            text: seqElement.text,
-                            mode: seqElement.mode ?? 'includes',
-                            isMessed: seqElement.isMessed ?? 'any',
-                            messageType: seqElement.messageType,
-                            messageTypeExclude: seqElement.messageTypeExclude ?? ['global']
-                        }
-                        NPCManager.registerChatListener(e, options, resolve) // Register chat listener and wait for it to be resolved
-                    })
-                } catch (error) {
-                    console.error(`An error occoured in expectChatMessage: ${error.stack}${error}`)
-                } finally {
-                    if (currentResolve) NPCManager.unregisterChatListener(e, currentResolve)
-                }
-                return 'success'
-                break
-
-            case 'say':
-                if (!seqElement.key) console.warn('Trying to run Say element without key')
-                if (seqElement.sayRawKey === true) { // Just a text message
-                    new Chat.Message(e, seqElement.key, { type: seqElement.messageType }).send()
-                } else { // Localization key message
-                    new Chat.Message(e, seqElement.key, { type: seqElement.messageType, contentIsLocalizationKey: true }).send()
-                }
-                return 'success'
-                break
-
-            case 'setLocalName':
-                e.sDP('localizationName', seqElement.localizationKey)
-                break
-
-            case 'transit':
-                if (!(seqElement.sequenceId in sequences)) {
-                    console.error(`Trying to transit to a non-existent sequence ${seqElement.sequenceId} from seq ${this.id}`)
-                    return 'fail'
-                }
-                NPCManager.runSequence(this.entity, seqElement.sequenceId, { allowOverride: true })
-                return 'finishThread'
-                break
-
-            case 'lightPost': // Do nothing
-                return 'success'
-                break
-
-            case 'jumpToLightPost':
-                const stepToJumpTo = this.lightPostMap.get(seqElement.name)
-                if (!stepToJumpTo) {
-                    console.warn(`Lightpost with name ${seqElement.name} do not exist on sequence ${this.id}`)
-                    return 'fail'
-                }
-                return {
-                    forceNextStep: stepToJumpTo
-                }
-                break
-
-            // Subsequences
-            case 'subsequence':
-                const deeperStep = [...step, 0]
-                if (seqElement.await !== false) {
-                    await this.#runThread(deeperStep)
-                } else {
-                    this.#runThread(deeperStep)
-                }
-                break
-
-            case 'cycle':
-                // I'll do it later
-                break
-
-            default:
-                console.error(`Unexpected action in sequence ${this.id}: ${seqElement.type}`)
-                return 'fail'
-        }
     }
 }
 
@@ -1069,14 +1028,19 @@ export class NPCManager {
      * @param {Entity} e 
      * @param {Number} step  
      */
-    static setSequenceId(e, id) { return e.sDP(dPPrefix + 'sequenceId', id) }
+    static assingSequenceId(e, id) { return e.sDP(dPPrefix + 'sequenceId', id) }
     /** 
      * Clears entity's sequence and all sequence-related data
      * @param {Entity} e 
-     * */
+     * @returns {boolean} - Did an entity have any sequence?
+     */
     static clearSequence(e) {
+        let hasCurrentSeq
         if (e && e.isValid) {
-            NPCManager.setSequenceId(e, undefined)
+            NPCManager.assingSequenceId(e, undefined)
+            // Current seq
+            hasCurrentSeq = !!this.getSequenceId(e)
+
             NPCManager.ThreadTable.get(e).reset()
 
             // Clear cycle data
@@ -1087,7 +1051,7 @@ export class NPCManager {
         }
         this.removeEntity(e)
         this.unregisterChatListener(e)
-        return true
+        return hasCurrentSeq
     }
     /** @param {Entity} e */
     static getSequenceId(e) { return e.gDP(dPPrefix + 'sequenceId') }
@@ -1107,7 +1071,7 @@ export class NPCManager {
     }
     /**
      * @typedef RunSequenceOptions
-     * @property {'auto' | 'clear'} [mode] - auto - start a sequence from last-saved step, clear - start from a beginning
+     * @property {'auto' | 'clear'} [mode] - auto - start a sequence from last-saved step, clear - start from the beginning
      * @property {Boolean} [allowOverride] - allow override of an existing sequence
      */
 
@@ -1147,14 +1111,15 @@ export class NPCManager {
         }
 
         // Run
-        this.setSequenceId(e, seqId)
-        // Get sequence
+        this.assingSequenceId(e, seqId)
+        // Get sequence instance
         const seq = this.getSequence(e)
         // Entity filter check
         if (seq.canBeAppliedOn && !seq.canBeAppliedOn.includes(e.typeId)) {
             console.warn('Trying to apply a sequence to an inappropriate entity')
             return
         }
+        NPCManager.log(`Sequence ${seq.id} was started`)
         if (seq) {
             this.addEntity(e)
             let responce
@@ -1169,6 +1134,7 @@ export class NPCManager {
             }
         }
         else console.error(`Cannot start sequence: Unexpected error occured`)
+        NPCManager.log(`Sequence ${seq.id} finished`)
     }
     /**
      * Restore sequence processing (e.g. after reloading a world)
@@ -1214,13 +1180,13 @@ export class NPCManager {
          * @param {Entity} e 
          */
         static freeze(e) {
-            console.warn(`Entity ${e.typeId} freezed`)
+            NPCManager.log(`Entity ${e.typeId} freezed`)
             NPCManager.removeEntity(e)
             NPCManager.unregisterChatListener(e)
             this.applyFreezeStatus(e)
         }
         static unfreeze(e) {
-            console.warn(`Entity ${e.typeId} unfreezed`)
+            NPCManager.log(`Entity ${e.typeId} unfreezed`)
             NPCManager.restoreSequence(e)
             this.removeFreezeStatus(e)
         }
@@ -1229,10 +1195,14 @@ export class NPCManager {
          * @param {Entity} e 
          */
         static applyFreezeStatus(e) {
+            NPCManager.log(`Called applyFreezeStatus on ` + e.typeId)
             if (!this.getFreezeStatus(e)) {
+                NPCManager.log(`Applied freeze on ` + e.typeId + ': it wasn\'t freesed')
                 const currentEntities = world.gDP(this.freezedEntitiesDp, [])
                 currentEntities.push(e.id)
                 world.sDP(this.freezedEntitiesDp, currentEntities)
+            } else {
+                NPCManager.log('Freeze is already applied on ' + e.typeId)
             }
         }
         /**
@@ -1240,10 +1210,12 @@ export class NPCManager {
          * @param {Entity} e 
          */
         static removeFreezeStatus(e) {
+            NPCManager.log(`Called removeFreezeStatus on ` + e.typeId)
             const currentEntities = world.gDP(this.freezedEntitiesDp, [])
             world.sDP(this.freezedEntitiesDp, currentEntities.filter(id => id !== e.id))
         }
         static getFreezeStatus(e) {
+            NPCManager.log(`Got freeze status for ` + e.typeId)
             return (world.gDP(this.freezedEntitiesDp, []).includes(e.id))
         }
         static freezedEntitiesDp = dPPrefix + 'freezedEntities'
@@ -1298,12 +1270,12 @@ export class NPCManager {
 
         /**
          * Get an index of the provided step in entity's stephub. If step is not in hub, return undefined
-         * @param {PathArray} stepToCheck 
-         * @returns {Number}
+         * @param {PathArray} pathArrayToCheck 
+         * @returns {number | undefined}
          */
-        #getIndexOfStep(stepToCheck) {
+        #getIndexOfPath(pathArrayToCheck) {
             for (let i = 0; i < this.hub.length; i++) {
-                if (JSON.stringify(this.hub[i]) === JSON.stringify(stepToCheck)) return i
+                if (arePathArraysEqual(this.hub[i], pathArrayToCheck)) return i
             }
             return undefined
         }
@@ -1315,7 +1287,7 @@ export class NPCManager {
          * @returns {Boolean}
          */
         replaceStepWith(stepToReplace, stepToReplaceWith) {
-            const index = this.#getIndexOfStep(stepToReplace)
+            const index = this.#getIndexOfPath(stepToReplace)
             if (index === undefined) {
                 console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved to threadTable.`)
                 return false
@@ -1330,7 +1302,7 @@ export class NPCManager {
          * @param {PathArray} step 
          */
         addStep(step) {
-            if (this.#getIndexOfStep(step) !== undefined) {
+            if (this.#getIndexOfPath(step) !== undefined) {
                 // console.warn(`Trying to add to a hub a step that is already in hub - aborted.`)
                 return this
             }
@@ -1345,7 +1317,7 @@ export class NPCManager {
          * @param {PathArray} [step]
          */
         removeStep(step) {
-            const index = this.#getIndexOfStep(step)
+            const index = this.#getIndexOfPath(step)
             if (index === undefined) {
                 console.warn(`Cannot remove a step ${step} that is not in the hub rn`)
                 return
@@ -1376,7 +1348,7 @@ export class NPCManager {
      * @param {string} msg 
      */
     static log(msg) {
-        const NPCManagerLogPrefix = `[§eNPCManager]: `
+        const NPCManagerLogPrefix = `[§wNPCManager§f]: `
 
         if (gDP(world, 'enableDNPCMLog')) console.log(NPCManagerLogPrefix + msg)
     }
@@ -1386,6 +1358,7 @@ export class NPCManager {
 world.afterEvents.entityLoad.subscribe(async event => {
     const e = event.entity
     if (NPCManager.hasSavedSequence(e) && !NPCManager.isEntityProcessing(e)) {
+        NPCManager.log(`An entity ${e.typeId} was loaded and it\'s sequence was restored`)
         NPCManager.restoreSequence(e)
     }
 })
@@ -1399,6 +1372,8 @@ world.beforeEvents.entityRemove.subscribe(async event => {
 
     // Remove freeze.
     NPCManager.Freeze.removeFreezeStatus(e)
+
+    NPCManager.log(`Entity ${e.typeId} was removed, all DNPCM data was unregistered`)
 })
 
 // A code was initialized (fix sequence death on /reload)
@@ -1407,6 +1382,8 @@ system.run(() => {
         for (const e of d.getEntities()) {
             if (NPCManager.hasSavedSequence(e) && !NPCManager.isEntityProcessing(e)) {
                 NPCManager.restoreSequence(e)
+
+                NPCManager.log(`Entity ${e.typeId} was restored, apparently after /reload command`)
             }
         }
     }
@@ -1414,6 +1391,7 @@ system.run(() => {
 
 /**
  * Checks, are the sequences OK.
+ * Also adds some data to sequences
  */
 function checkSequences() {
     function warn(text) {
@@ -1454,28 +1432,42 @@ function createLightPostMap(sequenceObject) {
     /** @type {LightPostMap} */
     const map = new Map()
 
-    /**
-     * @param {SequenceArrayElement[]} seq 
-     */
-    function createFromSequence(seq, currentStep) {
-        for (const [index, element] of seq.entries()) {
-            const step = [...currentStep, index]
-
-            if (element.type === 'lightPost') {
-                if (!element.name) {
-                    console.warn(`Lightpost on step ${step} has no name!`)
-                    continue
-                }
-                map.set(element.name, step)
-            }
-            if (NPCSequence.isElementAnySubsequence(element)) {
-                createFromSequence(element.sequence, step)
-            }
+    for (const { path, element } of walkSequence(sequenceObject.body)) {
+        if (element.type === 'lightPost' && element.name) {
+            map.set(element.name, path);
         }
     }
 
-    createFromSequence(sequenceObject.body, [])
 
     return map
 }
 checkSequences()
+
+/**
+ * Walk the sequence
+ * @param {SequenceArrayElement[]} body - the sequence body
+ * @param {PathArray} currentPath - for recursive calls. Never define this argument.
+ * @yields {{path: PathArray, element: SequenceArrayElement }}
+ */
+function* walkSequence(body, currentPath = []) {
+    for (let i = 0; i < body.length; i++) {
+        const element = body[i]
+        const path = [...currentPath, i]
+
+        yield { path, element }
+
+        if (element.sequence && Array.isArray(element.sequence)) {
+            yield* walkSequence(element.sequence, path)
+        }
+    }
+}
+
+/**
+ * Are the pathArrays equal?
+ * @param {PathArray} pathArray1 
+ * @param {PathArray} pathArray2 
+ * @returns {boolean}
+ */
+function arePathArraysEqual(pathArray1, pathArray2) {
+    return (pathArray1.length === pathArray2.length && pathArray1.every((val, i) => val === pathArray2[i]))
+}

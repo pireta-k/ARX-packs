@@ -342,6 +342,7 @@ export const enLocalization = {
     "spell.aura magna": 'хорошее заклинание левитации',
     "spell.aura magna magna": 'мощное заклинание левитации',
     "spell.signum": 'заклинание метки',
+    "spell.rattum illusio": 'заклинание успокоения всех крыс, у которых есть спокойная фаза',
     "spell.rattum illusio magna": 'заклинание провокации всех спокойных крыс',
     "spell.rattum non invocatio": 'заклинание уничтожения небольших крыс',
     'spell.venenatio': 'заклинание отравления',
@@ -390,6 +391,7 @@ export const enLocalization = {
     "spell.impetus": 'заклинание небольшого урона',
     "spell.impetus magna": 'заклинание хорошего урона',
     "spell.impetus magna magna": 'заклинание мощного урона',
+    "spell.non invocatio visus": 'заклинание невидимой головы на 60 секунд',
 
     "emote.cannot_cus_knocked": 'You cannot use emotes while unconscious.',
     "emote.cannot_cus_moving": 'To start the animation, stand still in one place.',
