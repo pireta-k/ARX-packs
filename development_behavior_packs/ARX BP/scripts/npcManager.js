@@ -667,7 +667,6 @@ class Thread {
 
         // Initialize
         this.path = path
-        this.threadTable = NPCManager.ThreadTable.get(NPCSequenceInstance.entity)
         this.sequence = NPCSequenceInstance
         this.isPending = false
 
@@ -725,28 +724,37 @@ class Thread {
             return 'doNotClearSequenceData'
         }
 
-        // Get a path to an element
-        const pathToElement = new Path(this.sequence, [...this.path.pathArray, fromStep])
+        /** @type {Path} */
+        let pathToElement = new Path(this.sequence, [...this.path.pathArray, fromStep])
+        /** @type {Element} */
+        let element
+        /** @type {SequenceElementResponce} */
+        let response
 
-        // Get element
-        const element = new Element(pathToElement)
+        while (true) {
+            // Get element
+            element = new Element(pathToElement)
 
-        // Run element
-        const response = await element.execute()
+            // Run element
+            response = await element.execute()
 
-        // Process responce
-        if (response === 'fail') console.warn(`An sequence ${this.sequence.id} element on path ${pathToElement} has reported a failure`)
-        else if (response === 'finishThread') {
-            this.threadTable.removeStep(this.path.pathArray)
-        }
+            // Process responce
+            if (response === 'fail') console.warn(`An sequence ${this.sequence.id} element on path ${pathToElement.pathArray} has reported a failure`)
+            else if (response === 'finishThread') {
+                NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by flag "finishThread"`)
+                this.sequence.threadTable.removePath(pathToElement.pathArray)
+                return 'success'
+            }
 
-        // Run next
-        const nextPath = pathToElement.getNextPathOnTheSameLevel()
-        if (!nextPath) {
-            NPCManager.log(`A thread execution FINISHED for sequence ${this.sequence.id}, path ${this.path.pathArray}`)
-            return
-        } else {
-            await this.run(nextPath.getHeader())
+            if (pathToElement.isLast()) { // Last element
+                NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by last element`)
+                this.sequence.threadTable.removePath(pathToElement.pathArray)
+                return 'success'
+            } else { // Not last
+                const nextPath = pathToElement.getNextPathOnTheSameLevel()
+                this.sequence.threadTable.replacePathWith(pathToElement.pathArray, nextPath.pathArray)
+                pathToElement = nextPath
+            }
         }
     }
 }
@@ -771,6 +779,7 @@ class NPCSequence {
         this.baitBlockId = sequence.head.baitBlockId
         this.canBeAppliedOn = sequence.head.canBeAppliedOn
         this.lightPostMap = sequence.head.lightPostMap
+        this.threadTable = NPCManager.ThreadTable.get(entity)
 
         this.body = sequence.body
 
@@ -811,7 +820,7 @@ class NPCSequence {
     /** @typedef {Record<PathArray, ThreadResponceData>} ThreadResponce */
     /**
      * @typedef {Object} ThreadResponceData
-     * @property {'sucess' | 'fail'} status
+     * @property {'success' | 'fail'} status
      * @property {Boolean} [clearSequenceData=true]
      */
 
@@ -1269,7 +1278,7 @@ export class NPCManager {
         }
 
         /**
-         * Get an index of the provided step in entity's stephub. If step is not in hub, return undefined
+         * Get an index of the provided path in entity's Threadtable. If path is not in hub, return undefined
          * @param {PathArray} pathArrayToCheck 
          * @returns {number | undefined}
          */
@@ -1286,7 +1295,7 @@ export class NPCManager {
          * @param {PathArray} stepToReplaceWith 
          * @returns {Boolean}
          */
-        replaceStepWith(stepToReplace, stepToReplaceWith) {
+        replacePathWith(stepToReplace, stepToReplaceWith) {
             const index = this.#getIndexOfPath(stepToReplace)
             if (index === undefined) {
                 console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved to threadTable.`)
@@ -1301,7 +1310,7 @@ export class NPCManager {
          * Adds a new step to threadTable
          * @param {PathArray} step 
          */
-        addStep(step) {
+        addPath(step) {
             if (this.#getIndexOfPath(step) !== undefined) {
                 // console.warn(`Trying to add to a hub a step that is already in hub - aborted.`)
                 return this
@@ -1316,7 +1325,7 @@ export class NPCManager {
          * If no step provided, clears all the threadTable
          * @param {PathArray} [step]
          */
-        removeStep(step) {
+        removePath(step) {
             const index = this.#getIndexOfPath(step)
             if (index === undefined) {
                 console.warn(`Cannot remove a step ${step} that is not in the hub rn`)
@@ -1338,7 +1347,7 @@ export class NPCManager {
          * Get a number of currently saved steps
          * @returns {Number}
          */
-        getNumberOfSteps() {
+        getNumberOfPaths() {
             return this.hub.length
         }
     }
