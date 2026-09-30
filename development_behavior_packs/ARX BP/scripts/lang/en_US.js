@@ -429,6 +429,7 @@ export const enLocalization = {
     "item.bannedWasReplaced": "The item you've just picked up §8(id: $0$)§f is prohibited in Arx. It was replaced with its ingredients.",
 
     "eve.name": 'Eve',
+    "eve.secret_name": 'Evening',
     "chat.eve.hello": "Hi! I'm Eve.",
 
     "update.played_world_form.title": 'Arx installation',

@@ -268,9 +268,53 @@ const sequences = {
             canBeAppliedOn: ['arx:eve']
         },
         body: [
-            { type: "goto", location: { x: 5, y: -60, z: 5 } },
-            { type: 'wait', seconds: 1 },
-            { type: "goto", location: { x: 0, y: -60, z: 0 } },
+            { type: "setLocalName", localizationKey: "eve.name" },
+            { type: "say", sayRawKey: true, messageType: 'local', key: "Hi. This is a simple sequence for me." },
+            {
+                type: "subsequence",
+                await: true,
+                sequence: [
+                    { type: "goto", location: { x: -5, y: -60, z: 5 } },
+                    { type: "goto", location: { x: -5, y: -60, z: -5 } },
+                    { type: "goto", location: { x: 0, y: -60, z: 0 } },
+                ]
+            },
+            {
+                type: "subsequence",
+                await: true,
+                sequence: [
+                    { type: 'wait', seconds: 2 },
+                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 1" },
+                    { type: 'wait', seconds: 2 },
+                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 2" },
+                    { type: 'wait', seconds: 2 },
+                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 3" },
+                ]
+            }
+        ]
+    },
+
+    eve_crash_test: {
+        head: {
+            baitBlockId: 'arx:bait_eve',
+            canBeAppliedOn: ['arx:eve']
+        },
+        body: [
+            { type: "setLocalName", localizationKey: "eve.name" },
+            { type: "say", sayRawKey: true, messageType: 'local', key: "Started." },
+            {
+                type: "subsequence",
+                await: true,
+                sequence: [
+                    { type: 'wait', seconds: 2 },
+                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 1" },
+                    { type: 'wait', seconds: 2 },
+                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 2" },
+                    { type: 'wait', seconds: 2 },
+                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 3" },
+                ]
+            },
+            { type: "say", sayRawKey: true, messageType: 'local', key: "Finished." },
         ]
     },
 }
@@ -287,9 +331,32 @@ const sequences = {
 const elementsRegistry = {
     subsequence: {
         run: async (element) => {
-            await new Thread(element.path).run()
+            const parentPathArray = element.path.pathArray
+            const threadTable = element.path.sequence.threadTable
+
+            // Ищем все пути в ThreadTable, которые находятся внутри этой подпоследовательности
+            const childPaths = threadTable.getChildPathsFor(parentPathArray)
+
+            if (childPaths.length > 0) {
+                // Restore child thread
+                const fromStep = childPaths[0][parentPathArray.length]
+
+                if (element.object.await) {
+                    await new Thread(element.path).run(fromStep)
+                } else {
+                    new Thread(element.path).run(fromStep)
+                }
+            } else {
+                // Usual launch
+                if (element.object.await) {
+                    await new Thread(element.path).run(0)
+                } else {
+                    new Thread(element.path).run(0)
+                }
+            }
         },
         isSubsequence: true,
+
     },
     goto: {
         run: async (element) => {
@@ -397,7 +464,7 @@ const elementsRegistry = {
             element.path.sequence.entity.sDP('localizationName', element.object.localizationKey)
         }
     },
-    transit: {
+    transit: { // To-update
         async run(element) {
             const seqElement = element.object
             const e = element.path.sequence.entity
@@ -407,24 +474,24 @@ const elementsRegistry = {
                 return 'fail'
             }
             NPCManager.runSequence(e, seqElement.sequenceId, { allowOverride: true })
-            return 'finishThread'
+            // We don't have to return something - override will kill current sequence anyway
         }
     },
     lightPost: {
         async run() { } // Do nothing
     },
-    jumpToLightPost: {
+    jumpToLightPost: { // Bad realization!!!
         async run(element) {
             const seqElement = element.object
-            const stepToJumpTo = element.path.sequence.lightPostMap.get(seqElement.name)
+            const pathArrayToJumpTo = element.path.sequence.lightPostMap.get(seqElement.name)
+            const pathToJumpTo = new Path(element.path.sequence, pathArrayToJumpTo)
 
-            if (!stepToJumpTo) {
-                console.warn(`Lightpost with name ${seqElement.name} do not exist on sequence ${element.path.sequence.id}`)
+            if (!pathArrayToJumpTo) {
+                console.warn(`Lightpost with name ${seqElement.name}, requred by element jumpToLightPost at path ${element.path.pathArray} do not exist on sequence ${element.path.sequence.id}`)
                 return 'fail'
             }
-            return {
-                forceNextStep: stepToJumpTo
-            }
+            await new Thread(pathToJumpTo.getParentPath()).run(pathToJumpTo.getHeader())
+            return 'finishThread'
         }
     },
     cycle: {
@@ -439,6 +506,7 @@ const elementsRegistry = {
  * A path in a sequence. 
  */
 class Path {
+    #cachedElement
 
     /**
      * @param {NPCSequence} seqInstance
@@ -503,7 +571,7 @@ class Path {
     }
 
     /**
-     * Get a parent path
+     * Get a parent path. For path [4, 2, 10] parent path is [4, 2]
      * @returns {Path | null}
      */
     getParentPath() {
@@ -534,7 +602,11 @@ class Path {
      * @returns {Element}
      */
     getElement() {
-        return new Element(this)
+        if (!this.#cachedElement) {
+            const element = new Element(this)
+            this.#cachedElement = element
+            return element
+        } else return this.#cachedElement
     }
 }
 
@@ -634,7 +706,7 @@ class Element {
             response = await elementsRegistry[this.object.type].run(this)
         }
         catch (error) {
-            console.error(`Cannot execute an element at path ${this.path.pathArray}, sequence ${this.path.sequence}, type ${this.object.type}: \n${error}${error.stack}`)
+            console.error(`Cannot execute an element at path ${this.path?.pathArray}, sequence ${this.path?.sequence}, type ${this.object?.type}: \n${error}${error.stack}`)
         }
         return response
     }
@@ -643,7 +715,7 @@ class Element {
 /**
  * A thread. 
  * Has only one step.
- * Creates from a NPC Sequence instance and path
+ * Creates from path
  */
 class Thread {
 
@@ -667,24 +739,6 @@ class Thread {
         this.isPending = false
 
         NPCManager.log(`A thread created for path <${path.isRoot ? 'Root' : path.pathArray}>, seq ${path.sequence.id}`)
-    }
-
-
-    // === Pending logic ===
-    // Thread can be pended. It means, it waits for something. As example, a thread waits for it's child thread to end. 
-    // Using of Promise system to await child thread isn't reliable: it will break on world reload.
-    static pendingThreads = new Map()
-
-    pend() {
-        this.isPending = true
-        Thread.pendingThreads.set(this.path, this)
-        NPCManager.log(`A thread was pended for path ${path.pathArray}, seq ${NPCSequenceInstance.id}`)
-    }
-
-    unpend() {
-        this.isPending = false
-        Thread.pendingThreads.delete(this.path)
-        NPCManager.log(`A thread was unpended for path ${path.pathArray}, seq ${NPCSequenceInstance.id}`)
     }
 
     /**
@@ -720,6 +774,8 @@ class Thread {
             return 'doNotClearSequenceData'
         }
 
+        this.path.sequence.activeThreads.push(this)
+
         /** @type {Path} */
         let pathToElement = new Path(this.path.sequence, [...this.path.pathArray, fromStep])
         /** @type {Element} */
@@ -741,19 +797,22 @@ class Thread {
             else if (response === 'finishThread') {
                 NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by flag "finishThread"`)
                 this.path.sequence.threadTable.removePath(pathToElement.pathArray)
-                return 'success'
+                break
             }
 
             if (pathToElement.isLast()) { // Last element
                 NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by last element`)
                 this.path.sequence.threadTable.removePath(pathToElement.pathArray)
-                return 'success'
-            } else { // Not last
+                break
+            }
+            else { // Not last
                 const nextPath = pathToElement.getNextPathOnTheSameLevel()
                 this.path.sequence.threadTable.replacePathWith(pathToElement.pathArray, nextPath.pathArray)
                 pathToElement = nextPath
             }
         }
+
+        this.path.sequence.activeThreads = this.path.sequence.activeThreads.filter(thread => thread !== this)
     }
 }
 
@@ -780,6 +839,7 @@ class NPCSequence {
         this.threadTable = NPCManager.ThreadTable.get(entity)
 
         this.body = sequence.body
+        this.activeThreads = []
 
         NPCManager.log(`New NPCSequence ${this.id} initialized on Entity ${entity.typeId}`)
     }
@@ -801,9 +861,12 @@ class NPCSequence {
         const e = this.entity
         const threadTable = NPCManager.ThreadTable.get(e)
 
+        // Get only root threads
+        const independentPathArrays = threadTable.getIndependentPathArrays()
+
         // == Threads launch ===
         await Promise.all(
-            threadTable.hub.map(path => new Thread(new Path(this, path).getParentPath()).run(path.at(-1)))
+            independentPathArrays.map(pathArray => new Thread(new Path(this, pathArray).getParentPath()).run(pathArray.at(-1)))
         )
 
         // Finished
@@ -1015,9 +1078,10 @@ export class NPCManager {
     static clearSequence(e) {
         let hasCurrentSeq
         if (e && e.isValid) {
-            NPCManager.assingSequenceId(e, undefined)
             // Current seq
-            hasCurrentSeq = !!this.getSequenceId(e)
+            hasCurrentSeq = this.hasSequence(e)
+
+            NPCManager.assingSequenceId(e, undefined)
 
             NPCManager.ThreadTable.get(e).reset()
 
@@ -1033,8 +1097,11 @@ export class NPCManager {
     }
     /** @param {Entity} e */
     static getSequenceId(e) { return e.gDP(dPPrefix + 'sequenceId') }
-    /** @param {Entity} e */
-    static hasSavedSequence(e) { return NPCManager.getSequenceId(e) !== undefined }
+    /** 
+     * Does the entity has a DNPCM sequence on it?
+     * @param {Entity} e 
+     */
+    static hasSequence(e) { return NPCManager.getSequenceId(e) !== undefined }
     /**
      * Get a sequence instance that is registered on an entity right now
      * @param {Entity} e 
@@ -1124,6 +1191,7 @@ export class NPCManager {
             console.warn('restoreSequence: No sequence to restore')
             return
         }
+        NPCManager.log(`§vrestoreSequence§f: Restored sequence ${currentSeqId} for entity ${e.typeId}`)
         // We don't have to await this
         this.runSequence(e, currentSeqId, { mode: 'auto' })
     }
@@ -1260,47 +1328,79 @@ export class NPCManager {
 
         /**
          * Replaces a step in a hub with a new one
-         * @param {PathArray} stepToReplace 
-         * @param {PathArray} stepToReplaceWith 
+         * @param {PathArray} pathArrayToReplace 
+         * @param {PathArray} pathArrayToReplaceWith 
          * @returns {Boolean}
          */
-        replacePathWith(stepToReplace, stepToReplaceWith) {
-            const index = this.#getIndexOfPath(stepToReplace)
+        replacePathWith(pathArrayToReplace, pathArrayToReplaceWith) {
+            const index = this.#getIndexOfPath(pathArrayToReplace)
             if (index === undefined) {
-                console.warn(`Trying to replace a step ${stepToReplace}, which is not yet saved to threadTable.`)
+                console.warn(`Trying to replace a step ${pathArrayToReplace}, which is not yet saved to threadTable.`)
                 return false
             }
-            this.hub[index] = stepToReplaceWith
+            this.hub[index] = pathArrayToReplaceWith
             this.#save()
+            NPCManager.log(`§dThreadTable§f: pathArray ${pathArrayToReplace} replaced with ${pathArrayToReplaceWith}`)
             return true
         }
 
         /**
-         * Adds a new step to threadTable
-         * @param {PathArray} step 
+         * Get only independent paths. Not child paths.
+         * A path is independent if no other path in the hub is its strict prefix.
+         * @returns {PathArray[]}
          */
-        addPath(step) {
-            if (this.#getIndexOfPath(step) !== undefined) {
+        getIndependentPathArrays() {
+            return this.hub.filter(path => {
+                return !this.hub.some(otherPath => {
+                    // otherPath must be strictly shorter to be a prefix
+                    if (path.length <= otherPath.length) return false;
+                    // Check if otherPath is a prefix of path
+                    return path.slice(0, otherPath.length).every((val, i) => val === otherPath[i]);
+                });
+            });
+        }
+
+        /**
+         * Get saved child paths to the provided path
+         * @param {PathArray} pathArray 
+         * @returns {PathArray[]}
+         */
+        getChildPathsFor(pathArray) {
+            return this.hub.filter(path => {
+                // Child path must be strictly longer than the parent path
+                if (path.length <= pathArray.length) return false;
+                // Check if path starts with pathArray
+                return path.slice(0, pathArray.length).every((val, i) => val === pathArray[i]);
+            });
+        }
+
+        /**
+         * Adds a new step to threadTable
+         * @param {PathArray} pathArray
+         */
+        addPath(pathArray) {
+            if (this.#getIndexOfPath(pathArray) !== undefined) {
                 // console.warn(`Trying to add to a hub a step that is already in hub - aborted.`)
                 return this
             }
-            this.hub.push(step)
+            this.hub.push(pathArray)
             this.#save()
+            NPCManager.log(`§dThreadTable§f: new path ${pathArray} added`)
             return this
         }
 
         /**
          * Removes given step.
-         * If no step provided, clears all the threadTable
-         * @param {PathArray} [step]
+         * @param {PathArray} pathArray
          */
-        removePath(step) {
-            const index = this.#getIndexOfPath(step)
+        removePath(pathArray) {
+            const index = this.#getIndexOfPath(pathArray)
             if (index === undefined) {
-                console.warn(`Cannot remove a step ${step} that is not in the hub rn`)
+                console.warn(`§dThreadTable§f: Cannot remove a pathArray ${pathArray}`)
                 return
             }
             this.hub.splice(index, 1)
+            NPCManager.log(`§dThreadTable§f: path ${pathArray} removed`)
             this.#save()
         }
 
@@ -1309,6 +1409,7 @@ export class NPCManager {
          */
         reset() {
             this.hub = NPCManager.ThreadTable.getNewThreadTable()
+            NPCManager.log(`§dThreadTable§f: resetted`)
             this.#save()
         }
 
@@ -1316,7 +1417,7 @@ export class NPCManager {
          * Get a number of currently saved steps
          * @returns {Number}
          */
-        getNumberOfPaths() {
+        getLength() {
             return this.hub.length
         }
     }
@@ -1335,8 +1436,8 @@ export class NPCManager {
 // An entity was loaded. Check for sequences
 world.afterEvents.entityLoad.subscribe(async event => {
     const e = event.entity
-    if (NPCManager.hasSavedSequence(e) && !NPCManager.isEntityProcessing(e)) {
-        NPCManager.log(`An entity ${e.typeId} was loaded and it\'s sequence was restored`)
+    if (NPCManager.hasSequence(e) && !NPCManager.isEntityProcessing(e)) {
+        NPCManager.log(`§bafterEvents.entityLoad§f: An entity ${e.typeId} was loaded and it\'s sequence was restored`)
         NPCManager.restoreSequence(e)
     }
 })
@@ -1358,10 +1459,10 @@ world.beforeEvents.entityRemove.subscribe(async event => {
 system.run(() => {
     for (const d of world.getAllDimensions()) {
         for (const e of d.getEntities()) {
-            if (NPCManager.hasSavedSequence(e) && !NPCManager.isEntityProcessing(e)) {
+            if (NPCManager.hasSequence(e) && !NPCManager.isEntityProcessing(e)) {
                 NPCManager.restoreSequence(e)
 
-                NPCManager.log(`Entity ${e.typeId} was restored, apparently after /reload command`)
+                NPCManager.log(`§vReload restoration§f: Entity's ${e.typeId} sequence was restored, apparently after /reload command`)
             }
         }
     }
