@@ -2,7 +2,6 @@ import { Entity, system, world } from "@minecraft/server"
 import { sleep } from "./arxLib/time"
 import { Vector } from "./arxLib/math"
 import { Chat } from "./chat"
-import { md5 } from "./arxLib/converters"
 import { gDP, sDP } from "./arxLib/DPOperations"
 
 /*====================================
@@ -69,12 +68,13 @@ const dPPrefix = 'NPCManager:'
  * @property {SequenceArrayElement[]} sequence
  */
 
-/** Cycle
+/** 
+ * Cycle
  * Make inner steps to run in cycle. Intended to use with merge (a NPC goes in circles and waits when you'll give her food)
  * @typedef {Object} SequenceArrayElementCycle
  * @property {"cycle"} type
  * @property {SequenceArrayElement[]} sequence
- * @property {Number} [repeatTimes]
+ * @property {Number} [repeatTimes] - Number of repetitions. If not specified, runs infinitely.
  */
 
 /**
@@ -101,7 +101,7 @@ const dPPrefix = 'NPCManager:'
  * @typedef {Object} SequenceArrayElementSay
  * @property {"say"} type
  * @property {String} key - Localization key
- * @property {MessageType} [messageType='local']
+ * @property {MessageType} [messageType='local'] - Local if not specified
  * @property {Boolean} [sayRawKey=false]
  */
 
@@ -262,38 +262,6 @@ const sequences = {
         ]
     },
 
-    eve_simple: {
-        head: {
-            baitBlockId: 'arx:bait_eve',
-            canBeAppliedOn: ['arx:eve']
-        },
-        body: [
-            { type: "setLocalName", localizationKey: "eve.name" },
-            { type: "say", sayRawKey: true, messageType: 'local', key: "Hi. This is a simple sequence for me." },
-            {
-                type: "subsequence",
-                await: true,
-                sequence: [
-                    { type: "goto", location: { x: -5, y: -60, z: 5 } },
-                    { type: "goto", location: { x: -5, y: -60, z: -5 } },
-                    { type: "goto", location: { x: 0, y: -60, z: 0 } },
-                ]
-            },
-            {
-                type: "subsequence",
-                await: true,
-                sequence: [
-                    { type: 'wait', seconds: 2 },
-                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 1" },
-                    { type: 'wait', seconds: 2 },
-                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 2" },
-                    { type: 'wait', seconds: 2 },
-                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 3" },
-                ]
-            }
-        ]
-    },
-
     eve_crash_test: {
         head: {
             baitBlockId: 'arx:bait_eve',
@@ -302,16 +270,20 @@ const sequences = {
         body: [
             { type: "setLocalName", localizationKey: "eve.name" },
             { type: "say", sayRawKey: true, messageType: 'local', key: "Started." },
+
+            { type: "say", key: 'Give me a code: 12343', sayRawKey: true },
             {
-                type: "subsequence",
-                await: true,
+                type: "merge",
+                mode: "awaitOnlyAt0Position",
                 sequence: [
-                    { type: 'wait', seconds: 2 },
-                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 1" },
-                    { type: 'wait', seconds: 2 },
-                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 2" },
-                    { type: 'wait', seconds: 2 },
-                    { type: "say", sayRawKey: true, messageType: 'local', key: "Msg 3" },
+                    { type: "expectChatMessage", mode: "includes", text: '12343', isMessed: "any" },
+                    {
+                        type: "cycle",
+                        sequence: [
+                            { type: "wait", seconds: 7 },
+                            { type: "say", key: 'Give me a code!', sayRawKey: true },
+                        ]
+                    }
                 ]
             },
             { type: "say", sayRawKey: true, messageType: 'local', key: "Finished." },
@@ -341,22 +313,67 @@ const elementsRegistry = {
                 // Restore child thread
                 const fromStep = childPaths[0][parentPathArray.length]
 
-                if (element.object.await) {
-                    await new Thread(element.path).run(fromStep)
-                } else {
+                if (element.object.await === false) {
                     new Thread(element.path).run(fromStep)
+                } else {
+                    await new Thread(element.path).run(fromStep)
                 }
             } else {
                 // Usual launch
-                if (element.object.await) {
-                    await new Thread(element.path).run(0)
-                } else {
+                if (element.object.await === false) {
                     new Thread(element.path).run(0)
+                } else {
+                    await new Thread(element.path).run(0)
                 }
             }
         },
         isSubsequence: true,
 
+    },
+    cycle: {
+        run: async (element) => {
+            const e = element.path.sequence.entity
+            const seqElement = element.object
+            const repeatTimes = seqElement.repeatTimes
+            const isInfinite = repeatTimes === undefined || repeatTimes === null
+
+            // Unique cycle counter DP name
+            const cycleKey = `${dPPrefix}cycleCounter_${element.path.pathArray.join('_')}`
+
+            // Get current iteration
+            let currentIteration = e.gDP(cycleKey, 0)
+
+            while (isInfinite || currentIteration < repeatTimes) {
+                const parentPathArray = element.path.pathArray
+                const threadTable = element.path.sequence.threadTable
+                const childPaths = threadTable.getChildPathsFor(parentPathArray)
+
+                let fromStep = 0
+                if (childPaths.length > 0) {
+                    // Restore
+                    fromStep = childPaths[0][parentPathArray.length]
+                }
+
+                // Run child sequence
+                const thread = new Thread(element.path)
+                const threadResponse = await thread.run(fromStep)
+
+                // If a thread was interrrupted
+                if (threadResponse === 'finishThread') {
+                    e.sDP(cycleKey, undefined) // Clear counter
+                    return 'finishThread' // Finish this thread
+                }
+
+                // Increment counter
+                currentIteration++
+                e.sDP(cycleKey, currentIteration)
+            }
+
+            // End
+            e.sDP(cycleKey, undefined)
+            return 'success'
+        },
+        isContainer: true
     },
     goto: {
         run: async (element) => {
@@ -367,7 +384,7 @@ const elementsRegistry = {
             await new Promise((resolve, reject) => {
                 const b = e.dimension.getBlock(resolvedLocation)
                 if (!b) {
-                    console.warn(`Cannot create a block object while processing a sequence (id: ${NPCManager.getSequenceId(e)}, step ${step}). The entity was teleported to desired location instead of classic navigation`)
+                    console.warn(`Cannot create a block object while processing a sequence (id: ${NPCManager.getSequenceId(e)}, path ${element.path.toString()}). The entity was teleported to desired location instead of classic navigation`)
                     e.teleport(resolvedLocation)
                     resolve(true)
                     return 'fail'
@@ -385,6 +402,7 @@ const elementsRegistry = {
                         system.clearRun(intervalId)
                         if (b) b.setType('minecraft:air')
                         e.teleport(resolvedLocation) // Teleport entity to the desired location
+                        NPCManager.log(`§aGoto element§f: Timeout, entity was teleported`)
                         resolve(true)
                         return 'success'
                     }
@@ -405,7 +423,7 @@ const elementsRegistry = {
         run: async (element) => {
             const ticks = Math.round(element.object.ticks ?? element.object.seconds * 20)
             if (!ticks || typeof ticks !== 'number' || ticks < 0) {
-                console.error(`NPCSequence: Wait element ${step} on seq ${element.path.sequence.id}: invalid (ticks | seconds) value provided`)
+                console.error(`NPCSequence: Wait element ${element.path.toString()} on seq ${element.path.sequence.id}: invalid (ticks | seconds) value provided`)
             } else {
                 await sleep(ticks)
             }
@@ -487,18 +505,12 @@ const elementsRegistry = {
             const pathToJumpTo = new Path(element.path.sequence, pathArrayToJumpTo)
 
             if (!pathArrayToJumpTo) {
-                console.warn(`Lightpost with name ${seqElement.name}, requred by element jumpToLightPost at path ${element.path.pathArray} do not exist on sequence ${element.path.sequence.id}`)
+                console.warn(`Lightpost with name ${seqElement.name}, requred by element jumpToLightPost at path ${element.path.toString()} do not exist on sequence ${element.path.sequence.id}`)
                 return 'fail'
             }
             await new Thread(pathToJumpTo.getParentPath()).run(pathToJumpTo.getHeader())
             return 'finishThread'
         }
-    },
-    cycle: {
-        async run(element) {
-            // TO-DO
-        },
-        isContainer: true
     }
 }
 
@@ -521,7 +533,7 @@ class Path {
 
         this.isValid = this.#isValid() ? true : false
 
-        NPCManager.log(`Path ${pathArray} was initialised for sequence ${seqInstance.id}`)
+        NPCManager.log(`Path with array ${pathArray} was initialised for sequence ${seqInstance.id}`)
     }
 
     /** @returns {Boolean} */
@@ -608,7 +620,17 @@ class Path {
             return element
         } else return this.#cachedElement
     }
+
+    /**
+     * Get a convenient for a human string
+     */
+    toString() {
+        if (this.isRoot) return 'ROOT'
+        return `[${this.pathArray.join(', ')}]`
+    }
 }
+
+/** @typedef {'finishThread' | 'success' | 'fail' } SequenceElementResponce */
 
 /**
  * Single element of a sequence
@@ -634,7 +656,7 @@ class Element {
         // Requires Object
         this.isSubsequence = this.#isSubsequence()
 
-        NPCManager.log(`New Element got for Path ${path.pathArray}`)
+        NPCManager.log(`New Element got for Path ${path.toString()}`)
     }
 
     /**
@@ -681,7 +703,7 @@ class Element {
         if (this.#isObjectValid(resultObject)) {
             return resultObject
         } else {
-            console.warn(`Object for Element in seq ${this.path.sequence.id}, path ${this.path.pathArray} is not valid`)
+            console.warn(`Object for Element in seq ${this.path.sequence.id}, path ${this.path.toString()} is not valid`)
             this.isValid = false
             return null
         }
@@ -698,9 +720,11 @@ class Element {
 
     /**
      * Execute the element and wait for its end
+     * @returns {SequenceElementResponce}
      */
     async execute() {
         /** @type {SequenceElementResponce} */
+        NPCManager.log(`§eElement§f: EXECUTING ${this.object.type} on path ${this.path.toString()}`)
         let response = 'fail'
         try {
             response = await elementsRegistry[this.object.type].run(this)
@@ -708,9 +732,17 @@ class Element {
         catch (error) {
             console.error(`Cannot execute an element at path ${this.path?.pathArray}, sequence ${this.path?.sequence}, type ${this.object?.type}: \n${error}${error.stack}`)
         }
+        NPCManager.log(`§eElement§f: FINISHED ${this.object.type} on path ${this.path.toString()}`)
         return response
     }
 }
+
+/** @typedef {Record<PathArray, ThreadResponceData>} ThreadResponce */
+/**
+ * @typedef {Object} ThreadResponceData
+ * @property {'success' | 'fail'} status
+ * @property {Boolean} [clearSequenceData=true]
+ */
 
 /**
  * A thread. 
@@ -735,10 +767,23 @@ class Thread {
         }
 
         // Initialize
+        this.isAborted = false
         this.path = path
-        this.isPending = false
 
-        NPCManager.log(`A thread created for path <${path.isRoot ? 'Root' : path.pathArray}>, seq ${path.sequence.id}`)
+        NPCManager.log(`A thread created for path ${path.toString()}, seq ${path.sequence.id}`)
+    }
+
+    /**
+     * Forcefully stops the thread. 
+     * It will finish its current step, but won't execute the next ones.
+     */
+    abort() {
+        if (this.isAborted) return
+        this.isAborted = true
+
+        // Remove from ThreadTable so it doesn't block restoration or independent path checks
+        this.path.sequence.threadTable.removePath(this.path.pathArray)
+        NPCManager.log(`Thread <${this.path.pathArray}> was aborted`)
     }
 
     /**
@@ -747,7 +792,7 @@ class Thread {
      * @returns {Promise<ThreadResponce>}
      */
     async run(fromStep = 0) {
-        NPCManager.log(`A thread RUNNED for sequence ${this.path.sequence.id}, path ${this.path.pathArray}, from step ${fromStep}`)
+        NPCManager.log(`A thread RUNNED for sequence ${this.path.sequence.id}, path ${this.path.toString()}, from step ${fromStep}`)
         const e = this.path.sequence.entity
 
         // Thread is not valid
@@ -770,7 +815,7 @@ class Thread {
         }
         // Check, if the entity is in loading list
         if (!NPCManager.isEntityProcessing(e)) {
-            console.warn(`Thread ${this.path.sequence.id} on path ${this.path.pathArray} started, but the entity is not in the active Entities list.`)
+            console.warn(`Thread ${this.path.sequence.id} on path ${this.path.toString()} started, but the entity is not in the active Entities list.`)
             return 'doNotClearSequenceData'
         }
 
@@ -780,39 +825,53 @@ class Thread {
         let pathToElement = new Path(this.path.sequence, [...this.path.pathArray, fromStep])
         /** @type {Element} */
         let element
-        /** @type {SequenceElementResponce} */
+        /** @type {Promise<SequenceElementResponce>} */
         let response
 
         this.path.sequence.threadTable.addPath(pathToElement.pathArray)
 
-        while (true) {
-            // Get element
-            element = new Element(pathToElement)
+        try {
+            while (true) {
+                // Stop execution if the thread was aborted externally (e.g., by merge)
+                if (this.isAborted) {
+                    NPCManager.log(`Thread ${this.path.pathArray} execution stopped due to abort`)
+                    break
+                }
 
-            // Run element
-            response = await element.execute()
+                // Get element
+                element = new Element(pathToElement)
 
-            // Process responce
-            if (response === 'fail') console.warn(`An sequence ${this.path.sequence.id} element on path ${pathToElement.pathArray} has reported a failure`)
-            else if (response === 'finishThread') {
-                NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by flag "finishThread"`)
-                this.path.sequence.threadTable.removePath(pathToElement.pathArray)
-                break
-            }
+                // Run element
+                response = await element.execute()
 
-            if (pathToElement.isLast()) { // Last element
-                NPCManager.log(`Thread ${this.path.pathArray} of sequence ${this.path.sequence.id} FINISHED by last element`)
-                this.path.sequence.threadTable.removePath(pathToElement.pathArray)
-                break
-            }
-            else { // Not last
-                const nextPath = pathToElement.getNextPathOnTheSameLevel()
-                this.path.sequence.threadTable.replacePathWith(pathToElement.pathArray, nextPath.pathArray)
-                pathToElement = nextPath
+                // Process responce
+                if (response === 'fail') console.warn(`An sequence ${this.path.sequence.id} element on path ${pathToElement.pathArray} has reported a failure`)
+                else if (response === 'finishThread') {
+                    NPCManager.log(`Thread ${this.path.toString()} of sequence ${this.path.sequence.id} FINISHED by flag "finishThread"`)
+                    this.path.sequence.threadTable.removePath(pathToElement.pathArray)
+                    this.path.sequence.activeThreads = this.path.sequence.activeThreads.filter(thread => thread !== this)
+                    return 'finishThread'
+                }
+
+                if (pathToElement.isLast()) { // Last element
+                    NPCManager.log(`Thread ${this.path.toString()} of sequence ${this.path.sequence.id} FINISHED by last element`)
+                    this.path.sequence.threadTable.removePath(pathToElement.pathArray)
+                    this.path.sequence.activeThreads = this.path.sequence.activeThreads.filter(thread => thread !== this)
+                    return 'success'
+                }
+                else { // Not last
+                    const nextPath = pathToElement.getNextPathOnTheSameLevel()
+                    this.path.sequence.threadTable.replacePathWith(pathToElement.pathArray, nextPath.pathArray)
+                    pathToElement = nextPath
+                }
             }
         }
-
-        this.path.sequence.activeThreads = this.path.sequence.activeThreads.filter(thread => thread !== this)
+        catch (err) {
+            console.error(`An error occured while processing the main cycle of a thread: ${err}${err.stack}`)
+        }
+        finally {
+            this.path.sequence.activeThreads = this.path.sequence.activeThreads.filter(thread => thread !== this)
+        }
     }
 }
 
@@ -843,15 +902,6 @@ class NPCSequence {
 
         NPCManager.log(`New NPCSequence ${this.id} initialized on Entity ${entity.typeId}`)
     }
-
-    /** @typedef {'finishThread' | 'success' | 'fail' | Record<any, any>} SequenceElementResponce */
-
-    /** @typedef {Record<PathArray, ThreadResponceData>} ThreadResponce */
-    /**
-     * @typedef {Object} ThreadResponceData
-     * @property {'success' | 'fail'} status
-     * @property {Boolean} [clearSequenceData=true]
-     */
 
     /**
      * === The main function of this class ===
@@ -1226,41 +1276,25 @@ export class NPCManager {
          * @param {Entity} e 
          */
         static freeze(e) {
+            if (this.getFreezeStatus(e)) return // Already freezed
+
             NPCManager.log(`Entity ${e.typeId} freezed`)
             NPCManager.removeEntity(e)
             NPCManager.unregisterChatListener(e)
-            this.applyFreezeStatus(e)
+            const currentEntities = world.gDP(this.freezedEntitiesDp, [])
+            currentEntities.push(e.id)
+            world.sDP(this.freezedEntitiesDp, currentEntities)
         }
         static unfreeze(e) {
+            if (!this.getFreezeStatus(e)) return // Isn't freezed
+
             NPCManager.log(`Entity ${e.typeId} unfreezed`)
             NPCManager.restoreSequence(e)
-            this.removeFreezeStatus(e)
-        }
-        /**
-         * Apply freeze status. Only affects saved data
-         * @param {Entity} e 
-         */
-        static applyFreezeStatus(e) {
-            NPCManager.log(`Called applyFreezeStatus on ` + e.typeId)
-            if (!this.getFreezeStatus(e)) {
-                NPCManager.log(`Applied freeze on ` + e.typeId + ': it wasn\'t freesed')
-                const currentEntities = world.gDP(this.freezedEntitiesDp, [])
-                currentEntities.push(e.id)
-                world.sDP(this.freezedEntitiesDp, currentEntities)
-            } else {
-                NPCManager.log('Freeze is already applied on ' + e.typeId)
-            }
-        }
-        /**
-         * Remove freeze status. Only affects saved data
-         * @param {Entity} e 
-         */
-        static removeFreezeStatus(e) {
-            NPCManager.log(`Called removeFreezeStatus on ` + e.typeId)
             const currentEntities = world.gDP(this.freezedEntitiesDp, [])
             world.sDP(this.freezedEntitiesDp, currentEntities.filter(id => id !== e.id))
         }
         static getFreezeStatus(e) {
+            if (!e) return false
             NPCManager.log(`Got freeze status for ` + e.typeId)
             return (world.gDP(this.freezedEntitiesDp, []).includes(e.id))
         }
@@ -1449,8 +1483,8 @@ world.beforeEvents.entityRemove.subscribe(async event => {
     NPCManager.removeEntity(e)
     NPCManager.unregisterChatListener(e)
 
-    // Remove freeze.
-    NPCManager.Freeze.removeFreezeStatus(e)
+    // Remove freeze
+    NPCManager.Freeze.unfreeze()
 
     NPCManager.log(`Entity ${e.typeId} was removed, all DNPCM data was unregistered`)
 })

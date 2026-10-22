@@ -883,6 +883,12 @@
 		"guide_wall_block": {
 			"textures": "textures/blocks/guide/guide_wall_block"
 		},
+		"guide_wall_block_orange": {
+			"textures": "textures/blocks/guide/guide_wall_block_orange"
+		},
+		"guide_door_block": {
+			"textures": "textures/blocks/guide/guide_door_block"
+		},
 
 
 		"mechanic_core": {

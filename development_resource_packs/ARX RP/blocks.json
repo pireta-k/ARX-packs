@@ -594,6 +594,13 @@
 	"arx:guide_wall_block": {
 		"textures": "guide_wall_block"
 	},
+	"arx:guide_wall_block_orange": {
+		"textures": "guide_wall_block_orange"
+	},
+	"arx:guide_door_block": {
+		"textures": "guide_door_block",
+		"sound": "netherite"
+	},
 
 	"arx:acss_anchor": {
 		"textures": "acss_anchor"

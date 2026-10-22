@@ -22,7 +22,6 @@ export function vectorXYZ2XZ(vectorXYZ) {
  * @returns {String}
  */
 export function md5(str) {
-    // Реализация MD5 на чистом JS
     function cmn(q, a, b, x, s, t) { a = add32(add32(a, q), add32(x, t)); return add32((a << s) | (a >>> (32 - s)), b); }
     function ff(a, b, c, d, x, s, t) { return cmn((b & c) | ((~b) & d), a, b, x, s, t); }
     function gg(a, b, c, d, x, s, t) { return cmn((b & d) | (c & (~d)), a, b, x, s, t); }
@@ -122,4 +121,13 @@ export function md5(str) {
         x[0] = add32(a, x[0]); x[1] = add32(b, x[1]); x[2] = add32(c, x[2]); x[3] = add32(d, x[3]);
     }
     return hex(md51(str));
+}
+
+class RLE {
+    static code(value) {
+
+    }
+    static decode(value) {
+        
+    }
 }
