@@ -437,4 +437,6 @@ export const enLocalization = {
     "update.played_world_form.continue": '§v>>§f §8Install Arx §v<<§f',
     "update.played_world_form.decline": '§a>>§f §8Decline [Recommended] §a<<§f',
     "update.played_world_form.cancelled": 'Arx installation §ccancelled§f. Arx cannot properly work without installation, so, remove Arx packs from this world or re-enter this world and §aconfirm§f Arx installation.',
+
+    'skills.levelup': 'New level',
 }
