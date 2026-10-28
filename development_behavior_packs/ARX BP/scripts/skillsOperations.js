@@ -3,42 +3,47 @@
 import { queueCommand } from './commandQueue'
 import { checkForItem } from './items/checkForItem'
 import { checkForTrait } from './traits/traitsOperations'
-import { iDP, sDP } from './arxLib/DPOperations'
+import { gDP, iDP, sDP } from './arxLib/DPOperations'
+import { Player } from '@minecraft/server'
+import { fl } from './lang/fetchLocalization'
 
-// Увеличиваем прогресс навыка на inputValue, учитывая срезание прогресса от уровня
+/**
+ * Increase player's skill progress. 
+ * @param {Player} player 
+ * @param {string} skill 
+ * @param {number} inputValue - number to increase. Ignores negative. +100 means 0 -> 1 lvl upgarde
+ */
 export function increaseSkillProgress(player, skill, inputValue) {
 
-    // Отрицательный/нулевой прирост навыка - запрещаем начисление
     if (inputValue <= 0) {
         return undefined
     }
 
-    // Если улучшаемого навыка не существует
     if (!(skill in registeredSkills)) {
-        console.warn(`Попыка увеличить прогресс незарегистрированного навыка ${skill}`)
+        console.warn(`Trying to increase progress of a non-existent skill ${skill}`)
         return undefined
     }
 
-    // Если мы в креативе или наблюдателе
-    if (player.getGameMode() === 'Creative' || player.getGameMode() === 'Spectator') {
+    const gm = player.getGameMode()
+    if (gm === 'Creative' || gm === 'Spectator') {
         return undefined
     }
 
-    // Определяем, насколько нужно улучшить навык
+    const progressDP = `skill:${skill}_progress`
+
+    // Define increaseValue
     let increaseValue = inputValue / (1.92 ** player.getDynamicProperty(`skill:${skill}_level`))
 
-    // Определяем множитель получаемого опыта
+    // XP mult
     const increaseMultiplier = calculateXPMultiplier(player)
-
-    // Домножаем получаемый опыт на множитель
     increaseValue *= increaseMultiplier
 
-    // Добавляем опыт игроку
-    iDP(player, `skill:${skill}_progress`, increaseValue)
+    // Write XP to player
+    iDP(player, progressDP, increaseValue)
 
 
-    // Проверяем, надо ли делать левелап
-    if (player.getDynamicProperty(`skill:${skill}_progress`) >= 100) {
+    // Level-up if needed
+    if (gDP(player, progressDP) >= 100) {
         increaseSkillLevel(player, skill)
     }
 }
@@ -72,28 +77,28 @@ export function calculateXPMultiplier(player) {
     if (checkForTrait(player, 'genius')) { increaseMultiplier += 0.1 }
     if (checkForTrait(player, 'lazy')) { increaseMultiplier -= 0.1 }
 
-    // Отправляем increaseMultiplier в DP
-    sDP(player, 'xpMultiplier', increaseMultiplier)
-
-    // Возврат
     return increaseMultiplier
 }
 
-// Увеличиваем уровень
+/**
+ * Increase player's skill level. Ignores math. All math is calculated in increaseSkillPregress()
+ * @param {Player} player 
+ * @param {string} skill 
+ */
 export function increaseSkillLevel(player, skill) {
-    if (player.getDynamicProperty('hasRegisteredCharacter') == true) {
-        if (!(skill in registeredSkills)) {
-            console.warn(`Попыка увеличить уровень незарегистрированного навыка ${skill}`)
-            return undefined
-        }
-
-        // Изменяем properties игрока
-        sDP(player, `skill:${skill}_progress`, 0)
-        iDP(player, `skill:${skill}_level`)
-        // Отчитываемся в чат
-        queueCommand(player, `playsound player.skill.levelUp @s ~ ~ ~`)
-        queueCommand(player, `tellraw @s { "rawtext": [ { "text": "${getSkillIcon(skill, player.getDynamicProperty(`skill:${skill}_level`))} §e§lНовый уровень§r§f: ${registeredSkills[skill].nameRU}§f: §a${player.getDynamicProperty(`skill:${skill}_level`)}\n" } ] }`)
+    if (!(skill in registeredSkills)) {
+        console.warn(`Trying to increase as level of a non-existent skill ${skill}`)
+        return undefined
     }
+
+    // Set values
+    sDP(player, `skill:${skill}_progress`, 0)
+    iDP(player, `skill:${skill}_level`)
+
+    // Report
+    const currentLevel = gDP(player, `skill:${skill}_level`)
+    player.runCommand('playsound player.skill.levelUp @s ~ ~ ~')
+    player.sendMessage(`${getSkillIcon(skill, currentLevel)} §e§l${fl(player, 'skills.levelup')}§r§f: ${registeredSkills[skill].nameRU}§f: §a${currentLevel}\n`)
 }
 
 // Возвращаем данные о навыках, отсортированные по уровню (от высокого к низкому)
