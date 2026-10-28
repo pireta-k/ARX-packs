@@ -46,7 +46,6 @@ export class Rob {
      * @returns {Boolean}
      */
     static checkRPConditions(initiator, victim) {
-        let canRob = true
         if (!victim.getProperty('arx:is_knocked')) {
             sl(initiator, 'rob.cannot.victim_is_not_knocked', [], '§c')
             return false

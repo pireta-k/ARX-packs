@@ -27,13 +27,8 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Test
         case "arx:mod_sword":
             if (manageCD(player)) {
-                const molang = new MolangVariableMap()
-                molang.setColorRGB('color', { red: 1, green: 0.2, blue: 0.8 })
-                molang.setFloat('lifetime', 10)
-                molang.setFloat('intensity', 20)
-                molang.setFloat('range', 4)
-
-                player.dimension.spawnParticle('arx:3d_fog__material_add', Vector.upLift(player.location), molang)
+                player.test = 'abc'
+                console.warn(player.test)
             }
             break
 

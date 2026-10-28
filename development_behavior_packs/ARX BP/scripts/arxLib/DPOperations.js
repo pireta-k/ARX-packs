@@ -15,10 +15,6 @@ export function sDP(object, DPName, value) {
         console.warn(`Called sDP() without necessary vars`)
         return undefined
     }
-    if (typeof value === 'function') {
-        console.warn('sDP(): cannot write function')
-        return undefined
-    }
     if (typeof value === 'string' && value.startsWith(specialDataTypePrefix)) {
         console.warn(`sDP(): cannot write a string that starts with ${specialDataTypePrefix}`)
         return undefined
@@ -151,9 +147,7 @@ export class DPManager {
         }
     }
 
-    /**
-     * DP that won't be cleared after RP death
-     */
+    /* DP that won't be cleared after RP death */
     static strongDPs = [
         'statistics:time_played_sec',
         'myRule:manaDisplayMode',

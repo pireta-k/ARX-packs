@@ -1477,7 +1477,7 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players.filter(p => p.gDP('isRobbingRightNow'))) {
                 let victimArray = getPlayersInRadius(player, 2.5, false).filter(p => p.id === player.gDP('robbingTargetID'))
-
+                
                 if (victimArray.length === 0) {
                     uiManager.closeAllForms(player)
                     player.sDP('isRobbingRightNow', false)
