@@ -598,11 +598,24 @@
 		"textures": "guide_wall_block_orange"
 	},
 	"arx:guide_door_block": {
-		"textures": "guide_door_block",
+		"sound": "netherite",
+		"textures": "guide_door_block"
+	},
+	"arx:guide_door_block_narrow": {
 		"sound": "netherite"
+	},
+	"arx:guide_wall_block_dark_orange": {
+		"textures": "guide_wall_block_dark_orange"
+	},
+	"arx:guide_wall_block_dark": {
+		"textures": "guide_wall_block_dark"
 	},
 
 	"arx:acss_anchor": {
 		"textures": "acss_anchor"
+	},
+
+	"arx:electric_cold_lamp": {
+		"sound": "glass"
 	}
 }

@@ -2,9 +2,7 @@
     "format_version": "1.21.30",
     "minecraft:block": {
         "components": {
-            "minecraft:destructible_by_mining": {
-                "seconds_to_destroy": 1.5
-            }
+            "minecraft:destructible_by_mining": false
         },
         "description": {
             "identifier": "arx:guide_wall_block_orange",

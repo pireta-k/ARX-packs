@@ -1607,3 +1607,12 @@ item.arx:rune_magna=§r§fMagna §e[Rune]
 item.arx:rune_durata=§r§fDurata §e[Rune]
 item.arx:rune_area=§r§fArea §e[Rune]
 item.arx:rune_alternus=§r§fAlternus §e[Rune]
+
+## Guide blocks
+tile.arx:guide_door_block.name=Guide's door block §q[Creative]
+tile.arx:guide_door_block_narrow.name=Guide's door block (narrow) §q[Creative]
+tile.arx:guide_wall_block.name=Guide's wall §q[Creative]
+tile.arx:guide_wall_block_orange.name=Guide's orange wall §q[Creative]
+tile.arx:guide_wall_block_dark.name=Guide's dark wall §q[Creative]
+tile.arx:guide_wall_block_dark_orange.name=Guide's dark orange wall §q[Creative]
+tile.arx:guide_door_terminal.name=Guide's door terminal §q[Creative]

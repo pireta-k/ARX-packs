@@ -15,17 +15,9 @@
                 ]
             },
             "minecraft:destructible_by_mining": {
-                "seconds_to_destroy": 2
+                "seconds_to_destroy": 1
             },
             "minecraft:geometry": "geometry.electric_cold_lamp",
-            "minecraft:light_emission": 15,
-            "minecraft:material_instances": {
-                "*": {
-                    "face_dimming": false,
-                    "render_method": "alpha_test",
-                    "texture": "electric_cold_lamp"
-                }
-            },
             "minecraft:selection_box": {
                 "origin": [
                     -8.0,
@@ -51,9 +43,40 @@
                     ],
                     "y_rotation_offset": 180.0
                 }
+            },
+            "states": {
+                "arx:enabled": [
+                    1,
+                    0
+                ]
             }
         },
         "permutations": [
+            {
+                "condition": "q.block_state('arx:enabled') == 1",
+                "components": {
+                    "minecraft:material_instances": {
+                        "*": {
+                            "face_dimming": false,
+                            "render_method": "opaque",
+                            "texture": "electric_cold_lamp"
+                        }
+                    },
+                    "minecraft:light_emission": 15
+                }
+            },
+            {
+                "condition": "q.block_state('arx:enabled') == 0",
+                "components": {
+                    "minecraft:material_instances": {
+                        "*": {
+                            "face_dimming": true,
+                            "render_method": "opaque",
+                            "texture": "electric_cold_lamp_disabled"
+                        }
+                    }
+                }
+            },
             {
                 "components": {
                     "minecraft:transformation": {
