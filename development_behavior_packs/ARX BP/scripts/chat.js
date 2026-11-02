@@ -1,5 +1,5 @@
 // Imports
-import { world, EntityComponentTypes, EquipmentSlot, system, Entity } from "@minecraft/server"
+import { world, EntityComponentTypes, EquipmentSlot, system, Entity, Player } from "@minecraft/server"
 import { queueCommand } from './commandQueue'
 import { checkForItem } from "./items/checkForItem"
 import { sl, fl } from "./lang/fetchLocalization"
@@ -12,6 +12,7 @@ import { isAdmin, getAdmins } from './arxLib/admin'
 import { NPCManager } from "./npcManager"
 import { getDistanceBetween, getEntityFamilies } from "./_main"
 import { random } from "./arxLib/random"
+import { sPerm } from "./arxLib/shortcuts"
 
 /**
  * @typedef ChatMessageOptions
@@ -252,6 +253,10 @@ world.beforeEvents.chatSend.subscribe(async (eventData) => {
     }
 });
 
+/**
+ * @param {Player} player 
+ * @param {string} trimmedMessage 
+ */
 export async function parceChatCommand(player, trimmedMessage) {
     if (trimmedMessage.startsWith("!")) { // Если это команда Аркса
         // command содержит в себе список из последовательности введенных слов в команде
@@ -262,6 +267,7 @@ export async function parceChatCommand(player, trimmedMessage) {
                 const codeToEval = trimmedMessage.slice(5);
                 try {
                     const rayEntity = player.getEntitiesFromViewDirection()[0]?.entity
+                    const rayBlock = player.getBlockFromViewDirection({'includePassableBlocks': true})?.block
                     const me = player
                     let result
                     await system.run(() => {
