@@ -1,4 +1,6 @@
 import { EntityComponentTypes, EquipmentSlot, ItemStack } from "@minecraft/server";
+import { Cache } from '../arxLib/cache'
+const equippableCache = new Cache()
 
 /**
  * @param {import("@minecraft/server").Player} player
@@ -6,10 +8,10 @@ import { EntityComponentTypes, EquipmentSlot, ItemStack } from "@minecraft/serve
  * @returns {ItemStack | ItemStack[] | undefined}
  */
 export function getItem(player, slot) {
-    const equippable = player.getComponent(EntityComponentTypes.Equippable);
+    const equippable = equippableCache.get(player, () => player.getComponent(EntityComponentTypes.Equippable))
     if (!equippable) return undefined;
 
-    const slotMap = {
+    const singleSlotsMap = {
         helmet: EquipmentSlot.Head,
         chest: EquipmentSlot.Chest,
         legs: EquipmentSlot.Legs,
@@ -18,12 +20,12 @@ export function getItem(player, slot) {
         offhand: EquipmentSlot.Offhand
     };
 
-    if (slot in slotMap) {
-        return equippable.getEquipment(slotMap[slot]);
+    if (slot in singleSlotsMap) {
+        return equippable.getEquipment(singleSlotsMap[slot]);
     }
 
     if (slot === 'equipment') {
-        return Object.values(slotMap).map(s => equippable.getEquipment(s)).filter(item => item !== undefined);
+        return Object.values(singleSlotsMap).map(s => equippable.getEquipment(s)).filter(item => item !== undefined);
     }
 
     if (slot === 'inventory') {

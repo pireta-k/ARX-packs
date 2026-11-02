@@ -1,4 +1,5 @@
 import { EntityComponentTypes, EquipmentSlot } from "@minecraft/server";
+import { getItem } from "./getItem";
 
 export function checkForItem(player, strSlot, itemId) {
     const lowerSlot = strSlot.toLowerCase();

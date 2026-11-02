@@ -27,7 +27,7 @@ import { isDay, sleep } from "../arxLib/time"
 // Other core parts
 import { getNearestPlayer } from "../getNearestPlayer"
 import { queueCommand } from "../commandQueue"
-import { msgFromGuide, parceChatCommand } from "../chat"
+import { msgFromGuide } from "../chat"
 import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
 import { playSound } from "../arxLib/audio"
