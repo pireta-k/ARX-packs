@@ -1,7 +1,7 @@
 import { Player, world } from "@minecraft/server";
 import { ActionFormData, FormCancelationReason, ModalFormData } from "@minecraft/server-ui";
 import { UI } from "../arxLib/UI"
-import { RELEASE, VERSION } from "../_main"
+import { RELEASE } from "../_main"
 import { gDP, sDP } from "../arxLib/DPOperations"
 import { defaultLanguage, fl, langMap } from "../lang/fetchLocalization"
 import { coreFramework, coreErrorCounts, corePing } from "../core/core"
@@ -36,7 +36,7 @@ export function simpleDevOptions(p) {
         "info.dev_options",
         {
             title: fl(p, 'info.dev_options.title'),
-            body: `Arx §6Ultima§f v.${VERSION}\nRelease type: ${RELEASE}`
+            body: `Arx §6Ultima§f v.${RELEASE.version}\nRelease type: ${RELEASE.type}`
         }
     )
 }
@@ -130,12 +130,7 @@ function devCoreReview(p) {
     function isDevCoreBlockActive(coreKey) {
         const block = coreFramework[coreKey]
         if (!block) return false
-        if (!('condition' in block)) return true
-        try {
-            return !!block.condition()
-        } catch {
-            return false
-        }
+        return block.isEnabled
     }
 }
 

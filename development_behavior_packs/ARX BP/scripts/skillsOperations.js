@@ -49,7 +49,6 @@ export function increaseSkillProgress(player, skill, inputValue) {
 }
 
 export function calculateXPMultiplier(player) {
-    // Настраиваем множитель получаемного опыта
     let increaseMultiplier = 1
 
     if (checkForItem(player, "Feet", "arx:ring_lamenite_zircon")) { increaseMultiplier += 0.5 }
@@ -249,10 +248,5 @@ export const registeredSkills = {
         howToIncrease: "повышается, когда вы блокируете атаки.",
         buff: "уменьшает силу, с которой вас отбрасывает, когда вы блокируете атаку.",
         iconIndex: 10,
-    },
-    // 'psycoSupport': {
-    //     nameRU: "§3Поддержка",
-    //     howToIncrease: "повышается, когда вы общаетесь с разумными в позитивном ключе.",
-    //     buff: "игроки чувствуют себя лучше, когда вы общаетесь с ними не в негативных тонах.",
-    // }
+    }
 }

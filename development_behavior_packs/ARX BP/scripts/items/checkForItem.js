@@ -74,7 +74,7 @@ export function checkForItem(player, strSlot, itemId) {
             slot = EquipmentSlot.Offhand;
             break;
         default:
-            console.error(`Недопустимый слот: ${strSlot}`);
+            console.error(`Unavailable slot: ${strSlot}`);
             return false;
     }
 

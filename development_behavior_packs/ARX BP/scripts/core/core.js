@@ -16,7 +16,6 @@ import { killingTimeAnimDelay, animate_killing_time } from './animate_killing_ti
 import { sDP, iDP, gDP } from '../arxLib/DPOperations'
 import { acquireTrait } from "../traits/traitsOperations"
 import { sendToActionBar, actionBarCoreTick } from './actionBarCore'
-import { syncHud, updateStressHud, clearHud } from './hud'
 import { ambienceCoreTick } from './ambience_core'
 import { dynamicLightCoreTick } from './dynamicLightCore'
 import { isInBiomeWithTag, musicCoreTick } from './music_core'
@@ -42,15 +41,18 @@ OPTIONAL overclock: {    <- If this key exists, can overclock, else cannot
 */
 
 /**
- * @typedef CoreBlockRunData
- * @property {import('@minecraft/server').Player[]} players
+ * @typedef {object} CoreBlockData
+ * @property {Player[]} players - all players
+ * @property {Player[]} [playersF] - prefiltered players (only for blocks with preFilterPlayers)
  */
 
 /**
  * @typedef CoreBlock
  * @property {Number} tickSpeed
- * @property {(data: CoreBlockRunData) => Void} [condition]
- * @property {(data: CoreBlockRunData) => Void} operations
+ * @property {(data: CoreBlockData) => boolean} [condition] - if decalred, coreblock will execute only in condition result is true
+ * @property {(p: Player) => boolean} [preFilterPlayers] - if declared, CoreBlockData will have playersF property that means playersFiltered. If no players remained after filtering, core block won't execute.
+ * @property {(data: CoreBlockData) => Void} operations - main part of a coreBlock
+ * @property {boolean} [isEnabled] - core block status. Sets automatically
  */
 
 /**
@@ -87,11 +89,10 @@ export const coreFramework = {
     // Watchdog system (input)
     watchdog: {
         tickSpeed: 1,
-        operations: (data) => {
-            if (data.players.length > 0) {
-                const hoster = getHoster()
-                if (hoster) setScore(hoster, 'watchdog', Math.floor(Math.random() * 4294967296) - 2147483648)
-            }
+        condition: (data) => data.players.length > 0,
+        operations: () => {
+            const hoster = getHoster()
+            if (hoster) setScore(hoster, 'watchdog', Math.floor(Math.random() * 4294967296) - 2147483648)
         }
     },
     // Grass generator
@@ -368,8 +369,9 @@ export const coreFramework = {
     },
     wateringCropsBySoaking: {
         tickSpeed: 80,
+        preFilterPlayers: p => p.gDP('wetness', 0) > 0,
         operations: (data) => {
-            for (const player of data.players.filter(p => p.gDP('wetness', 0) > 0)) {
+            for (const player of data.playersF) {
                 const blocksBelow = player.getAllBlocksStandingOn().filter(b => b.typeId === 'minecraft:farmland')
                 for (const b of blocksBelow) {
                     const moisturing = b.permutation.getState('moisturized_amount') // 0 - 7 inclusive
@@ -399,18 +401,17 @@ export const coreFramework = {
     // Hypersynergy Amulet CD
     hypersynergyAmulCd: {
         tickSpeed: 2,
+        preFilterPlayers: p => gDP(p, 'amul_hypersynergyCD'),
         operations: (data) => {
-            for (const player of data.players) {
-                if (player.getDynamicProperty('amul_hypersynergyCD') > 0) {
-                    if (player.getDynamicProperty('amul_hypersynergyCD') === 1) {
-                        queueCommand(player, 'playsound tick @s ~ ~ ~')
-                    }
-                    iDP(player, 'amul_hypersynergyCD', -1)
+            for (const player of data.playersF) {
+                if (gDP(player, 'amul_hypersynergyCD') === 1) {
+                    player.runCommand('playsound tick @s ~ ~ ~')
                 }
+                iDP(player, 'amul_hypersynergyCD', -1)
             }
         }
     },
-    // World border
+    // World border -- Remove?
     worldBorder: {
         tickSpeed: 4,
         condition: () => gDP(world, 'enableWorldBorder'),
@@ -458,42 +459,39 @@ export const coreFramework = {
     // Distance travelled
     distanceTravelled: {
         tickSpeed: 5,
+        preFilterPlayers: p => p.isMoving && p.getGameMode() !== 'Creative' && p.getGameMode() !== 'Spectator',
         operations: (data) => {
-            for (const player of data.players) {
-                if (player.isMoving && player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator') {
-                    iDP(player, "statistics:distance", 1.04 * (player.getDynamicProperty('speedPower') / 100))
-                }
+            for (const p of data.playersF) {
+                iDP(p, "statistics:distance", 1.04 * (gDP(p, 'speedPower') / 100))
             }
         }
     },
     // Heartbeat 
     heartbeat: {
         tickSpeed: 16,
+        preFilterPlayers: p => p.wellness < 0.5,
         operations: (data) => {
-            for (const player of data.players) {
+            for (const player of data.playersF) {
                 const wellness = player.wellness
-                if (wellness < 0.5) {
-                    const loudness = 0.1 / wellness
-                    const pitch = 0.9 + (1.1 - 0.9) * Math.random()
-                    const rotationPower = 0.02 / wellness
+                const loudness = 0.1 / wellness
+                const pitch = 0.9 + (1.1 - 0.9) * Math.random()
+                const rotationPower = 0.02 / wellness
 
-                    player.runCommand(`playsound heartbeat.default @s ~ ~ ~ ${loudness} ${pitch}`)
-                    player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
-                    system.runTimeout(() => {
-                        if (player.isValid) player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
-                    }, 5)
-                }
+                player.runCommand(`playsound heartbeat.default @s ~ ~ ~ ${loudness} ${pitch}`)
+                player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
+                system.runTimeout(() => {
+                    if (player.isValid) player.runCommand(`camerashake add @s ${rotationPower} 0.1 positional`)
+                }, 5)
             }
         }
     },
     // Torch Particles 
     torchParicles: {
         tickSpeed: 10,
+        preFilterPlayers: p => checkForItem(p, 'Mainhand', 'minecraft:torch') || checkForItem(p, 'Mainhand', 'minecraft:soul_torch') || checkForItem(p, 'Mainhand', 'minecraft:copper_torch') || checkForItem(p, 'Mainhand', 'minecraft:redstone_torch'),
         operations: (data) => {
-            for (const player of data.players) {
-                if (checkForItem(player, 'Mainhand', 'minecraft:torch') || checkForItem(player, 'Mainhand', 'minecraft:soul_torch') || checkForItem(player, 'Mainhand', 'minecraft:copper_torch') || checkForItem(player, 'Mainhand', 'minecraft:redstone_torch')) {
-                    player.runCommand('execute positioned ~ ~1.9 ~ run particle minecraft:basic_smoke_particle ^-0.3 ^0 ^0.4')
-                }
+            for (const p of data.playersF) {
+                p.runCommand('execute positioned ~ ~1.9 ~ run particle minecraft:basic_smoke_particle ^-0.3 ^0 ^0.4')
             }
         }
     },
@@ -519,7 +517,7 @@ export const coreFramework = {
                     }
                 }
                 // Character lifetime
-                if (player.getDynamicProperty('hasRegisteredCharacter')) iDP(player, 'characterLifeSec')
+                if (gDP(player, 'hasRegisteredCharacter')) iDP(player, 'characterLifeSec')
             }
         }
     },
@@ -540,144 +538,139 @@ export const coreFramework = {
     // Stress - happiness system
     stress: {
         tickSpeed: 20,
+        preFilterPlayers: p => !gDP(p, 'respawnDelay') && p.getGameMode() == 'Survival',
         operations: (data) => {
             for (const player of data.players) {
-                if (player.getDynamicProperty('respawnDelay') === 0 && player.getGameMode() == 'Survival') {
-                    // Заводим JS переменные
-                    let stress = player.getDynamicProperty('stress') // Стресс
-                    let stressLevel = player.getDynamicProperty('stressLevel') // Уровень стресса
-                    let stressDynamic = player.getDynamicProperty('stressDynamic') // Корректирующая динамика
+                // Заводим JS переменные
+                let stress = player.getDynamicProperty('stress') // Стресс
+                let stressLevel = player.getDynamicProperty('stressLevel') // Уровень стресса
+                let stressDynamic = player.getDynamicProperty('stressDynamic') // Корректирующая динамика
 
-                    // Случайные события
-                    const goodTimesProb = (checkForTrait(player, 'skilled_fisherman') && checkForItem(player, 'mainhand', 'minecraft:fishing_rod')) ? 0.0002 : 0.0001
-                    const stressBonus = checkForTrait(player, 'indifference') ? 1500 : 750
-                    if (Math.random() < goodTimesProb) {
-                        player.sendMessage(' Вы вспомнили хорошие времена. Это подняло ваше настроение.')
-                        stress -= stressBonus;
-                    } else if (Math.random() < 0.0001 && !checkForTrait(player, 'inflexible')) {
-                        player.sendMessage(' Вы вспомнили плохие времена. Это испортило ваше настроение.')
-                        stress += stressBonus;
-                    }
-
-                    // Чилл в водичке
-                    if (checkForTrait(player, 'water_lover') && player.isInWater) { stress -= 3 }
-                    // Депрессия в водичке
-                    if (checkForTrait(player, 'aquaphobe') && player.isInWater) { stress += 3 }
-
-                    // Стресс при низком здоровье
-                    if (player.wellness < 0.25) stress += 25
-                    else if (player.wellness < 0.5) stress += 8
-
-                    // Падение стресса к нейтральным значениям
-                    const decreaseValue = checkForTrait(player, 'kind') ? stress / 750 : stress / 1000
-                    if (stress > 800) stress -= decreaseValue // Если стресс высокий, падение ускорено.
-                    else if (stress < -800) stress += 1
-
-                    // Черта манипулятор
-                    if (checkForTrait(player, 'manipulator')) {
-                        const playersNearManipulator = getPlayersInRadius(player, 8, false)
-                        for (let playerNearManipulator of playersNearManipulator) {
-                            iDP(playerNearManipulator, 'stress')
-                            iDP(player, 'stress', -1)
-                        }
-                    }
-
-                    // Черта харизматик
-                    if (checkForTrait(player, 'charismatic')) {
-                        const playersNearCharismatic = getPlayersInRadius(player, 8, false)
-                        for (let playerNearCharismatic of playersNearCharismatic) {
-                            iDP(playerNearCharismatic, 'stress', -2)
-                        }
-                    }
-
-                    // Черта общительный
-                    if (checkForTrait(player, 'communicative')) {
-                        const increaseValue = getPlayersInRadius(player, 8, false).length === 0 ? 2 : -2
-                        iDP(player, 'stress', increaseValue)
-                    }
-
-                    // Черта страх темноты
-                    if (checkForTrait(player, 'nodarkness') && player.lightLevel < 6) {
-                        iDP(player, 'stress', 5)
-                    }
-
-                    // Черта страх глубин
-                    if (checkForTrait(player, 'nomines') && player.location.y < 0) {
-                        iDP(player, 'stress', 5)
-                    }
-
-                    // Корректирующая динамика
-                    {
-                        // Вычисление переменной от текущего стресса
-                        stressDynamic += stress / 8000
-
-                        // Угасание перменной
-                        if (stressDynamic > 0) { stressDynamic -= 0.1 }
-                        else if (stressDynamic < 0) { stressDynamic += 0.1 }
-
-                        // Границы
-                        const stressDynamicLimit = 30
-                        if (stressDynamic > stressDynamicLimit) { stressDynamic = stressDynamicLimit }
-                        else if (stressDynamic < -stressDynamicLimit) { stressDynamic = -stressDynamicLimit }
-
-                        // Воздействие на стресс
-                        stress -= stressDynamic
-                    }
-
-                    // Границы стресса
-                    const stressLimit = 5000
-                    if (stress > stressLimit) { stress = stressLimit }
-                    else if (stress < -stressLimit) { stress = -stressLimit }
-
-                    // Определяем уровень стресса
-                    if (stress < -3500) stressLevel = -4;
-                    else if (stress < -2500) stressLevel = -3;
-                    else if (stress < -1500) stressLevel = -2;
-                    else if (stress < -500) stressLevel = -1;
-                    else if (stress <= 500) stressLevel = 0;
-                    else if (stress <= 1500) stressLevel = 1;
-                    else if (stress <= 2500) stressLevel = 2;
-                    else if (stress <= 3500) stressLevel = 3;
-                    else {
-                        stressLevel = 4
-                        // Выдаем черту, если под стрессом
-                        const traitRand = Math.random()
-
-                        let traitProbability
-
-                        if (checkForTrait(player, 'unstable')) traitProbability = 0.005
-                        else traitProbability = 0.0025
-
-                        if (traitRand < traitProbability) {
-                            acquireTrait(player, [2, 3, 4])
-                        }
-                    }
-
-                    // Вывод в чат
-                    let stressLevelOld = player.getDynamicProperty('stressLevel') // Уровень стресса в прошлый проход
-                    if (stressLevelOld != stressLevel) {
-
-                        const stressLevelAbs = Math.abs(stressLevel)
-
-                        const word1 = stressLevelOld < stressLevel ? "хуже" : "лучше"
-                        const icon = stressLevel > 0 ? '' : stressLevel === 0 ? '' : ''
-                        const word2 = stressLevel > 0 ? 'стресса' : 'счастья'
-                        const color = stressLevel > 1 ? '§c' : stressLevel < -1 ? '§a' : ''
-
-                        const stressOutputLevel = stressLevelAbs == 4 ? 'Макс.' : stressLevelAbs.toString()
-
-                        player.sendMessage(`[Стало ${word1}] ${icon.repeat(stressLevelAbs != 0 ? stressLevelAbs : 1)} (${color}${stressOutputLevel} §fур. ${word2})`)
-                    }
-
-                    // Записываем полученные переменные в DP
-                    sDP(player, 'stress', stress) // Стресс
-                    sDP(player, 'stressLevel', stressLevel) // Уровень стресса
-                    sDP(player, 'stressDynamic', stressDynamic) // Корректирующая динамика
-
-                    updateStressHud(player, stressLevel)
-                } else {
-                    clearHud(player)
+                // Случайные события
+                const goodTimesProb = (checkForTrait(player, 'skilled_fisherman') && checkForItem(player, 'mainhand', 'minecraft:fishing_rod')) ? 0.0002 : 0.0001
+                const stressBonus = checkForTrait(player, 'indifference') ? 1500 : 750
+                if (Math.random() < goodTimesProb) {
+                    player.sendMessage(' Вы вспомнили хорошие времена. Это подняло ваше настроение.')
+                    stress -= stressBonus;
+                } else if (Math.random() < 0.0001 && !checkForTrait(player, 'inflexible')) {
+                    player.sendMessage(' Вы вспомнили плохие времена. Это испортило ваше настроение.')
+                    stress += stressBonus;
                 }
+
+                // Чилл в водичке
+                if (checkForTrait(player, 'water_lover') && player.isInWater) { stress -= 3 }
+                // Депрессия в водичке
+                if (checkForTrait(player, 'aquaphobe') && player.isInWater) { stress += 3 }
+
+                // Стресс при низком здоровье
+                if (player.wellness < 0.25) stress += 25
+                else if (player.wellness < 0.5) stress += 8
+
+                // Падение стресса к нейтральным значениям
+                const decreaseValue = checkForTrait(player, 'kind') ? stress / 750 : stress / 1000
+                if (stress > 800) stress -= decreaseValue // Если стресс высокий, падение ускорено.
+                else if (stress < -800) stress += 1
+
+                // Черта манипулятор
+                if (checkForTrait(player, 'manipulator')) {
+                    const playersNearManipulator = getPlayersInRadius(player, 8, false)
+                    for (let playerNearManipulator of playersNearManipulator) {
+                        iDP(playerNearManipulator, 'stress')
+                        iDP(player, 'stress', -1)
+                    }
+                }
+
+                // Черта харизматик
+                if (checkForTrait(player, 'charismatic')) {
+                    const playersNearCharismatic = getPlayersInRadius(player, 8, false)
+                    for (let playerNearCharismatic of playersNearCharismatic) {
+                        iDP(playerNearCharismatic, 'stress', -2)
+                    }
+                }
+
+                // Черта общительный
+                if (checkForTrait(player, 'communicative')) {
+                    const increaseValue = getPlayersInRadius(player, 8, false).length === 0 ? 2 : -2
+                    iDP(player, 'stress', increaseValue)
+                }
+
+                // Черта страх темноты
+                if (checkForTrait(player, 'nodarkness') && player.lightLevel < 6) {
+                    iDP(player, 'stress', 5)
+                }
+
+                // Черта страх глубин
+                if (checkForTrait(player, 'nomines') && player.location.y < 0) {
+                    iDP(player, 'stress', 5)
+                }
+
+                // Корректирующая динамика
+                {
+                    // Вычисление переменной от текущего стресса
+                    stressDynamic += stress / 8000
+
+                    // Угасание перменной
+                    if (stressDynamic > 0) { stressDynamic -= 0.1 }
+                    else if (stressDynamic < 0) { stressDynamic += 0.1 }
+
+                    // Границы
+                    const stressDynamicLimit = 30
+                    if (stressDynamic > stressDynamicLimit) { stressDynamic = stressDynamicLimit }
+                    else if (stressDynamic < -stressDynamicLimit) { stressDynamic = -stressDynamicLimit }
+
+                    // Воздействие на стресс
+                    stress -= stressDynamic
+                }
+
+                // Границы стресса
+                const stressLimit = 5000
+                if (stress > stressLimit) { stress = stressLimit }
+                else if (stress < -stressLimit) { stress = -stressLimit }
+
+                // Определяем уровень стресса
+                if (stress < -3500) stressLevel = -4;
+                else if (stress < -2500) stressLevel = -3;
+                else if (stress < -1500) stressLevel = -2;
+                else if (stress < -500) stressLevel = -1;
+                else if (stress <= 500) stressLevel = 0;
+                else if (stress <= 1500) stressLevel = 1;
+                else if (stress <= 2500) stressLevel = 2;
+                else if (stress <= 3500) stressLevel = 3;
+                else {
+                    stressLevel = 4
+                    // Выдаем черту, если под стрессом
+                    const traitRand = Math.random()
+
+                    let traitProbability
+
+                    if (checkForTrait(player, 'unstable')) traitProbability = 0.005
+                    else traitProbability = 0.0025
+
+                    if (traitRand < traitProbability) {
+                        acquireTrait(player, [2, 3, 4])
+                    }
+                }
+
+                // Вывод в чат
+                let stressLevelOld = player.getDynamicProperty('stressLevel') // Уровень стресса в прошлый проход
+                if (stressLevelOld != stressLevel) {
+
+                    const stressLevelAbs = Math.abs(stressLevel)
+
+                    const word1 = stressLevelOld < stressLevel ? "хуже" : "лучше"
+                    const icon = stressLevel > 0 ? '' : stressLevel === 0 ? '' : ''
+                    const word2 = stressLevel > 0 ? 'стресса' : 'счастья'
+                    const color = stressLevel > 1 ? '§c' : stressLevel < -1 ? '§a' : ''
+
+                    const stressOutputLevel = stressLevelAbs == 4 ? 'Макс.' : stressLevelAbs.toString()
+
+                    player.sendMessage(`[Стало ${word1}] ${icon.repeat(stressLevelAbs != 0 ? stressLevelAbs : 1)} (${color}${stressOutputLevel} §fур. ${word2})`)
+                }
+
+                // Записываем полученные переменные в DP
+                sDP(player, 'stress', stress) // Стресс
+                sDP(player, 'stressLevel', stressLevel) // Уровень стресса
+                sDP(player, 'stressDynamic', stressDynamic) // Корректирующая динамика
             }
         }
     },
@@ -758,68 +751,68 @@ export const coreFramework = {
     // Temperature
     temperature: {
         tickSpeed: 20,
+        preFilterPlayers: p => !['Creative', 'Spectator'].includes(p.getGameMode()) && gDP(p, 'hasRegisteredCharacter'),
         operations: (data) => {
-            for (const player of data.players) {
-                if (player.getGameMode() !== 'Creative' && player.getGameMode() !== 'Spectator' && gDP(player, 'hasRegisteredCharacter')) {
-                    let freezing = player.getDynamicProperty('freezing')
+            for (const player of data.playersF) {
+                let freezing = player.getDynamicProperty('freezing')
 
-                    // Определяем блокировку холода
-                    let blockFreezing = false
-                    if (player.getDynamicProperty('freezingBlockByPotion') > 0) (blockFreezing = true)
-                    if (checkForItem(player, "legs", "arx:snow_bars_scarf") && !checkForItem(player, "chest", undefined)) (blockFreezing = true)
-                    if (player.getDynamicProperty('respawnDelay') > 0) { blockFreezing = true }
-                    if (player.hasTag('heating_by_heater_block_activate')) { blockFreezing = true }
+                // Определяем блокировку холода
+                let blockFreezing = false
+                if (player.getDynamicProperty('freezingBlockByPotion') > 0) (blockFreezing = true)
+                if (checkForItem(player, "legs", "arx:snow_bars_scarf") && !checkForItem(player, "chest", undefined)) (blockFreezing = true)
+                if (player.getDynamicProperty('respawnDelay') > 0) { blockFreezing = true }
+                if (player.hasTag('heating_by_heater_block_activate')) { blockFreezing = true }
 
-                    // Увеличение холода
-                    if (isInBiomeWithTag(player, ['frozen', 'cold'], 'any') && !blockFreezing) { freezing += 1 }
-                    // Увеличение жары
-                    else if (player.dimension.id === 'minecraft:nether' && player.getDynamicProperty('heatingBlockByPotion') == 0 && player.getDynamicProperty('heatingBlockByScroll') == 0) { freezing -= 1 }
-                    // Уменьшение значений
-                    else if (freezing > 12) { freezing -= 10 }
-                    else if (freezing > 0) { freezing -= 1 }
-                    else if (freezing < -12) { freezing += 10 }
-                    else if (freezing < 0) { freezing += 1 }
+                // Увеличение холода
+                if (isInBiomeWithTag(player, ['frozen', 'cold'], 'any') && !blockFreezing) { freezing += 1 }
+                // Увеличение жары
+                else if (player.dimension.id === 'minecraft:nether' && player.getDynamicProperty('heatingBlockByPotion') == 0 && player.getDynamicProperty('heatingBlockByScroll') == 0) { freezing -= 1 }
+                // Уменьшение значений
+                else if (freezing > 12) { freezing -= 10 }
+                else if (freezing > 0) { freezing -= 1 }
+                else if (freezing < -12) { freezing += 10 }
+                else if (freezing < 0) { freezing += 1 }
 
-                    // Отображение
-                    if (freezing != 0) {
-                        let numOfSymbols = (Math.ceil(Math.abs(freezing) / 10))
-                        if (numOfSymbols > 5) { numOfSymbols = 5 }
-
+                // Отображение
+                if (freezing != 0) {
+                    let numOfSymbols = (Math.ceil(Math.abs(freezing) / 10))
+                    if (numOfSymbols > 5) { numOfSymbols = 5 }
 
 
-                        const symbolType = freezing > 0 ? "" : ""
-                        const message = freezing > 0 ? " §bВы замерзаете§f " : " §cВам жарко§f "
 
-                        let symbolLine = ''
-                        for (let i = 0; i < numOfSymbols; i++) {
-                            symbolLine += symbolType
-                        }
+                    const symbolType = freezing > 0 ? "" : ""
+                    const message = freezing > 0 ? " §bВы замерзаете§f " : " §cВам жарко§f "
 
-                        const resultLine = symbolLine + message + symbolLine
-
-                        sendToActionBar(player, 'freezing', resultLine, 20)
+                    let symbolLine = ''
+                    for (let i = 0; i < numOfSymbols; i++) {
+                        symbolLine += symbolType
                     }
 
-                    // Урон
-                    const damageType = freezing > 0 ? 'freezing' : 'fire'
+                    const resultLine = symbolLine + message + symbolLine
 
-                    // Можно ли вообще нанести урон
-                    if (Math.abs(freezing) > 20) {
-                        if (Math.random() < (Math.abs(freezing) / 100)) {
-                            player.runCommand(`damage @s 1 ${damageType}`)
-                        }
-                    }
-
-                    sDP(player, 'freezing', freezing)
+                    sendToActionBar(player, 'freezing', resultLine, 20)
                 }
+
+                // Урон
+                const damageType = freezing > 0 ? 'freezing' : 'fire'
+
+                // Можно ли вообще нанести урон
+                if (Math.abs(freezing) > 20) {
+                    if (Math.random() < (Math.abs(freezing) / 100)) {
+                        player.runCommand(`damage @s 1 ${damageType}`)
+                    }
+                }
+
+                sDP(player, 'freezing', freezing)
             }
         }
     },
     // Passive bleeding
     bleeding: {
         tickSpeed: 20,
+        preFilterPlayers: p => p.wellness < 0.5,
         operations: (data) => {
-            for (const player of data.players) {
+            for (const player of data.playersF) {
                 const particleLoc = player.getHeadLocation()
                 const molang = new MolangVariableMap()
                 const hitDirection = { x: 0, y: 0, z: 0 }
@@ -863,33 +856,32 @@ export const coreFramework = {
     // Beacon spell
     beaconSpell: {
         tickSpeed: 20,
+        preFilterPlayers: p => gDP(p, 'magicBeacon') > 0,
         operations: (data) => {
-            for (const player of data.players) {
-                if (player.getDynamicProperty('magicBeacon') > 0) {
-                    iDP(player, 'magicBeacon', -1)
-                    if (player.getDynamicProperty('magicBeacon') === 0) {
-                        const entities = player.dimension.getEntities()
-                        for (const entity of entities) {
-                            if (entity.typeId === 'arx:magic_beacon' && entity.hasTag(player.name)) {
-                                player.runCommand('particle arx:portal_fog')
-                                player.teleport(entity.location)
-                                player.runCommand('camera @s fade time 0 0 1 color 200 0 150')
-                                player.runCommand('event entity @e[type=arx:magic_beacon, r = 0.1] arx:suicide')
-                                queueCommand(player, "playsound spell.beacon @a ~ ~ ~")
-                                player.runCommand('particle arx:portal_fog')
-                                queueCommand(player, "camerashake add @a[r=8] 1 0.1")
-                                break
-                            }
+            for (const player of data.playersF) {
+                iDP(player, 'magicBeacon', -1)
+                if (!gDP(player, 'magicBeacon')) {
+                    const entities = player.dimension.getEntities()
+                    for (const entity of entities) {
+                        if (entity.typeId === 'arx:magic_beacon' && entity.hasTag(player.name)) {
+                            player.runCommand('particle arx:portal_fog')
+                            player.teleport(entity.location)
+                            player.runCommand('camera @s fade time 0 0 1 color 200 0 150')
+                            player.runCommand('event entity @e[type=arx:magic_beacon, r = 0.1] arx:suicide')
+                            queueCommand(player, "playsound spell.beacon @a ~ ~ ~")
+                            player.runCommand('particle arx:portal_fog')
+                            queueCommand(player, "camerashake add @a[r=8] 1 0.1")
+                            break
                         }
                     }
-                    else if (player.getDynamicProperty('magicBeacon') < 4) {
-                        player.runCommand('playsound tick @s ~ ~ ~')
-                        const entities = player.dimension.getEntities()
-                        for (const entity of entities) {
-                            if (entity.typeId === 'arx:magic_beacon' && entity.hasTag(player.name)) {
-                                entity.runCommand('particle arx:beacon_fog ~ ~ ~')
-                                break
-                            }
+                }
+                else if (player.getDynamicProperty('magicBeacon') < 4) {
+                    player.runCommand('playsound tick @s ~ ~ ~')
+                    const entities = player.dimension.getEntities()
+                    for (const entity of entities) {
+                        if (entity.typeId === 'arx:magic_beacon' && entity.hasTag(player.name)) {
+                            entity.runCommand('particle arx:beacon_fog ~ ~ ~')
+                            break
                         }
                     }
                 }
@@ -898,14 +890,12 @@ export const coreFramework = {
     },
     // No character
     noCharacter: {
-        condition: (data) => data.players.some((p) => !gDP(p, 'hasRegisteredCharacter')),
         tickSpeed: 20,
+        preFilterPlayers: p => !gDP(p, 'hasRegisteredCharacter'),
         operations: (data) => {
-            for (const player of data.players) {
-                if (!player.getDynamicProperty('hasRegisteredCharacter')) {
-                    player.runCommand('effect @s regeneration 2 255 true')
-                    player.runCommand('effect @s saturation 2 255 true')
-                }
+            for (const player of data.playersF) {
+                player.addEffect('regeneration', 40, { amplifier: 255, showParticles: false })
+                player.addEffect('saturation', 40, { amplifier: 255, showParticles: false })
             }
         }
     },
@@ -938,6 +928,15 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 weighAnalysis(player)
+            }
+        }
+    },
+    weightRecountOnItemPickUp: {
+        tickSpeed: 1,
+        operations: (data) => {
+            for (const p of data.players.filter(p => p.recountWeightOnNextTick)) {
+                weighAnalysis(p)
+                p.recountWeightOnNextTick = false
             }
         }
     },
@@ -1103,8 +1102,6 @@ export const coreFramework = {
                         displayMPAndAdjacent(player)
                     }
                 }
-
-                syncHud(player)
             }
         }
     },
@@ -1144,7 +1141,7 @@ export const coreFramework = {
                 speedPower -= (player.getDynamicProperty("blockingPlayerWasAttacked") * 1.2) || 0
 
                 // Увеличение от роста
-                speedPower += Math.round((player.getDynamicProperty("height") - 150) / 9) || 0
+                speedPower += Math.round((gDP(player, 'height') - 150) / 9) || 0
 
                 // Увеличение от навыка плавания
                 if (player.isInWater) {
@@ -1178,13 +1175,13 @@ export const coreFramework = {
                 speedPower += player.getDynamicProperty('speedBoostAfterKnockout')
 
                 // Срезние от перегруза
-                if (player?.getDynamicProperty('overLoading') > 0) { speedPower -= player.getDynamicProperty("overLoading") * 12 }
+                if (player.getDynamicProperty('overLoading') > 0) { speedPower -= player.getDynamicProperty("overLoading") * 12 }
 
                 // Безусловное срезание от загруженности
                 speedPower -= player.getDynamicProperty('weighLoading') * 2
 
                 // Срезание от охлаждения
-                speedPower -= (Math.abs(player.getDynamicProperty('freezing')) / 2)
+                speedPower -= (Math.abs(gDP(player, 'freezing')) / 2)
 
                 // Срезание от темноты
                 if (player.lightLevel < 6) { speedPower -= 15 }
@@ -1211,18 +1208,18 @@ export const coreFramework = {
                 let maxHP = 16
 
                 // Бонус от уровня
-                maxHP += player.getDynamicProperty("skill:hp_level") * 2
+                maxHP += gDP(player, 'skill:hp_level') * 2
 
                 // Макс хп - запись в DP
                 sDP(player, "maxHP", maxHP)
 
                 // Исполнение
-                player.runCommand(`event entity @s arx:set_${maxHP}_hp`)
+                player.triggerEvent(`arx:set_${maxHP}_hp`)
 
                 {
                     // Убиваем, если макс хп равно нулю
                     if (maxHP <= 0) {
-                        player.runCommand('damage @s 50 suicide')
+                        player.runCommand('damage @s 9999 suicide')
                     }
                 }
             }
@@ -1336,20 +1333,19 @@ export const coreFramework = {
             for (const player of data.players) {
                 let diggingSpeed = 0
 
-                // Определяем значение
-                if (player.getProperty('arx:is_knocked')) { diggingSpeed -= 255 }
+                if (player.getProperty('arx:is_knocked')) diggingSpeed -= 255
 
                 // Штраф от намокания
-                if (player.getDynamicProperty('wetness') > 200) { diggingSpeed -= 1 }
-                if (player.getDynamicProperty('wetness') > 400) { diggingSpeed -= 1 }
+                if (player.getDynamicProperty('wetness') > 200) diggingSpeed -= 1
+                if (player.getDynamicProperty('wetness') > 400) diggingSpeed -= 1
 
                 // Нормализуем
-                if (diggingSpeed < -255) { diggingSpeed = -255 }
-                if (diggingSpeed > 255) { diggingSpeed = 255 }
+                if (diggingSpeed < -255) diggingSpeed = -255
+                if (diggingSpeed > 255) diggingSpeed = 255
 
-                // Исполняем
-                if (diggingSpeed < 0) { player.runCommand(`effect @s mining_fatigue 2 ${Math.abs(diggingSpeed)} true`) }
-                if (diggingSpeed > 0) { player.runCommand(`effect @s haste 2 ${diggingSpeed} true`) }
+                // Implement
+                if (diggingSpeed < 0) player.addEffect('mining_fatigue', 40, { amplifier: Math.abs(diggingSpeed), showParticles: false })
+                if (diggingSpeed > 0) player.addEffect('haste', 40, { amplifier: diggingSpeed, showParticles: false })
             }
         }
     },
@@ -1357,49 +1353,45 @@ export const coreFramework = {
     // Traits
     // Schizophrenia 
     schizophrenia: {
-        condition: (data) => data.players.some((p) => checkForTrait(p, 'schizophrenic')),
         tickSpeed: 20,
+        preFilterPlayers: p => checkForTrait(p, 'schizophrenic') && !player.getProperty('arx:is_knocked'),
         operations: (data) => {
-            for (const player of data.players) {
-                if (checkForTrait(player, 'schizophrenic') && !player.getProperty('arx:is_knocked')) {
-                    if (Math.random() < 0.01) {
-                        let sound
-                        const rand = Math.floor(Math.random() * 10)
-                        switch (rand) {
-                            case 0: sound = 'mob.chicken.say'; break
-                            case 1: sound = 'random.explode'; break
-                            case 2: sound = 'random.orb'; break
-                            case 3: sound = 'random.eat'; break
-                            case 4: sound = 'random.chestopen'; break
-                            case 5: sound = 'random.break'; break
-                            case 6: sound = 'random.door_close'; break
-                            case 7: sound = 'random.click'; break
-                            case 8: sound = 'fire.fire'; break
-                            case 9: sound = 'ambient.weather.lightning.impact'; break
-                        }
-                        player.runCommand(`playsound ${sound} @s ~${Math.floor(Math.random() * 17) - 8} ~${Math.floor(Math.random() * 5) - 2} ~${Math.floor(Math.random() * 17) - 8}`)
+            for (const player of data.playersF) {
+                if (Math.random() < 0.01) {
+                    let sound
+                    const rand = Math.floor(Math.random() * 10)
+                    switch (rand) {
+                        case 0: sound = 'mob.chicken.say'; break
+                        case 1: sound = 'random.explode'; break
+                        case 2: sound = 'random.orb'; break
+                        case 3: sound = 'random.eat'; break
+                        case 4: sound = 'random.chestopen'; break
+                        case 5: sound = 'random.break'; break
+                        case 6: sound = 'random.door_close'; break
+                        case 7: sound = 'random.click'; break
+                        case 8: sound = 'fire.fire'; break
+                        case 9: sound = 'ambient.weather.lightning.impact'; break
                     }
+                    player.runCommand(`playsound ${sound} @s ~${Math.floor(Math.random() * 17) - 8} ~${Math.floor(Math.random() * 5) - 2} ~${Math.floor(Math.random() * 17) - 8}`)
                 }
             }
         }
     },
     // Impulsive paranoid
     impulsive_par: {
-        condition: (data) => data.players.some((p) => checkForTrait(p, 'impulsive_par')),
         tickSpeed: 20,
+        preFilterPlayers: p => checkForTrait(p, 'impulsive_par') && !player.getProperty('arx:is_knocked'),
         operations: (data) => {
-            for (const player of data.players) {
-                if (checkForTrait(player, 'impulsive_par') && !player.getProperty('arx:is_knocked')) {
-                    if (Math.random() < 0.015) {
-                        const playersNearImpulsivePar = getPlayersInRadius(player, 3, false)
-                        const strength = Math.max(player.getDynamicProperty('basicStrength'), 1)
-                        if (playersNearImpulsivePar.length > 0) {
-                            const playerNearImpulsivePar = playersNearImpulsivePar[Math.floor(Math.random() * playersNearImpulsivePar.length)]
-                            playerNearImpulsivePar.applyDamage(strength, { damagingEntity: player, cause: 'entityAttack' })
-                            player.sendMessage(`§cВы непроизвольно пытаетесь ударить всех подряд, под ваши взмахи попадает ${playerNearImpulsivePar.getDynamicProperty('name')}`)
-                            player.runCommand('playanimation @s animation.player.break_limb')
-                            playerNearImpulsivePar.sendMessage(`§c${player.getDynamicProperty('name')} как-то странно пытается меня ударить!`)
-                        }
+            for (const player of data.playersF) {
+                if (Math.random() < 0.015) {
+                    const playersNearImpulsivePar = getPlayersInRadius(player, 3, false)
+                    const strength = Math.max(player.getDynamicProperty('basicStrength'), 1)
+                    if (playersNearImpulsivePar.length > 0) {
+                        const playerNearImpulsivePar = playersNearImpulsivePar[Math.floor(Math.random() * playersNearImpulsivePar.length)]
+                        playerNearImpulsivePar.applyDamage(strength, { damagingEntity: player, cause: 'entityAttack' })
+                        player.sendMessage(`§cВы непроизвольно пытаетесь ударить всех подряд, под ваши взмахи попадает ${playerNearImpulsivePar.getDynamicProperty('name')}`)
+                        player.runCommand('playanimation @s animation.player.break_limb')
+                        playerNearImpulsivePar.sendMessage(`§c${player.getDynamicProperty('name')} как-то странно пытается меня ударить!`)
                     }
                 }
             }
@@ -1407,16 +1399,14 @@ export const coreFramework = {
     },
     // Paranoid masochist 
     paranoidMasochist: {
-        condition: (data) => data.players.some((p) => checkForTrait(p, 'paranoid_mas')),
+        preFilterPlayers: p => checkForTrait(p, 'paranoid_mas') && !player.getProperty('arx:is_knocked'),
         tickSpeed: 20,
         operations: (data) => {
-            for (const player of data.players) {
-                if (checkForTrait(player, 'paranoid_mas')) {
-                    if (Math.random() < 0.002 && !player.getProperty('arx:is_knocked')) {
-                        player.applyDamage(Math.ceil(Math.random() * 3))
-                        player.sendMessage('§cВы причиняете себе боль, но вам это нравится')
-                        iDP(player, "stress", -100)
-                    }
+            for (const player of data.playersF) {
+                if (Math.random() < 0.002 && !player.getProperty('arx:is_knocked')) {
+                    player.applyDamage(Math.ceil(Math.random() * 3))
+                    player.sendMessage('§cВы причиняете себе боль, но вам это нравится')
+                    iDP(player, "stress", -100)
                 }
             }
         }
@@ -1448,8 +1438,9 @@ export const coreFramework = {
     // Remove tag "is_emoting_via_arx_command"
     animationTagListener: {
         tickSpeed: 2,
+        preFilterPlayers: p => p.hasTag('is_emoting_via_arx_command') && p.isMoving,
         operations: (data) => {
-            for (const p of data.players.filter(p => p.hasTag('is_emoting_via_arx_command') && p.isMoving)) {
+            for (const p of data.playersF) {
                 p.removeTag('is_emoting_via_arx_command')
             }
         },
@@ -1474,8 +1465,9 @@ export const coreFramework = {
 
     robbingDistanceListener: {
         tickSpeed: 20,
+        preFilterPlayers: p => p.gDP('isRobbingRightNow'),
         operations: (data) => {
-            for (const player of data.players.filter(p => p.gDP('isRobbingRightNow'))) {
+            for (const player of data.playersF) {
                 let victimArray = getPlayersInRadius(player, 2.5, false).filter(p => p.id === player.gDP('robbingTargetID'))
 
                 if (victimArray.length === 0) {
@@ -1502,11 +1494,10 @@ export const coreFramework = {
 
     smallHeadSpellImplementation: {
         tickSpeed: 20,
+        preFilterPlayers: (p) => gDP(p, 'spellOfSmallHead'),
         operations: (data) => {
-            for (const p of data.players) {
-                if (gDP(p, 'spellOfSmallHead')) {
-                    p.runCommand('playanimation @s animation.player.invisible_head')
-                }
+            for (const p of data.playersF) {
+                p.runCommand('playanimation @s animation.player.invisible_head')
             }
         }
     }
@@ -1537,7 +1528,9 @@ world.afterEvents.worldLoad.subscribe(async () => {
         }
 
         system.runInterval(async () => { // Every tick
+
             // Create data (to pass it into core blocks)
+            /** @type {CoreBlockData} */
             let data = {
                 players: world.getPlayers().filter(p => p.currentHP !== 0)
             }
@@ -1555,15 +1548,31 @@ world.afterEvents.worldLoad.subscribe(async () => {
 
                     // Condition check
                     let canExecute = true
+
                     if ('condition' in coreBlock) {
                         try {
                             canExecute = coreBlock.condition(data)
                         }
-                        catch (e) {
-                            console.error(`${errorName}: Condition check internal error: ${e}`)
+                        catch (err) {
+                            console.error(`${errorName}: Condition check internal error: ${err.stack}${err}`)
                             canExecute = false
                         }
                     }
+
+                    // Pre-filter players
+                    if ('preFilterPlayers' in coreBlock) {
+                        try {
+                            data.playersF = data.players.filter(coreBlock.preFilterPlayers)
+                        }
+                        catch (err) {
+                            console.error(`${errorName}: Players pre-filter internal error: ${err.stack}${err}`)
+                            data.playersF = []
+                            canExecute = false
+                        }
+                        if (data.playersF.length === 0) canExecute = false
+                    }
+
+                    coreBlock.isEnabled = canExecute
 
                     if (canExecute) {
                         try {
@@ -1629,6 +1638,8 @@ const dynamicPropertiesToDecrease = {
 
     'fiolix': undefined,
 };
+
+
 
 // Mana display
 export function displayMPAndAdjacent(player) {

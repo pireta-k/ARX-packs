@@ -40,7 +40,7 @@ export async function registerCharacter(player) {
     // Everything is fine
     else {
         // Version notification check
-        if (RELEASE != 'stable' && !gDP(player, 'hasAlreadySeenVersionWarning')) sDP(player, 'registerCharacterStage', -9)
+        if (RELEASE.type != 'stable' && !gDP(player, 'hasAlreadySeenVersionWarning')) sDP(player, 'registerCharacterStage', -9)
 
         switch (player.getDynamicProperty('registerCharacterStage')) {
 
@@ -48,7 +48,7 @@ export async function registerCharacter(player) {
             case -9: // Warning
                 const formWarning = new ModalFormData()
                     .title(fl(player, 'lobby.registration.notStableRelease.title'))
-                    .label(fl(player, `lobby.registration.notStableRelease.${RELEASE}`)) // alpha | beta | special
+                    .label(fl(player, `lobby.registration.notStableRelease.${RELEASE.type}`)) // alpha | beta | special
                     .submitButton(fl(player, 'lobby.registration.notStableRelease.confirm'))
 
                     .show(player)

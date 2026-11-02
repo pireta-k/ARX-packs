@@ -2,13 +2,12 @@
 
 // Imports - Minecraft
 import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond } from "@minecraft/server"
-import { ActionFormData } from "@minecraft/server-ui"
 
 import './vanillaPrototypes'
 
 // Imports - Arx functions 
-import { getScore, incScore, setScore } from './arxLib/scoresOperations'
-import { increaseSkillProgress, wipeSkillsProgress } from './skillsOperations'
+import { incScore } from './arxLib/scoresOperations'
+import { increaseSkillProgress } from './skillsOperations'
 import { onConsume } from './food/onConsume'
 import { registerCharacter } from "./registerCharacter"
 import { showDialog } from './dialogues'
@@ -50,20 +49,28 @@ import { Vector } from "./arxLib/math"
 import { playSound } from "./arxLib/audio"
 import { random } from "./arxLib/random"
 import { bannedItems } from "./items/banned"
+import { Cache } from "./arxLib/cache"
 
 /**
- * Type of an Arx release
+ * Type of Arx release
  * @typedef { 'alpha' | 'beta' | 'special' | 'stable' } ArxReleaseType
  */
-/** @type {ArxReleaseType} */
-export const RELEASE = 'alpha'
 /** 
  * Requires 3 numbers, like [1, 5, 53]
  * @typedef { number[] } ArxVersion 
  */
-/** @type {ArxVersion} */
-export const VERSION = [0, 2, 2]
-export const REPOSITORY = 'https://github.com/pireta-k/ARX-packs'
+
+/**
+ * Arx release data
+ * @property {ArxReleaseType} type - release type
+ * @property {ArxVersion} version - Arx version
+ * @property {string} repository - link to github
+ */
+export const RELEASE = {
+    type: "alpha",
+    version: [0, 2, 37],
+    repository: 'https://github.com/pireta-k/ARX-packs'
+}
 
 // Version check
 /**
@@ -77,7 +84,7 @@ export function isArxVersionValid(version) {
     if (!version.every(v => typeof v === 'number')) return false
     return true
 }
-if (!isArxVersionValid(VERSION)) {
+if (!isArxVersionValid(RELEASE.version)) {
     console.warn(`Arx version, provided in _main.js, doesn't look valid`)
 }
 
@@ -86,17 +93,7 @@ world.afterEvents.playerButtonInput.subscribe((event) => {
     const state = event.newButtonState
     const player = event.player
 
-    if (button === 'Jump') {
-        // Кнопку нажали
-        if (state === 'Pressed') {
-            sDP(player, 'pressedJumpButton', true)
-        }
-        // Кнопку отпустили
-        else {
-            sDP(player, 'pressedJumpButton', false)
-        }
-    }
-    else if (button === 'Sneak') {
+    if (button === 'Sneak') {
         if (state === 'Pressed') {
             // Обновляем данные о посохе
             const item = getItem(player, 'mainhand')
@@ -135,7 +132,10 @@ world.afterEvents.playerInventoryItemChange.subscribe((event) => {
             return // Exit
         }
 
-        // Анализ поднимаемного игроком веса
+        // Commands core to recount player's weight on the next tick.
+        // Prevents multiple recounts on the same tick
+        p.recountWeightOnNextTick = true
+
         weighAnalysis(p)
 
         onWeaponInventoryChange(event)
@@ -1045,6 +1045,21 @@ system.beforeEvents.startup.subscribe(initEvent => {
         origin => {
             const player = origin.initiator ?? origin.sourceEntity
             system.run(() => { Knockout.suicide(player) })
+        }
+    )
+
+    // Clear cache
+    ccr.registerCommand(
+        {
+            name: 'arx:clearcache',
+            description: 'Clear Arx cache. Can possibly fix problems with Arx',
+            permissionLevel: CommandPermissionLevel.Admin,
+            cheatsRequired: false
+        },
+        origin => {
+            const p = origin.initiator ?? origin.sourceEntity
+            Cache.resetCaches()
+            p.sendMessage('Cache cleared')
         }
     )
 })

@@ -1,7 +1,7 @@
 // Arx pack updates — version migrations and first-time world setup
 
 import { Player, system, world } from "@minecraft/server";
-import { isArxVersionValid, VERSION } from "../_main"
+import { isArxVersionValid, RELEASE } from "../_main"
 import { gDP, sDP } from "../arxLib/DPOperations"
 import { updateRegistry } from "./updateRegistry";
 import { MessageFormData } from "@minecraft/server-ui";
@@ -34,7 +34,7 @@ function compareVersions(versionA, versionB) {
  * @returns {boolean}
  */
 export function isArxWorldReady() {
-    return ['equal', 'newer'].includes(compareVersions(gDP(world, 'latestV', ZEROVERSION), VERSION))
+    return ['equal', 'newer'].includes(compareVersions(gDP(world, 'latestV', ZEROVERSION), RELEASE.version))
 }
 
 /**
@@ -48,14 +48,14 @@ async function update() {
         sDP(world, 'latestV', ZEROVERSION)
         installedVersion = ZEROVERSION
     }
-    const comparsionResult = compareVersions(installedVersion, VERSION)
+    const comparsionResult = compareVersions(installedVersion, RELEASE.version)
 
     // Pack version unchanged
     if (comparsionResult === 'equal') return
 
     // Pack version is older
     else if (comparsionResult === 'newer') {
-        console.warn(`Looks like Arx packs were downgraded (${installedVersion} -> ${VERSION}). Doing nothing.`)
+        console.warn(`Looks like Arx packs were downgraded (${installedVersion} -> ${RELEASE.version}). Doing nothing.`)
     }
 
     // Pack version is newer (UPDATE!!!)
@@ -77,15 +77,15 @@ async function update() {
                 }
                 sDP(world, 'latestV', element.version)
             }
-            console.warn(`This world was §asucessfully§f updated for Arx Ultima ${VERSION} o§8(installed ${elementsToApply.length} updates)`)
+            console.warn(`This world was §asucessfully§f updated for Arx Ultima ${RELEASE.version} o§8(installed ${elementsToApply.length} updates)`)
         }
         // After an update was finished, set world version to Arx pack version
-        sDP(world, 'latestV', VERSION)
+        sDP(world, 'latestV', RELEASE.version)
     }
 
     // Error in comparsion
     else {
-        console.error(`An unknown error occured while checking for updates. Versions: installedVersion = ${installedVersion}, VERSION = ${VERSION}`)
+        console.error(`An unknown error occured while checking for updates. Versions: installedVersion = ${installedVersion}, VERSION = ${RELEASE.version}`)
         return
     }
 }
