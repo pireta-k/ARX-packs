@@ -1,26 +1,23 @@
 import { world } from "@minecraft/server"
 import { checkForItem } from '../items/checkForItem'
 import { sDP } from "../arxLib/DPOperations"
+import { getItem } from "../items/getItem"
+import { lightSourcesList } from "../items/lists"
 
 export function dynamicLightCoreTick() {
     for (const player of world.getPlayers()) {
 
         let dynamicLightPower = 0
 
-        // Mainhand items
-        if (checkForItem(player, 'mainhand', 'minecraft:torch')) dynamicLightPower += 14
-        if (checkForItem(player, 'mainhand', 'minecraft:redstone_torch')) dynamicLightPower += 7
-        if (checkForItem(player, 'mainhand', 'minecraft:soul_torch')) dynamicLightPower += 12
-        if (checkForItem(player, 'mainhand', 'minecraft:copper_torch')) dynamicLightPower += 12
-        if (checkForItem(player, 'mainhand', 'minecraft:lantern')) dynamicLightPower += 14
+        const mainhandItemId = getItem(player, 'mainhand')?.typeId
+        const legsItemId = getItem(player, 'legs')?.typeId
+
+        // Mainhand
+        if (mainhandItemId in lightSourcesList.mainhand) dynamicLightPower += lightSourcesList.mainhand[mainhandItemId]
 
         // Belt lamps
-        if (checkForItem(player, 'legs', 'arx:belt_lamp')) dynamicLightPower += 10
-        if (checkForItem(player, 'legs', 'arx:brightmouse')) dynamicLightPower += 14
-        if (checkForItem(player, 'legs', 'arx:magilight')) dynamicLightPower += 9
-        if (checkForItem(player, 'legs', 'arx:archilight')) dynamicLightPower += 15
-        if (checkForItem(player, 'legs', 'arx:firefly_belt_lamp')) dynamicLightPower += 14
-        if (checkForItem(player, 'legs', 'arx:mechanic_belt_lamp')) dynamicLightPower += 9
+        if (mainhandItemId in lightSourcesList.beltLamps) dynamicLightPower += lightSourcesList.beltLamps[mainhandItemId]
+        if (legsItemId in lightSourcesList.beltLamps) dynamicLightPower += lightSourcesList.beltLamps[legsItemId]
 
         // Check allowed values range
         if (dynamicLightPower > 15) dynamicLightPower = 15

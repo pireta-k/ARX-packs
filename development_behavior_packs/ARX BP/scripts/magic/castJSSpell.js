@@ -7,6 +7,7 @@ import { checkForItem } from '../items/checkForItem';
 import { gDP, sDP } from '../arxLib/DPOperations';
 import { rayCast } from './rayCast';
 import { XP } from '../skills';
+import { spellDistanceRingsList } from '../items/lists';
 
 // Создает и возвращает объект spellData, хранящий в себе всё, что может пригодиться в обработке заклинания
 export function prepareSpellData(player, runeSequence) {
@@ -71,20 +72,12 @@ export function defineCastDistance(p) {
     let distance = 12 // Basic
 
     // Rings
-    if (checkForItem(p, 'Offhand', 'arx:ring_aluminum_aquamarine')) distance += 1
-    if (checkForItem(p, 'Feet', 'arx:ring_aluminum_aquamarine')) distance += 1
-    if (checkForItem(p, 'Offhand', 'arx:ring_gold_aquamarine')) distance += 2
-    if (checkForItem(p, 'Feet', 'arx:ring_gold_aquamarine')) distance += 2
-    if (checkForItem(p, 'Offhand', 'arx:ring_naginitis_aquamarine')) distance += 3
-    if (checkForItem(p, 'Feet', 'arx:ring_naginitis_aquamarine')) distance += 3
-    if (checkForItem(p, 'Offhand', 'arx:ring_caryite_aquamarine')) distance += 4
-    if (checkForItem(p, 'Feet', 'arx:ring_caryite_aquamarine')) distance += 4
-    if (checkForItem(p, 'Offhand', 'arx:ring_malafiotironite_aquamarine')) distance += 5
-    if (checkForItem(p, 'Feet', 'arx:ring_malafiotironite_aquamarine')) distance += 5
-    if (checkForItem(p, 'Offhand', 'arx:ring_lamenite_aquamarine')) distance += 6
-    if (checkForItem(p, 'Feet', 'arx:ring_lamenite_aquamarine')) distance += 6
+    const feetItemId = getItem(p, 'feet')?.typeId
+    const offhandItemId = getItem(p, 'offhand')?.typeId
 
-    // Навык Дистанция заклинаний: +1 блок за уровень
+    if (feetItemId in spellDistanceRingsList) weighLimit += spellDistanceRingsList[feetItemId]
+    if (offhandItemId in spellDistanceRingsList) weighLimit += spellDistanceRingsList[offhandItemId]
+
     distance += XP.getLevel(p, 'mp_range')
 
     sDP(p, 'spellDistance', distance)

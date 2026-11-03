@@ -163,9 +163,10 @@ export function useStaff(player, forceChannel = undefined) {
         }
 
         // Mp reduction by rare gem amuls
-        if (checkForItem(player, 'Legs', 'arx:amul_magic_painit') && magicTarget === 2) spellCostMult -= 0.25
-        if (checkForItem(player, 'Legs', 'arx:amul_magic_titanite') && magicTarget === 1) spellCostMult -= 0.25
-        if (checkForItem(player, 'Legs', 'arx:amul_magic_zoisite')) spellCostMult -= 0.1
+        const amuletId = getItem(player, 'legs')?.typeId
+        if (amuletId === 'arx:amul_magic_painit' && magicTarget === 2) spellCostMult -= 0.25
+        if (amuletId === 'arx:amul_magic_titanite' && magicTarget === 1) spellCostMult -= 0.25
+        if (amuletId === 'arx:amul_magic_zoisite') spellCostMult -= 0.1
 
         // If mp reduction is more than 0.9 
         if (spellCostMult < 0.1) spellCostMult = 0.1

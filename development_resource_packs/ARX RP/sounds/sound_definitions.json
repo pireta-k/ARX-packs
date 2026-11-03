@@ -124,15 +124,6 @@
          "sounds/equipment/din_hijo_block"
       ]
    },
-   "get_achievement": {
-      "category": "music",
-      "sounds": [
-         {
-            "name": "sounds/achievements/get_achievement",
-            "stream": true
-         }
-      ]
-   },
    "magic_dash": {
       "category": "neutral",
       "sounds": [

@@ -1,7 +1,7 @@
 // ARX javascript
 
 // Imports - Minecraft
-import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond } from "@minecraft/server"
+import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond, EntityHealthComponent } from "@minecraft/server"
 
 import './vanillaPrototypes'
 
@@ -50,6 +50,7 @@ import { playSound } from "./arxLib/audio"
 import { random } from "./arxLib/random"
 import { bannedItems } from "./items/banned"
 import { Cache } from "./arxLib/cache"
+import { strengthRingsList } from "./items/lists"
 
 /**
  * Type of Arx release
@@ -242,46 +243,42 @@ export function generateGrass(vector3, dimension) {
 function calculateStrength(player) {
     let basicStrength = 0.5
 
-    // Кольца
-    if (checkForItem(player, "Feet", "arx:ring_gold_ruby")) { basicStrength += 1 }
-    if (checkForItem(player, "Offhand", "arx:ring_gold_ruby")) { basicStrength += 1 }
-    if (checkForItem(player, "Feet", "arx:ring_naginitis_ruby")) { basicStrength += 2 }
-    if (checkForItem(player, "Offhand", "arx:ring_naginitis_ruby")) { basicStrength += 2 }
-    if (checkForItem(player, "Feet", "arx:ring_caryite_ruby")) { basicStrength += 3 }
-    if (checkForItem(player, "Offhand", "arx:ring_caryite_ruby")) { basicStrength += 3 }
-    if (checkForItem(player, "Feet", "arx:ring_toliriite_ruby")) { basicStrength += 4 }
-    if (checkForItem(player, "Offhand", "arx:ring_toliriite_ruby")) { basicStrength += 4 }
-    if (checkForItem(player, "Feet", "arx:ring_lamenite_ruby")) { basicStrength += 5 }
-    if (checkForItem(player, "Offhand", "arx:ring_lamenite_ruby")) { basicStrength += 5 }
+    // Rings
+    const feetItemId = getItem(player, 'feet')?.typeId
+    const legsItemId = getItem(player, 'legs')?.typeId
+    const offhandItemId = getItem(player, 'offhand')?.typeId
 
-    if (checkForItem(player, "Legs", "arx:durasteel_bracers")) { basicStrength += 1 }
+    if (feetItemId in strengthRingsList) basicStrength += strengthRingsList[feetItemId]
+    if (offhandItemId in strengthRingsList) basicStrength += strengthRingsList[offhandItemId]
 
-    if (checkForItem(player, "Legs", "arx:amul_bloody_circle")) { basicStrength += 0.5 }
-    if (checkForItem(player, "Legs", "arx:amul_essence_of_vicious_demon")) { basicStrength += 3 }
+    switch (legsItemId) {
+        case 'arx:durasteel_bracers': basicStrength += 1; break;
+        case 'arx:amul_bloody_circle': basicStrength += 0.5; break;
+        case 'arx:amul_essence_of_vicious_demon': basicStrength += 3; break;
 
-    // Прокач
-    basicStrength += (XP.getLevel(player, 'strength') / 2)
-
-    // Черты
-    if (checkForTrait(player, 'loner')) {
-        const playersNearLoner = getPlayersInRadius(player, 8)
-        if (playersNearLoner.length > 0) { basicStrength -= 0.5 }
-        else { basicStrength += 0.5 }
+        case 'arx:big_bag': basicStrength -= 8; break;
+        case 'arx:default_bag': basicStrength -= 4; break;
+        case 'arx:mini_bag': basicStrength -= 1; break;
     }
 
-    // Нокаут
-    if (player.getProperty('arx:is_knocked')) { basicStrength -= 999 }
+    // Skill
+    basicStrength += (XP.getLevel(player, 'strength') / 2)
 
-    // Нет перса
-    if (player.getDynamicProperty('hasRegisteredCharacter') === false) { basicStrength -= 999 }
+    // Traits
+    if (checkForTrait(player, 'loner')) {
+        const playersNearLoner = getPlayersInRadius(player, 8)
+        if (playersNearLoner.length > 0) basicStrength -= 0.5
+        else basicStrength += 0.5
+    }
+
+    // Knockout
+    if (player.getProperty('arx:is_knocked')) basicStrength -= 999
+
+    // No character
+    if (!gDP(player, 'hasRegisteredCharacter')) basicStrength -= 999
 
     // Увеличение от бонуса фиоликса
-    if (player.getDynamicProperty('statsBonusByFiolix') > 0) { basicStrength += 2 }
-
-    // От рюкзаков
-    if (checkForItem(player, "Legs", "arx:big_bag")) { basicStrength -= 8 }
-    if (checkForItem(player, "Legs", "arx:default_bag")) { basicStrength -= 4 }
-    if (checkForItem(player, "Legs", "arx:mini_bag")) { basicStrength -= 1 }
+    if (gDP(player, 'statsBonusByFiolix') > 0) basicStrength += 2
 
     // Воздействие стресса
     switch (player.getDynamicProperty('stressLevel')) {
@@ -294,13 +291,15 @@ function calculateStrength(player) {
     }
 
     // Штрафовое срезание от перегруза
-    if (player?.getDynamicProperty('overLoading') > 0) { basicStrength -= (player?.getDynamicProperty('overLoading') * 3) }
+    const overLoading = gDP(player, 'overLoading', 0)
+    if (overLoading > 0) basicStrength -= (overLoading * 3)
 
-    // Срезание от кольца гладиатора
-    if ((checkForItem(player, 'Feet', 'arx:ring_aluminum_amethyst') || checkForItem(player, 'Offhand', 'arx:ring_aluminum_amethyst')) && basicStrength > 1) basicStrength = 1
+    // Gladiator ring
+    const gladiatorRingId = 'arx:ring_aluminum_amethyst'
+    if ((feetItemId === gladiatorRingId || offhandItemId === gladiatorRingId) && basicStrength > 1) basicStrength = 1
 
     // Штраф от запрета атаки
-    if (player?.getDynamicProperty("prohibit_damage") > 0) { basicStrength -= 99999 }
+    if (player?.getDynamicProperty("prohibit_damage") > 0) basicStrength -= 99999
 
     // Штрафовое срезание от отката
     basicStrength -= Math.ceil(player.getDynamicProperty("attackCD") / 20) * 4
@@ -311,6 +310,7 @@ function calculateStrength(player) {
     return basicStrength
 }
 
+const healthComponentCache = new Cache()
 // Intercept damage
 world.beforeEvents.entityHurt.subscribe((event) => {
     // === Vars ===
@@ -319,8 +319,11 @@ world.beforeEvents.entityHurt.subscribe((event) => {
     const damager = event.damageSource.damagingEntity
     const cause = event.damageSource.cause
 
-    // e.currentHP (== getComponent('minecraft:health')?.currentValue) returns hp AFTER the entity has taken damage.
-    const healthAfter = e.currentHP
+    // getComponent('minecraft:health')?.currentValue returns hp AFTER the entity has taken damage despite the fact that this is BEFORE event (wtf mojang?)
+    /** @type {EntityHealthComponent} */
+    const healthComponent = healthComponentCache.get(e, () => e.getComponent('minecraft:health'))
+
+    const healthAfter = healthComponent?.currentValue
     const healthBefore = healthAfter !== undefined ? healthAfter + dmg : undefined
     // Is the hit killing the entity?
     const fatal = healthAfter !== undefined && (healthAfter <= 0)

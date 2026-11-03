@@ -19,7 +19,6 @@ import { sendToActionBar, actionBarCoreTick } from './actionBarCore'
 import { ambienceCoreTick } from './ambience_core'
 import { dynamicLightCoreTick } from './dynamicLightCore'
 import { isInBiomeWithTag, musicCoreTick } from './music_core'
-import { achievementsCoreTick } from './achievements'
 import { fl, sl } from "../lang/fetchLocalization"
 import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
 import { isDay, sleep } from "../arxLib/time"
@@ -34,7 +33,7 @@ import { getHoster } from "../arxLib/admin"
 import { playSound } from "../arxLib/audio"
 import { NPCManager } from "../npcManager"
 import { getItem } from "../items/getItem"
-import { jumpBoostRingsList, manaBonusRingsList, manaRegenRingsList, speedBonusRingsList } from "../items/lists"
+import { jumpBoostRingsList, manaBonusRingsList, manaRegenRingsList, rangedAccuracyRingsList, speedBonusRingsList } from "../items/lists"
 
 /** TO-DO
 OPTIONAL overclock: {    <- If this key exists, can overclock, else cannot 
@@ -330,7 +329,7 @@ export const coreFramework = {
                 const inBoat = player.ridingOn?.typeId === 'minecraft:boat'
 
                 // Зонт или амулет ненамокания 
-                const holdingUmbrella = checkForItem(player, 'mainhand', 'arx:umbrella_golden_silk') || checkForItem(player, 'mainhand', 'arx:umbrella_silk') || checkForItem(player, 'mainhand', 'arx:umbrella_skin') || checkForItem(player, 'mainhand', 'arx:umbrella_small_silk')
+                const holdingUmbrella = getItem(player, 'mainhand')?.getTags()?.includes('is_umbrella')
                 for (let playerNearUmbrella of getPlayersInRadius(player, 1.5, false)) {
                     sDP(playerNearUmbrella, 'someoneCoversWithUmbrella', true)
                 }
@@ -491,7 +490,7 @@ export const coreFramework = {
     // Torch Particles 
     torchParicles: {
         tickSpeed: 10,
-        preFilterPlayers: p => checkForItem(p, 'Mainhand', 'minecraft:torch') || checkForItem(p, 'Mainhand', 'minecraft:soul_torch') || checkForItem(p, 'Mainhand', 'minecraft:copper_torch') || checkForItem(p, 'Mainhand', 'minecraft:redstone_torch'),
+        preFilterPlayers: p => torchIds.includes(getItem(p, 'mainhand')?.typeId),
         operations: (data) => {
             for (const p of data.playersF) {
                 p.runCommand('execute positioned ~ ~1.9 ~ run particle minecraft:basic_smoke_particle ^-0.3 ^0 ^0.4')
@@ -1226,23 +1225,12 @@ export const coreFramework = {
             for (const player of data.players) {
                 let rangedAttackAccuracy = 0
 
-                if (checkForItem(player, "Feet", "arx:ring_lamenite_topaz")) { rangedAttackAccuracy += 6 }
-                if (checkForItem(player, "Offhand", "arx:ring_lamenite_topaz")) { rangedAttackAccuracy += 6 }
+                // Rings
+                const feetItemId = getItem(player, 'feet')?.typeId
+                const offhandItemId = getItem(player, 'offhand')?.typeId
 
-                if (checkForItem(player, "Feet", "arx:ring_toliriite_topaz")) { rangedAttackAccuracy += 5 }
-                if (checkForItem(player, "Offhand", "arx:ring_toliriite_topaz")) { rangedAttackAccuracy += 5 }
-
-                if (checkForItem(player, "Feet", "arx:ring_caryite_topaz")) { rangedAttackAccuracy += 4 }
-                if (checkForItem(player, "Offhand", "arx:ring_caryite_topaz")) { rangedAttackAccuracy += 4 }
-
-                if (checkForItem(player, "Feet", "arx:ring_naginitis_topaz")) { rangedAttackAccuracy += 3 }
-                if (checkForItem(player, "Offhand", "arx:ring_naginitis_topaz")) { rangedAttackAccuracy += 3 }
-
-                if (checkForItem(player, "Feet", "arx:ring_gold_topaz")) { rangedAttackAccuracy += 2 }
-                if (checkForItem(player, "Offhand", "arx:ring_gold_topaz")) { rangedAttackAccuracy += 2 }
-
-                if (checkForItem(player, "Feet", "arx:ring_aluminum_topaz")) { rangedAttackAccuracy += 1 }
-                if (checkForItem(player, "Offhand", "arx:ring_aluminum_topaz")) { rangedAttackAccuracy += 1 }
+                if (feetItemId in rangedAccuracyRingsList) rangedAttackAccuracy += rangedAccuracyRingsList[feetItemId]
+                if (offhandItemId in rangedAccuracyRingsList) rangedAttackAccuracy += rangedAccuracyRingsList[offhandItemId]
 
                 // Прибавка от уровня стрельбы
                 rangedAttackAccuracy += XP.getLevel(player, 'shooting')
@@ -1377,10 +1365,6 @@ export const coreFramework = {
     actionBar: {
         tickSpeed: 1,
         operations: actionBarCoreTick,
-    },
-    achievements: {
-        tickSpeed: 30,
-        operations: achievementsCoreTick,
     },
 
     // Remove tag "is_emoting_via_arx_command"
@@ -1588,6 +1572,7 @@ const dynamicPropertiesToDecrease = {
 };
 
 const movementComponentCache = new Cache()
+const torchIds = ['minecraft:torch', 'minecraft:soul_torch', 'minecraft:copper_torch', 'minecraft:redstone_torch']
 
 // Mana display
 export function displayMPAndAdjacent(player) {

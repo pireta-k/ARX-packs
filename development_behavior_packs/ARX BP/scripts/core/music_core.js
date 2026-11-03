@@ -9,7 +9,7 @@ import { isDay } from "../arxLib/time"
 const musicOptions = { fade: 2, loop: true }
 
 // All locations.
-// Proprity - if conditions for more then 1 locations met, system would choose location with less priority
+// Priority - if conditions for more then 1 locations met, system would choose location with less priority
 const musicLocations = {
     // Mines
     "upperMines": {

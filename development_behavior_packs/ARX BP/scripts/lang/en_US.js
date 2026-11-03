@@ -123,7 +123,6 @@ export const enLocalization = {
     'info.option.stats': 'Stats',
     'info.option.traits': 'Traits',
     'info.option.tastes': 'Tastes',
-    'info.option.achievements': 'Achievements',
     'info.option.settings': 'Arx settings',
     'info.option.globalSettings': 'Global Arx settings\n§o§dVisible only to admins',
     'info.option.statistics': 'Statistics',

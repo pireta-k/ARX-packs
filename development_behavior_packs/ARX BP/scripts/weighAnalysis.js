@@ -1,33 +1,34 @@
-import { checkForItem } from "./items/checkForItem"
 import { getScore } from "./arxLib/scoresOperations"
 import { checkForTrait } from './traits/traitsOperations'
-import { getNearestPlayer } from './getNearestPlayer'
 import { gDP, sDP } from "./arxLib/DPOperations"
 import { XP } from "./skills"
+import { getItem } from "./items/getItem"
+import { weightLimitRingsList } from "./items/lists"
 
 export function weighAnalysis(player) {
     // weighLimit - ограничение переносимого веса, при переходе за который накладывается штраф
     let weighLimit = 4
-    // Сумки
-    if (checkForItem(player, "Legs", "arx:belt_bag")) weighLimit += 1
-    if (checkForItem(player, "Legs", "arx:big_bag")) weighLimit += 8
-    if (checkForItem(player, "Legs", "arx:default_bag")) weighLimit += 4
-    if (checkForItem(player, "Feet", "arx:leg_bag")) weighLimit += 1
-    if (checkForItem(player, "Feet", "arx:leg_bag_dual")) weighLimit += 2
-    if (checkForItem(player, "Legs", "arx:mini_bag")) weighLimit += 2
-    // Кольца
-    if (checkForItem(player, "Feet", "arx:ring_aluminum_cornelian")) weighLimit += 1
-    if (checkForItem(player, "OffHand", "arx:ring_aluminum_cornelian")) weighLimit += 1
-    if (checkForItem(player, "Feet", "arx:ring_gold_cornelian")) weighLimit += 2
-    if (checkForItem(player, "OffHand", "arx:ring_gold_cornelian")) weighLimit += 2
-    if (checkForItem(player, "Feet", "arx:ring_naginitis_cornelian")) weighLimit += 3
-    if (checkForItem(player, "OffHand", "arx:ring_naginitis_cornelian")) weighLimit += 3
-    if (checkForItem(player, "Feet", "arx:ring_caryite_cornelian")) weighLimit += 4
-    if (checkForItem(player, "OffHand", "arx:ring_caryite_cornelian")) weighLimit += 4
-    if (checkForItem(player, "Feet", "arx:ring_toliriite_cornelian")) weighLimit += 5
-    if (checkForItem(player, "OffHand", "arx:ring_toliriite_cornelian")) weighLimit += 5
-    if (checkForItem(player, "Feet", "arx:ring_lamenite_cornelian")) weighLimit += 6
-    if (checkForItem(player, "OffHand", "arx:ring_lamenite_cornelian")) weighLimit += 6
+
+    const feetItemId = getItem(player, 'feet')?.typeId
+    const legsItemId = getItem(player, 'legs')?.typeId
+    const offhandItemId = getItem(player, 'offhand')?.typeId
+
+    // Bags
+    switch (feetItemId) {
+        case "arx:leg_bag": weighLimit += 1; break;
+        case "arx:leg_bag_dual": weighLimit += 2; break;
+    }
+    switch (legsItemId) {
+        case "arx:belt_bag": weighLimit += 1; break;
+        case "arx:big_bag": weighLimit += 8; break;
+        case "arx:default_bag": weighLimit += 4; break;
+        case "arx:mini_bag": weighLimit += 2; break;
+    }
+
+    // Rings
+    if (feetItemId in weightLimitRingsList) weighLimit += weightLimitRingsList[feetItemId]
+    if (offhandItemId in weightLimitRingsList) weighLimit += weightLimitRingsList[offhandItemId]
+
 
     if (gDP(player, 'weighLimitBonusByPotion', 0) > 0) weighLimit += 2
     if (gDP(player, 'weighLimitBonusByPotionImproved', 0) > 0) weighLimit += 6
@@ -35,16 +36,11 @@ export function weighAnalysis(player) {
     // From perma potions
     weighLimit += (gDP(player, 'weightLimitPermanentBonus', 0) / 2)
 
-    // От черты
     if (checkForTrait(player, 'powerful')) weighLimit += 1
-
-    // Увеличение от прокачки
     weighLimit += XP.getLevel(player, 'endurance')
+    if (gDP(player, 'statsBonusByFiolix', 0) > 0) weighLimit += 2
 
-    // Увеличение от бонуса фиоликса
-    if (gDP(player, 'statsBonusByFiolix', 0) > 0) { weighLimit += 2 }
-
-    // Воздействие стресса
+    // Stress
     const stressLevel = gDP(player, 'stressLevel', 0)
     if (stressLevel == 4) { weighLimit -= 4 }
     else if (stressLevel == 3) { weighLimit -= 2 }

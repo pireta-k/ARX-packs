@@ -5,7 +5,6 @@ import { infoAboutTastes } from "./infoAboutTastes"
 import { infoSkillsScreen } from "./infoSkillsScreen"
 import { infoAboutStats } from "./infoAboutStats"
 import { infoAboutStatistics } from "./infoAboutStatistics"
-import { infoAboutAchievements } from "./infoAboutAchievements"
 import { knownSpellsBook } from "./knownSpellsBook"
 import { infoAboutTraits } from "./infoAboutTraits"
 import { arxSettings, arxGlobalSettings } from "./arxSettings"
@@ -69,10 +68,6 @@ export function infoScreen(player) {
             condition: () => gDP(player, 'hasRegisteredCharacter'),
             icon: 'textures/ui/info/about_tastes',
             exe: () => infoAboutTastes(player)
-        },
-        achievements: {
-            icon: 'textures/ui/info/about_achievements',
-            exe: () => infoAboutAchievements(player)
         },
         settings: {
             icon: 'textures/ui/info/options',

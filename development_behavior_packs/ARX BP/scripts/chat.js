@@ -231,7 +231,8 @@ export class Chat {
             if (this.#sourceEntity.typeId === 'minecraft:player' && !['action', 'global'].includes(this.type)) {
                 const p = this.#sourceEntity
                 const amulet = getItem(p, 'legs')
-                if (amulet.typeId.startsWith('arx:amul_hypersynergy')) {
+                const amuletId = amulet.typeId
+                if (amuletId.startsWith('arx:amul_hypersynergy')) {
                     const words = this.rawText.split(' ')
                     let rune = words[0]
                     if (words.length === 1) {
@@ -242,18 +243,16 @@ export class Chat {
                         while (true) {
                             if (rune.startsWith('§')) {
                                 rune = rune.slice(2)
-                            } else {
-                                break
-                            }
+                            } else break
                         }
 
                         if (rune in runeCiphers) {
                             if (!gDP(this.#sourceEntity, 'amul_hypersynergyCD') > 0) {
                                 cipherRuneSequence(p, rune, amulet?.getTags())
                                 // Выдаем КД
-                                if (checkForItem(p, "Legs", 'arx:amul_hypersynergy')) sDP(p, 'amul_hypersynergyCD', 100)
-                                if (checkForItem(p, "Legs", 'arx:amul_hypersynergy_improved')) sDP(p, 'amul_hypersynergyCD', 35)
-                                if (checkForItem(p, "Legs", 'arx:amul_hypersynergy_superior')) sDP(p, 'amul_hypersynergyCD', 5)
+                                if (amuletId === 'arx:amul_hypersynergy') sDP(p, 'amul_hypersynergyCD', 100)
+                                if (amuletId === 'arx:amul_hypersynergy_improved') sDP(p, 'amul_hypersynergyCD', 35)
+                                if (amuletId === 'arx:amul_hypersynergy_superior') sDP(p, 'amul_hypersynergyCD', 5)
                             }
                             else {
                                 p.sendMessage("§cОткат амулета гиперсинергии ещё не закончился.")
