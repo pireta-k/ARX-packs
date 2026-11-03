@@ -6,6 +6,7 @@ import { spellRegistry } from './spells/_spellRegistry';
 import { checkForItem } from '../items/checkForItem';
 import { gDP, sDP } from '../arxLib/DPOperations';
 import { rayCast } from './rayCast';
+import { XP } from '../skills';
 
 // Создает и возвращает объект spellData, хранящий в себе всё, что может пригодиться в обработке заклинания
 export function prepareSpellData(player, runeSequence) {
@@ -84,7 +85,7 @@ export function defineCastDistance(p) {
     if (checkForItem(p, 'Feet', 'arx:ring_lamenite_aquamarine')) distance += 6
 
     // Навык Дистанция заклинаний: +1 блок за уровень
-    distance += gDP(p, 'skill:mp_range_level', 0)
+    distance += XP.getLevel(p, 'mp_range')
 
     sDP(p, 'spellDistance', distance)
     return distance

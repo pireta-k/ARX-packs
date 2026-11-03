@@ -1,13 +1,13 @@
 import { ActionFormData } from "@minecraft/server-ui"
 import { getScore } from "../arxLib/scoresOperations"
-import { calculateXPMultiplier } from "../skillsOperations"
+import { XP } from "../skills"
 import { defineCastDistance } from "../magic/castJSSpell"
 import { gDP } from "../arxLib/DPOperations"
 
 // UI
 export function infoAboutStats(p) {
     // Recalculate stats
-    calculateXPMultiplier(p)
+    XP.calculateXPMultiplier(p)
     defineCastDistance(p)
 
     // Show

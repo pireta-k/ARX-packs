@@ -7,7 +7,7 @@ import './vanillaPrototypes'
 
 // Imports - Arx functions 
 import { incScore } from './arxLib/scoresOperations'
-import { increaseSkillProgress } from './skillsOperations'
+import { XP } from './skills'
 import { onConsume } from './food/onConsume'
 import { registerCharacter } from "./registerCharacter"
 import { showDialog } from './dialogues'
@@ -260,7 +260,7 @@ function calculateStrength(player) {
     if (checkForItem(player, "Legs", "arx:amul_essence_of_vicious_demon")) { basicStrength += 3 }
 
     // Прокач
-    basicStrength += (player.getDynamicProperty('skill:strength_level') / 2)
+    basicStrength += (XP.getLevel(player, 'strength') / 2)
 
     // Черты
     if (checkForTrait(player, 'loner')) {
@@ -462,7 +462,7 @@ world.afterEvents.entityHitEntity.subscribe((hitEvent) => {
             damaged.runCommand('execute positioned ~ ~1.0 ~ positioned ^ ^ ^0.5 run particle arx:blocking_sparks')
             // Отбрасываем
             const viewDirection = damager.getViewDirection() // Отталкиваем в направлении взгляда атакующего
-            const blockingSkill = Math.cbrt(damaged.getDynamicProperty('skill:blocking_level') + 1)
+            const blockingSkill = Math.cbrt(XP.getLevel(damaged, 'blocking') + 1)
             damaged.applyKnockback({ x: viewDirection.x * 2 / blockingSkill, z: viewDirection.z * 2 / blockingSkill }, 0.4 / blockingSkill)
             damager.applyKnockback({ x: viewDirection.x * -1 / blockingSkill, z: viewDirection.z * -1 / blockingSkill }, 0.2 / blockingSkill)
             // Обработка переменных
@@ -477,7 +477,7 @@ world.afterEvents.entityHitEntity.subscribe((hitEvent) => {
                 sDP(damaged, 'prohibit_damage', 1)
             }
             sDP(damaged, 'blockingPlayerWasAttacked', 25)
-            increaseSkillProgress(damaged, 'blocking', 20)
+            XP.increaseSkillProgress(damaged, 'blocking', 20)
         }
     }
 })
@@ -1051,7 +1051,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
     // Clear cache
     ccr.registerCommand(
         {
-            name: 'arx:clearcache',
+            name: 'arx:clear-cache',
             description: 'Clear Arx cache. Can possibly fix problems with Arx',
             permissionLevel: CommandPermissionLevel.Admin,
             cheatsRequired: false
@@ -1060,6 +1060,41 @@ system.beforeEvents.startup.subscribe(initEvent => {
             const p = origin.initiator ?? origin.sourceEntity
             Cache.resetCaches()
             p.sendMessage('Cache cleared')
+        }
+    )
+
+    // Check delay
+    ccr.registerCommand(
+        {
+            name: 'arx:check-eval-delay',
+            description: 'Run a JS code cnd check it\'s delay',
+            permissionLevel: CommandPermissionLevel.Admin,
+            cheatsRequired: true,
+            mandatoryParameters: [
+                {
+                    name: 'arx:command',
+                    type: CustomCommandParamType.String
+                }
+            ]
+        },
+        (origin, command) => {
+            const me = origin.initiator ?? origin.sourceEntity
+            if (!gDP(world, 'allowUnsafeCommands')) {
+                me.sendMessage('§cUnsafe commands are disabled in your world')
+                return
+            }
+            try {
+                const start = new Date()
+                for (let i = 0; i < 10000; i++) {
+                    eval(command)
+                }
+                const end = new Date()
+                const diff = end - start
+                me.sendMessage('§bPing x10000§f: ' + diff + 'ms')
+            }
+            catch (error) {
+                me.sendMessage('§cError in eval§f: ' + error)
+            }
         }
     )
 })
@@ -1074,7 +1109,7 @@ world.afterEvents.projectileHitEntity.subscribe((hitEvent) => {
         if ((getEntityFamilies(damagedEntity).includes('mob') || getEntityFamilies(damagedEntity).includes('animal') || getEntityFamilies(damagedEntity).includes('monster') || damagedEntity.typeId === 'player') &&
             damager != damagedEntity) {
 
-            increaseSkillProgress(damager, "shooting", 15)
+            XP.increaseSkillProgress(damager, "shooting", 15)
         }
     }
 })
@@ -1142,7 +1177,7 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
         if (damaged != damager && damageCause != 'campfire' && damageCause != 'contact' && damageCause != 'drowning' && damageCause != 'fall' && damageCause != 'magma' &&
             damageCause != 'soulCampfire' && damageCause != 'starve' && damageCause != 'suffocation' && damageCause != 'fire' && damageCause != 'fireTick' && damageCause != 'freezing') {
 
-            increaseSkillProgress(damaged, "hp", hurtEvent.damage * 10)
+            XP.increaseSkillProgress(damaged, "hp", hurtEvent.damage * 10)
 
             if (checkForItem(player, 'Legs', 'arx:amul_dash')) {
                 player.applyKnockback({ x: (Math.random() - 0.5) * 6, z: (Math.random() - 0.5) * 6 }, 0.3)
@@ -1222,11 +1257,11 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
                 && damaged != damager) {
 
                 // Увеличиваем силу
-                increaseSkillProgress(damager, "strength", hurtEvent.damage * 2)
+                XP.increaseSkillProgress(damager, "strength", hurtEvent.damage * 2)
 
                 // Увеличиваем выносливость, если мы с перегрузом
                 if (damager.getDynamicProperty("overLoading") > 0) {
-                    increaseSkillProgress(damager, "endurance", hurtEvent.damage * 4)
+                    XP.increaseSkillProgress(damager, "endurance", hurtEvent.damage * 4)
                 }
             }
 

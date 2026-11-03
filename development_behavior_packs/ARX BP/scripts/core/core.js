@@ -4,7 +4,7 @@
 import { system, world, EntityComponentTypes, EquipmentSlot, MolangVariableMap } from "@minecraft/server"
 
 import { getScore, setScore } from '../arxLib/scoresOperations'
-import { increaseSkillLevel, increaseSkillProgress, wipeSkills } from '../skillsOperations'
+import { XP } from '../skills'
 import { checkForItem } from "../items/checkForItem"
 import { ModalFormData, MessageFormData, MessageFormResponse, uiManager } from "@minecraft/server-ui"
 import { getPlayersInRadius } from '../getPlayersInRadius'
@@ -23,6 +23,7 @@ import { achievementsCoreTick } from './achievements'
 import { fl, sl } from "../lang/fetchLocalization"
 import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
 import { isDay, sleep } from "../arxLib/time"
+import { Cache } from "../arxLib/cache"
 
 // Other core parts
 import { getNearestPlayer } from "../getNearestPlayer"
@@ -32,6 +33,8 @@ import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
 import { playSound } from "../arxLib/audio"
 import { NPCManager } from "../npcManager"
+import { getItem } from "../items/getItem"
+import { jumpBoostRingsList, manaBonusRingsList, manaRegenRingsList, speedBonusRingsList } from "../items/lists"
 
 /** TO-DO
 OPTIONAL overclock: {    <- If this key exists, can overclock, else cannot 
@@ -834,20 +837,20 @@ export const coreFramework = {
             for (const player of data.players) {
                 // Fortitude
                 if (player.wellness < 0.25) {
-                    increaseSkillProgress(player, 'fortitude', 8)
+                    XP.increaseSkillProgress(player, 'fortitude', 8)
                 } else if (player.wellness < 0.5) {
-                    increaseSkillProgress(player, 'fortitude', 3)
+                    XP.increaseSkillProgress(player, 'fortitude', 3)
                 }
                 // Прокачка навыков, связанных с движением
                 if (player.isMoving && !player.isRiding) {
                     if (player.getDynamicProperty('overLoading') > 0) {
-                        increaseSkillProgress(player, "endurance", 1)
+                        XP.increaseSkillProgress(player, "endurance", 1)
                     }
                     else if (player.isInWater) {
-                        increaseSkillProgress(player, 'swimming', 10)
+                        XP.increaseSkillProgress(player, 'swimming', 10)
                     }
                     else {
-                        increaseSkillProgress(player, "running", 0.5)
+                        XP.increaseSkillProgress(player, "running", 0.5)
                     }
                 }
             }
@@ -933,8 +936,9 @@ export const coreFramework = {
     },
     weightRecountOnItemPickUp: {
         tickSpeed: 1,
+        preFilterPlayers: p => p.recountWeightOnNextTick,
         operations: (data) => {
-            for (const p of data.players.filter(p => p.recountWeightOnNextTick)) {
+            for (const p of data.playersF) {
                 weighAnalysis(p)
                 p.recountWeightOnNextTick = false
             }
@@ -948,23 +952,11 @@ export const coreFramework = {
                 // Регенерация маны - рассчет
                 let mpRegenPower = 0.1
 
-                if (checkForItem(player, "Feet", "arx:ring_aluminum_beryl")) mpRegenPower += 0.3
-                if (checkForItem(player, "Offhand", "arx:ring_aluminum_beryl")) mpRegenPower += 0.3
+                const feetItemId = getItem(player, 'feet')?.typeId
+                const offhandItemId = getItem(player, 'offhand')?.typeId
 
-                if (checkForItem(player, "Feet", "arx:ring_gold_beryl")) mpRegenPower += 0.8
-                if (checkForItem(player, "Offhand", "arx:ring_gold_beryl")) mpRegenPower += 0.8
-
-                if (checkForItem(player, "Feet", "arx:ring_naginitis_beryl")) mpRegenPower += 1.5
-                if (checkForItem(player, "Offhand", "arx:ring_naginitis_beryl")) mpRegenPower += 1.5
-
-                if (checkForItem(player, "Feet", "arx:ring_caryite_beryl")) mpRegenPower += 2.5
-                if (checkForItem(player, "Offhand", "arx:ring_caryite_beryl")) mpRegenPower += 2.5
-
-                if (checkForItem(player, "Feet", "arx:ring_malafiotironite_beryl")) mpRegenPower += 3.8
-                if (checkForItem(player, "Offhand", "arx:ring_malafiotironite_beryl")) mpRegenPower += 3.8
-
-                if (checkForItem(player, "Feet", "arx:ring_lamenite_beryl")) mpRegenPower += 5
-                if (checkForItem(player, "Offhand", "arx:ring_lamenite_beryl")) mpRegenPower += 5
+                if (feetItemId in manaRegenRingsList) mpRegenPower += manaRegenRingsList[feetItemId]
+                if (offhandItemId in manaRegenRingsList) mpRegenPower += manaRegenRingsList[offhandItemId]
 
                 // Potions 
                 if (gDP(player, 'MPRegenBonusFromPotion') > 0) mpRegenPower += 0.3
@@ -973,11 +965,11 @@ export const coreFramework = {
                 mpRegenPower += ((gDP(player, 'MPRegenPermanentBonus') ?? 0) / 10)
 
                 // От черты
-                if (checkForTrait(player, 'wise')) { mpRegenPower += 0.2 }
-                if (checkForTrait(player, 'paranoid')) { mpRegenPower -= 0.2 }
+                if (checkForTrait(player, 'wise')) mpRegenPower += 0.2
+                if (checkForTrait(player, 'paranoid')) mpRegenPower -= 0.2
 
                 // Воздействие стресса
-                switch (player.getDynamicProperty('stressLevel')) {
+                switch (gDP(player, 'stressLevel')) {
                     case 4: mpRegenPower -= checkForTrait(player, 'conscious') ? 0.3 : 0.4; break
                     case 3: mpRegenPower -= 0.2; break
                     case 2: mpRegenPower -= 0.1; break
@@ -987,47 +979,32 @@ export const coreFramework = {
                 }
 
                 // Увеличение от прокачки
-                mpRegenPower += player.getDynamicProperty('skill:mp_regen_level') / 3
+                mpRegenPower += XP.getLevel(player, 'mp_regen') / 3
 
                 sDP(player, "mpRegenPower", mpRegenPower)
 
                 // Максимальная мана - рассчет
                 let maxMp = 20
 
-                if (checkForItem(player, "Feet", "arx:ring_aluminum_sapphire")) { maxMp += 5 }
-                if (checkForItem(player, "Offhand", "arx:ring_aluminum_sapphire")) { maxMp += 5 }
+                if (feetItemId in manaBonusRingsList) maxMp += manaBonusRingsList[feetItemId]
+                if (offhandItemId in manaBonusRingsList) maxMp += manaBonusRingsList[offhandItemId]
 
-                if (checkForItem(player, "Feet", "arx:ring_gold_sapphire")) { maxMp += 10 }
-                if (checkForItem(player, "Offhand", "arx:ring_gold_sapphire")) { maxMp += 10 }
-
-                if (checkForItem(player, "Feet", "arx:ring_naginitis_sapphire")) { maxMp += 20 }
-                if (checkForItem(player, "Offhand", "arx:ring_naginitis_sapphire")) { maxMp += 20 }
-
-                if (checkForItem(player, "Feet", "arx:ring_caryite_sapphire")) { maxMp += 30 }
-                if (checkForItem(player, "Offhand", "arx:ring_caryite_sapphire")) { maxMp += 30 }
-
-                if (checkForItem(player, "Feet", "arx:ring_malafiotironite_sapphire")) { maxMp += 40 }
-                if (checkForItem(player, "Offhand", "arx:ring_malafiotironite_sapphire")) { maxMp += 40 }
-
-                if (checkForItem(player, "Feet", "arx:ring_lamenite_sapphire")) { maxMp += 50 }
-                if (checkForItem(player, "Offhand", "arx:ring_lamenite_sapphire")) { maxMp += 50 }
-
-                if (checkForItem(player, "Chest", "arx:apprentice_robe")) { maxMp += 3 }
-                if (checkForItem(player, "Head", "arx:royal_sorrel_flower")) { maxMp += 5 }
+                if (checkForItem(player, "Chest", "arx:apprentice_robe")) maxMp += 3
+                if (checkForItem(player, "Head", "arx:royal_sorrel_flower")) maxMp += 5
 
                 // Potions 
                 if (gDP(player, 'maxMPBonusFromPotion') > 0) maxMp += 15
                 if (gDP(player, 'maxMPBonusFromPotionImproved') > 0) maxMp += 45
 
                 // Увеличение от бонуса фиоликса
-                if (player.getDynamicProperty('statsBonusByFiolix') > 0) { maxMp += 10 }
+                if (gDP(player, 'statsBonusByFiolix') > 0) maxMp += 10
 
                 // От черты
-                if (checkForTrait(player, 'enlightened')) { maxMp += 5 }
-                if (checkForTrait(player, 'stupid')) { maxMp -= 5 }
+                if (checkForTrait(player, 'enlightened')) maxMp += 5
+                if (checkForTrait(player, 'stupid')) maxMp -= 5
 
                 // Воздействие стресса
-                switch (player.getDynamicProperty('stressLevel')) {
+                switch (gDP(player, 'stressLevel')) {
                     case 4: maxMp -= checkForTrait(player, 'conscious') ? 15 : 20; break
                     case 3: maxMp -= 10; break
                     case 2: maxMp -= 5; break
@@ -1037,7 +1014,7 @@ export const coreFramework = {
                 }
 
                 // Увеличение от прокачки
-                maxMp += gDP(player, 'skill:mana_level', 0) * 5
+                maxMp += XP.getLevel(player, 'mana') * 5
 
                 // От пермабонуса
                 maxMp += gDP(player, 'MPPermanentBonus', 0)
@@ -1046,11 +1023,11 @@ export const coreFramework = {
                 sDP(player, "maxMp", maxMp)
 
                 // Макс мана отрицательна
-                if (maxMp < 0 || player.getDynamicProperty("mp") < 0) {
+                if (maxMp < 0 || gDP(player, 'mp') < 0) {
                     sDP(player, 'mp', 0)
                 }
                 // Регенерируем
-                else if (player.getDynamicProperty("mp") < maxMp) {
+                else if (gDP(player, 'mp') < maxMp) {
                     // Реген маны
                     if (mpRegenPower > 0) {
                         iDP(player, "mp", mpRegenPower / 10)
@@ -1069,36 +1046,21 @@ export const coreFramework = {
                     }
                     displayMPAndAdjacent(player)
                 }
-                // Мана больше макс маны
-                else if (player.getDynamicProperty("mp") > maxMp) { // Маны больше чем надо
+                // Mana > max mana
+                else if (gDP(player, 'mp') > maxMp) { // Маны больше чем надо
                     sDP(player, 'mp', maxMp)
                     sDP(player, 'MPSmoothAccrue', 0)
                     displayMPAndAdjacent(player)
                 }
-                // Мана равна макс мане
+                // Mana == max mana
                 else {
                     sDP(player, 'MPSmoothAccrue', 0)
 
-                    // Определяем, что у нас за предмет
-                    const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Mainhand)
+                    const item = getItem(player, 'mainhand')
+                    const itemTags = item?.getTags()
 
-                    // Если мы держим посох
-                    if (item?.getTags().includes('is_staff')) {
-                        displayMPAndAdjacent(player)
-                    }
-
-                    // Если мы держим руну
-                    else if (item?.getTags().includes('is_wand')) {
-                        displayMPAndAdjacent(player)
-                    }
-
-                    // Если мы держим руну
-                    else if (item?.getTags().includes('is_rune')) {
-                        displayMPAndAdjacent(player)
-                    }
-
-                    // Если у нас гиперсинергия
-                    else if (checkForItem(player, "Legs", 'arx:amul_hypersynergy') || checkForItem(player, "Legs", 'arx:amul_hypersynergy_improved') || checkForItem(player, "Legs", 'arx:amul_hypersynergy_superior')) {
+                    if (['is_staff', 'is_wand', 'is_rune'].some(tag => itemTags?.includes(tag)) ||
+                        item?.typeId?.startsWith('arx:amul_hypersynergy')) {
                         displayMPAndAdjacent(player)
                     }
                 }
@@ -1112,30 +1074,18 @@ export const coreFramework = {
             for (const player of data.players) {
                 let speedPower = 100 // База = 100%
 
-                // Увеличение от колец
-                if (checkForItem(player, "Feet", "arx:ring_aluminum_chrysolite")) speedPower += 5
-                if (checkForItem(player, "Offhand", "arx:ring_aluminum_chrysolite")) speedPower += 5
+                // Rings
+                const feetItemId = getItem(player, 'feet')?.typeId
+                const offhandItemId = getItem(player, 'offhand')?.typeId
 
-                if (checkForItem(player, "Feet", "arx:ring_gold_chrysolite")) speedPower += 10
-                if (checkForItem(player, "Offhand", "arx:ring_gold_chrysolite")) speedPower += 10
+                if (feetItemId in speedBonusRingsList) speedPower += speedBonusRingsList[feetItemId]
+                if (offhandItemId in speedBonusRingsList) speedPower += speedBonusRingsList[offhandItemId]
 
-                if (checkForItem(player, "Feet", "arx:ring_naginitis_chrysolite")) speedPower += 20
-                if (checkForItem(player, "Offhand", "arx:ring_naginitis_chrysolite")) speedPower += 20
-
-                if (checkForItem(player, "Feet", "arx:ring_caryite_chrysolite")) speedPower += 30
-                if (checkForItem(player, "Offhand", "arx:ring_caryite_chrysolite")) speedPower += 30
-
-                if (checkForItem(player, "Feet", "arx:ring_toliriite_chrysolite")) speedPower += 40
-                if (checkForItem(player, "Offhand", "arx:ring_toliriite_chrysolite")) speedPower += 40
-
-                if (checkForItem(player, "Feet", "arx:ring_lamenite_chrysolite")) speedPower += 50
-                if (checkForItem(player, "Offhand", "arx:ring_lamenite_chrysolite")) speedPower += 50
-
-                // От экипировки
-                if (checkForItem(player, "Feet", "arx:leg_bag_dual")) speedPower -= 8
+                // Equipment
+                if (feetItemId === "arx:leg_bag_dual") speedPower -= 8
 
                 // Увеличение от уровня
-                speedPower += player.getDynamicProperty("skill:running_level") * 2 || 0
+                speedPower += XP.getLevel(player, 'running') * 2
 
                 // Срезание от попадания по блокирующему
                 speedPower -= (player.getDynamicProperty("blockingPlayerWasAttacked") * 1.2) || 0
@@ -1145,7 +1095,7 @@ export const coreFramework = {
 
                 // Увеличение от навыка плавания
                 if (player.isInWater) {
-                    speedPower += player.getDynamicProperty('skill:swimming_level') * 5 || 0
+                    speedPower += XP.getLevel(player, 'swimming') * 5
                 }
 
                 // Увеличение от бонуса фиоликса
@@ -1162,8 +1112,9 @@ export const coreFramework = {
                 }
 
                 // Штраф от намокания
-                if (player.getDynamicProperty('wetness') > 200) speedPower -= 10
-                if (player.getDynamicProperty('wetness') > 400) speedPower -= 10
+                const wetness = gDP(player, 'wetness')
+                if (wetness > 200) speedPower -= 10
+                if (wetness > 400) speedPower -= 10
 
                 // Бонус от закла
                 if (player.getDynamicProperty('speedBoost:level0') > 0) { speedPower += 10 }
@@ -1184,16 +1135,16 @@ export const coreFramework = {
                 speedPower -= (Math.abs(gDP(player, 'freezing')) / 2)
 
                 // Срезание от темноты
-                if (player.lightLevel < 6) { speedPower -= 15 }
+                if (player.lightLevel < 6) speedPower -= 15
 
                 // Если значение отрицательное
-                if (speedPower < 0) { speedPower = 0 }
+                if (speedPower < 0) speedPower = 0
 
-                if (player.isSprinting) { speedPower += 25 }
+                if (player.isSprinting) speedPower += 25
 
                 // Скорость - реализация
                 if (speedPower && player.getDynamicProperty("speedPower") != speedPower) {
-                    const movementComponent = player.getComponent("minecraft:movement")
+                    const movementComponent = movementComponentCache.get(player, () => player.getComponent("minecraft:movement"))
                     movementComponent.setCurrentValue(speedPower / 1000)
                     sDP(player, "speedPower", speedPower)
                 }
@@ -1208,7 +1159,7 @@ export const coreFramework = {
                 let maxHP = 16
 
                 // Бонус от уровня
-                maxHP += gDP(player, 'skill:hp_level') * 2
+                maxHP += XP.getLevel(player, 'hp') * 2
 
                 // Макс хп - запись в DP
                 sDP(player, "maxHP", maxHP)
@@ -1232,15 +1183,12 @@ export const coreFramework = {
             for (const player of data.players) {
                 let jumpPower = 0
 
-                // Кольца
-                if (checkForItem(player, "Feet", "arx:ring_naginitis_olivine")) { jumpPower += 1 }
-                if (checkForItem(player, "Offhand", "arx:ring_naginitis_olivine")) { jumpPower += 1 }
+                // Rings
+                const feetItemId = getItem(player, 'feet')?.typeId
+                const offhandItemId = getItem(player, 'offhand')?.typeId
 
-                if (checkForItem(player, "Feet", "arx:ring_toliriite_olivine")) { jumpPower += 2 }
-                if (checkForItem(player, "Offhand", "arx:ring_toliriite_olivine")) { jumpPower += 2 }
-
-                if (checkForItem(player, "Feet", "arx:ring_lamenite_olivine")) { jumpPower += 3 }
-                if (checkForItem(player, "Offhand", "arx:ring_lamenite_olivine")) { jumpPower += 3 }
+                if (feetItemId in jumpBoostRingsList) jumpPower += jumpBoostRingsList[feetItemId]
+                if (offhandItemId in jumpBoostRingsList) jumpPower += jumpBoostRingsList[offhandItemId]
 
                 // Увеличение от бонуса фиоликса
                 if (player.getDynamicProperty('statsBonusByFiolix') > 0) { jumpPower += 1 }
@@ -1297,7 +1245,7 @@ export const coreFramework = {
                 if (checkForItem(player, "Offhand", "arx:ring_aluminum_topaz")) { rangedAttackAccuracy += 1 }
 
                 // Прибавка от уровня стрельбы
-                rangedAttackAccuracy += player.getDynamicProperty("skill:shooting_level")
+                rangedAttackAccuracy += XP.getLevel(player, 'shooting')
 
                 // Прибавка от заклинаний
                 if (player.getDynamicProperty('shootingBoostBySpell_plus2')) rangedAttackAccuracy += 2
@@ -1469,7 +1417,7 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.playersF) {
                 let victimArray = getPlayersInRadius(player, 2.5, false).filter(p => p.id === player.gDP('robbingTargetID'))
-                
+
                 if (victimArray.length === 0) {
                     uiManager.closeAllForms(player)
                     player.sDP('isRobbingRightNow', false)
@@ -1639,7 +1587,7 @@ const dynamicPropertiesToDecrease = {
     'fiolix': undefined,
 };
 
-
+const movementComponentCache = new Cache()
 
 // Mana display
 export function displayMPAndAdjacent(player) {

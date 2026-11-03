@@ -1,5 +1,5 @@
 import { ActionFormData } from "@minecraft/server-ui"
-import { getSkillsData, getInfoAboutHowToIncreaseSkills, getInfoAboutSkillsBuffs } from "../skillsOperations"
+import { XP } from "../skills"
 
 
 // Выводим экранчик с опциями навыков
@@ -13,21 +13,21 @@ export function infoSkillsScreen(player) {
         .show(player)
         .then((response) => {
             if (response.selection === 0) {
-                const form1 = new ActionFormData()
+                new ActionFormData()
                     .title("Мои навыки")
-                    .body(getSkillsData(player))
+                    .body(XP.getSkillsData(player))
                     .show(player)
 
             } else if (response.selection === 1) {
-                const form2 = new ActionFormData()
+                new ActionFormData()
                     .title("Как прокачать навыки")
-                    .body(getInfoAboutHowToIncreaseSkills(player))
+                    .body(XP.getInfoAboutHowToIncreaseSkills())
                     .show(player)
 
             } else if (response.selection === 2) {
-                const form3 = new ActionFormData()
+                new ActionFormData()
                     .title("Бонусы от навыков")
-                    .body(`За §a1 уровень§f навыка:\n\n${getInfoAboutSkillsBuffs(player)}`)
+                    .body(`За §a1 уровень§f навыка:\n\n${XP.getInfoAboutSkillsBuffs()}`)
                     .show(player)
             }
         })

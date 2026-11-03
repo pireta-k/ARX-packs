@@ -113,7 +113,7 @@ export function iDP(object, DPName, valueToIncrease = 1) {
 export function gDP(object, DPName, fallback = undefined) {
     // Check input
     if (!object || !DPName) {
-        console.warn(`Called gDP() without necessary vars`)
+        console.warn(`Called gDP() without necessary vars: object = ${object}, DPName = ${DPName}, fallback = ${fallback}`)
         return undefined
     }
 

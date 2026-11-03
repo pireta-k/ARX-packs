@@ -2,13 +2,10 @@
 import { world, EntityComponentTypes, EquipmentSlot } from "@minecraft/server";
 
 import { runeCiphers } from './rune_cipher_list'
-
 import { castJSSpell, prepareSpellData } from './castJSSpell'
 import { findSpell } from "./findSpell"
 import { getActiveStaffChannel } from './getActiveStaffChannel'
-
-import { increaseSkillProgress } from "../skillsOperations";
-
+import { XP } from "../skills";
 import { manageCD } from "../manageCD";
 import { gDP, iDP, sDP } from "../arxLib/DPOperations";
 import { spellRegistry } from "./spells/_spellRegistry";
@@ -241,8 +238,8 @@ function withdrawMP(player, spellCostReq, spellCostMult, spellData) {
     // МАКС МП manaSkillIncreaseValue: Высокое значение до 30, низкое после.
     const manaSkillIncreaseValue = spellCostReq <= 30 ? spellCostReq * 3 : spellCostReq / 2;
 
-    increaseSkillProgress(player, "mp_regen", mpRegenSkillIncreaseValue)
-    increaseSkillProgress(player, "mana", manaSkillIncreaseValue)
+    XP.increaseSkillProgress(player, "mp_regen", mpRegenSkillIncreaseValue)
+    XP.increaseSkillProgress(player, "mana", manaSkillIncreaseValue)
     increaseMpRangeSkillProgress(player, spellData)
 
     if (spellCostMult === 1) sl(player, 'magic.spell.spent_mp', [spellCostReq])
@@ -273,5 +270,5 @@ function increaseMpRangeSkillProgress(player, spellData) {
 
     if (maxDistance < farThreshold) return
 
-    increaseSkillProgress(player, 'mp_range', maxDistance * 6)
+    XP.increaseSkillProgress(player, 'mp_range', maxDistance * 6)
 }

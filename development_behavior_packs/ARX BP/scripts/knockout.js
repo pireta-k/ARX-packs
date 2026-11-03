@@ -1,8 +1,7 @@
 import { Player, system, world, ItemStack } from "@minecraft/server";
 import { fl, sl } from "./lang/fetchLocalization";
-import { sendItems } from "./items/sendItems";
 import { sDP, iDP, DPManager } from "./arxLib/DPOperations";
-import { wipeSkillsProgress } from "./skillsOperations"
+import { XP } from "./skills"
 import { random } from "./arxLib/random";
 import { ActionFormData } from "@minecraft/server-ui";
 
@@ -60,7 +59,7 @@ export class Knockout {
             // Очищаем прогресс навыков
             const difficulty = world.getDifficulty()
             if (['Hard', 'Normal'].includes(difficulty)) {
-                wipeSkillsProgress(p)
+                XP.wipeSkillsProgress(p)
             }
 
             // Выставляем вариант анимации нокаута
@@ -76,7 +75,7 @@ export class Knockout {
             iDP(p, 'stress', 4000)
 
             // Выставляем откат нокаута
-            sDP(p, 'respawnDelay', 40 - p.getDynamicProperty('skill:fortitude_level') * 2)
+            sDP(p, 'respawnDelay', 40 - XP.getLevel(p, 'fortitude') * 2)
         })
     }
 

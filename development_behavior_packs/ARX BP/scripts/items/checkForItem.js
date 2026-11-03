@@ -2,6 +2,7 @@ import { EntityComponentTypes, EquipmentSlot } from "@minecraft/server";
 import { getItem } from "./getItem";
 
 export function checkForItem(player, strSlot, itemId) {
+    if (!strSlot) return false
     const lowerSlot = strSlot.toLowerCase();
 
     // Новый слот: "any" — проверяет ВСЁ

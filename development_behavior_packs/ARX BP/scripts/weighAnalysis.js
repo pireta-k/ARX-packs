@@ -3,6 +3,7 @@ import { getScore } from "./arxLib/scoresOperations"
 import { checkForTrait } from './traits/traitsOperations'
 import { getNearestPlayer } from './getNearestPlayer'
 import { gDP, sDP } from "./arxLib/DPOperations"
+import { XP } from "./skills"
 
 export function weighAnalysis(player) {
     // weighLimit - ограничение переносимого веса, при переходе за который накладывается штраф
@@ -38,7 +39,7 @@ export function weighAnalysis(player) {
     if (checkForTrait(player, 'powerful')) weighLimit += 1
 
     // Увеличение от прокачки
-    weighLimit += (gDP(player, 'skill:endurance_level', 0) ?? 0)
+    weighLimit += XP.getLevel(player, 'endurance')
 
     // Увеличение от бонуса фиоликса
     if (gDP(player, 'statsBonusByFiolix', 0) > 0) { weighLimit += 2 }

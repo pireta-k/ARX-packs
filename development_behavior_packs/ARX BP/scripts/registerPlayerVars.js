@@ -1,17 +1,8 @@
 import { gDP, sDP } from "./arxLib/DPOperations"
-import { registeredSkills } from "./skillsOperations"
+import { skills } from "./skills"
 
 // Эта функция устанавливает игроку значения переменных в дефолтные
 export function registerPlayerVars(player) {
-    for (let skill in registeredSkills) {
-        if (gDP(player, `skill:${skill}_level`) === undefined) {
-            sDP(player, `skill:${skill}_level`, 0)
-        }
-        if (gDP(player, `skill:${skill}_progress`) === undefined) {
-            sDP(player, `skill:${skill}_progress`, 0.0)
-        }
-    }
-
     // Каналы магии
     for (let i = 1; i < 11; i++) {
         if (gDP(player, `channel_${i}_rune_sequence`) === undefined) {

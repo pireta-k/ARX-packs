@@ -49,12 +49,14 @@ function devWorldSettings(p) {
     const ambiencePreviousValue = gDP(world, 'enableAmbienceCore', false)
     const fogsPreviousValue = gDP(world, 'enableFogs', false)
     const DNPCMLogPreviousValue = gDP(world, 'enableDNPCMLog', false)
+    const unsafeCommandsPreviousValue = gDP(world, 'allowUnsafeCommands', false)
 
     const f = new ModalFormData()
         .title(fl(p, 'info.dev_world_settings.title'))
         .toggle(fl(p, 'info.dev_world_settings.enable_ambience_core'), { defaultValue: ambiencePreviousValue, tooltip: fl(p, 'info.dev_world_settings.enable_ambience_core.tooltip') })
         .toggle(fl(p, 'info.dev_world_settings.enable_fogs'), { defaultValue: fogsPreviousValue, tooltip: fl(p, 'info.dev_world_settings.enable_fogs.tooltip') })
         .toggle(fl(p, 'info.dev_world_settings.enable_DNPCM_log'), { defaultValue: DNPCMLogPreviousValue, tooltip: fl(p, 'info.dev_world_settings.enable_DNPCM_log.tooltip') })
+        .toggle(fl(p, 'info.dev_world_settings.unsafe_commands'), { defaultValue: unsafeCommandsPreviousValue, tooltip: fl(p, 'info.dev_world_settings.unsafe_commands.tooltip') })
         .submitButton(fl(p, 'info.dev_world_settings.save'))
 
     f.show(p).then(response => {
@@ -63,6 +65,7 @@ function devWorldSettings(p) {
             sDP(world, 'enableAmbienceCore', fv[0])
             sDP(world, 'enableFogs', fv[1])
             sDP(world, 'enableDNPCMLog', fv[2])
+            sDP(world, 'allowUnsafeCommands', fv[3])
         }
         if (response.cancelationReason === FormCancelationReason.UserClosed) simpleDevOptions(p)
 

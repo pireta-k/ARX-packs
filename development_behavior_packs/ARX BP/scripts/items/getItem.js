@@ -1,6 +1,6 @@
 import { EntityComponentTypes, EquipmentSlot, ItemStack } from "@minecraft/server";
 import { Cache } from '../arxLib/cache'
-const equippableCache = new Cache()
+export const equippableCache = new Cache()
 
 /**
  * @param {import("@minecraft/server").Player} player
@@ -9,6 +9,7 @@ const equippableCache = new Cache()
  */
 export function getItem(player, slot) {
     const equippable = equippableCache.get(player, () => player.getComponent(EntityComponentTypes.Equippable))
+    // const equippable = player.getComponent(EntityComponentTypes.Equippable)
     if (!equippable) return undefined;
 
     const singleSlotsMap = {
@@ -39,5 +40,7 @@ export function getItem(player, slot) {
         return items;
     }
 
-    return undefined;
+    console.error('getItem(): unknown slot provided: ' + slot)
+
+    return undefined
 }

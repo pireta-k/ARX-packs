@@ -161,6 +161,8 @@ export const enLocalization = {
     'info.dev_world_settings.enable_fogs.tooltip': 'Mines, night, gear. After being disabled, your current fog can stuck on you.',
     'info.dev_world_settings.enable_DNPCM_log': 'DNPCM log',
     'info.dev_world_settings.enable_DNPCM_log.tooltip': 'Dynamic NPC Manager log. All actions done by DNPC will be logged. This is needed for debugging.',
+    'info.dev_world_settings.unsafe_commands': 'Unsafe commands',
+    'info.dev_world_settings.unsafe_commands.tooltip': 'Allows you to run unsafe commands, like /eval.',
     'info.dev_world_settings.save': 'Save',
 
     'info.dev_options.core_review.title': 'Core review',
@@ -201,7 +203,7 @@ export const enLocalization = {
     'info.settings.chat_prefixes.short': 'Short §8[§2L§8]',
     'info.settings.performance': 'Show performance in Arx menu',
     'info.settings.dev_mode': 'Developer mode',
-    'info.settings.dev_mode.tooltip': 'You\'ll be able to see technical data',
+    'info.settings.dev_mode.tooltip': 'You\'ll be able to see technical data.',
     'info.settings.submit': 'Save',
 
 
