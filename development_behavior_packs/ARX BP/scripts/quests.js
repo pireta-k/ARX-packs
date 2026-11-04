@@ -1,27 +1,31 @@
-import { gDP, sDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/dp"
 import { fl } from "./lang/fetchLocalization"
 import { ActionFormData } from "@minecraft/server-ui"
 import { world } from "@minecraft/server"
 
+/** @typedef {Record<QuestName, QuestData>} QuestList */
+/** @typedef {string} QuestName */
 
+/**
+ * @typedef {object} QuestData
+ * @property {MinMaxInterface} stages
+ * @property {boolean} [isGlobal=false]
+ */
 
-/* All the quests
-=== STRUCTURE ===
-questId: {
-    stages: { // Inclusive
-        min: Number,
-        max: Number
-    },
-    isGlobal: bool // If true, the quest progress will be saved to the world obj. This quest progress is synced for all player
-}
-*/
+/**
+ * @typedef {object} MinMaxInterface
+ * @property {number} min
+ * @property {number} max
+ */
+
+/** @type {QuestList} */
 const quests = {
     test: {
         stages: { min: 0, max: 1 }
     },
     find_a_diamond: {
         stages: { min: 0, max: 0 }
-    },
+    }
 }
 
 

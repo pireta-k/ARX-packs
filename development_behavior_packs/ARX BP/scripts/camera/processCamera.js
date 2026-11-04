@@ -1,6 +1,6 @@
 import { system, world } from "@minecraft/server"
 import { timeline } from './launchCameraUI'
-import { sDP, iDP } from "../arxLib/DPOperations";
+import { sDP, iDP } from "../arxLib/dp";
 
 // Обработка камеры
 system.runInterval(() => {

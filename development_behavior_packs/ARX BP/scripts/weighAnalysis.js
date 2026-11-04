@@ -1,6 +1,6 @@
 import { getScore } from "./arxLib/scoresOperations"
 import { checkForTrait } from './traits/traitsOperations'
-import { gDP, sDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/dp"
 import { XP } from "./skills"
 import { getItem } from "./items/getItem"
 import { weightLimitRingsList } from "./items/lists"

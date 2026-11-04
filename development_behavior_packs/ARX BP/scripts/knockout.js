@@ -1,6 +1,6 @@
 import { Player, system, world, ItemStack } from "@minecraft/server";
 import { fl, sl } from "./lang/fetchLocalization";
-import { sDP, iDP, DPManager } from "./arxLib/DPOperations";
+import { sDP, iDP, DPManager } from "./arxLib/dp";
 import { XP } from "./skills"
 import { random } from "./arxLib/random";
 import { ActionFormData } from "@minecraft/server-ui";
@@ -109,11 +109,11 @@ export class Knockout {
 
         this.applyInputPermissionOnExit(p)
 
-        p.runCommand('title @s title §c= Вы окончательно погибли =')
-        p.runCommand(`tellraw @s { "rawtext": [ { "text": "§cТак и закончилась эта история. Вы погибли навсегда." } ] }`)
         p.setProperty('arx:bust_size', 0)
-        executeCommandDelayed(p, 'function knockout_system/data_wipe/_wipe_main')
-        executeCommandDelayed(p, 'clear @s')
+        system.run(() => {
+            p.runCommand('function knockout_system/data_wipe/_wipe_main')
+            p.runCommand('clear @s')
+        })
         p.teleport({ x: -9999.5, y: 4, z: -9999.5 }, { dimension: world.getDimension('minecraft:overworld') })
 
         // Сносим переменные DP

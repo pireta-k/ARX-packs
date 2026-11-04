@@ -1,37 +1,31 @@
 // Возвращает true, если можно начать кд, иначе false
 
-import { EntityComponentTypes, EquipmentSlot, ItemComponentTypes } from "@minecraft/server";
+import { ItemComponentTypes, ItemCooldownComponent, Player } from "@minecraft/server";
+import { getItem } from "./items/getItem";
 
-
-export function manageCD(player, startCooldown = true) {
-    const equippable = player.getComponent(EntityComponentTypes.Equippable);
-    if (!equippable) {
-        console.warn(`Вызвана функция ManageCD, но у игрока нет компонента Equippable. Игрок ${player.name}, предмет ${item?.typeId}`);
-        return;
-    }
-
-    const item = equippable.getEquipment(EquipmentSlot.Mainhand);
+/**
+ * If an item has a cooldown, start it
+ * @param {Player} player 
+ * @returns {boolean} - returns true if CD was sucessfully started
+ */
+export function manageCD(player) {
+    const item = getItem(player, 'mainhand')
     if (!item) {
-        console.warn(`Вызвана функция ManageCD, но в главной руке игрока нет предмета. Игрок ${player.name}, предмет ${item?.typeId}`);
-        return;
-    }
-
-    const cooldownComponent = item.getComponent(ItemComponentTypes.Cooldown);
-    if (!cooldownComponent) {
-        console.warn(`Вызвана функция ManageCD, но у предмета в руке нет компонента Cooldown. Игрок ${player.name}, предмет ${item?.typeId}`);
-        return;
-    }
-
-    const cooldownCategory = cooldownComponent.cooldownCategory;
-    const maxCD = cooldownComponent.cooldownTicks;
-    const remainingCD = player.getItemCooldown(cooldownCategory)
-
-    //console.warn(`Категория кулдауна: ${cooldownCategory}, Время кулдауна: ${maxCD}`);
-
-    if (remainingCD === 0) {
-        if (startCooldown) cooldownComponent.startCooldown(player) // Запускаем кулдаун. Важно делать это в конце, после получения данных
-        return true
-    } else {
+        console.warn('Called ManageCD without an item')
         return false
     }
+
+    /** @type {ItemCooldownComponent} */
+    const cooldownComponent = item.getComponent(ItemComponentTypes.Cooldown)
+    if (!cooldownComponent) {
+        console.warn('Called ManageCD with an item without cooldown component with id: ' + item.typeId)
+        return false
+    }
+
+    const remainingCD = player.getItemCooldown(cooldownComponent.cooldownCategory)
+
+    if (remainingCD === 0) {
+        cooldownComponent.startCooldown(player)
+        return true
+    } else return false
 }

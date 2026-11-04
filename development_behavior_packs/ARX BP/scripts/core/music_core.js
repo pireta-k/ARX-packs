@@ -2,7 +2,7 @@
 
 // Imports
 import { world } from "@minecraft/server"
-import { sDP } from "../arxLib/DPOperations"
+import { sDP } from "../arxLib/dp"
 import { checkForItem } from "../items/checkForItem"
 import { isDay } from "../arxLib/time"
 

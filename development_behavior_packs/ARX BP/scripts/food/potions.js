@@ -1,5 +1,5 @@
 import { acquireTrait, checkForTrait } from "../traits/traitsOperations"
-import { sDP, iDP, gDP } from "../arxLib/DPOperations"
+import { sDP, iDP, gDP } from "../arxLib/dp"
 import { sl, fl } from '../lang/fetchLocalization'
 import { consumeFiolix } from "./fiolix"
 

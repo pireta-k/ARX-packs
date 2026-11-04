@@ -1,6 +1,6 @@
 import { world } from "@minecraft/server"
 import { checkForItem } from '../items/checkForItem'
-import { sDP } from "../arxLib/DPOperations"
+import { sDP } from "../arxLib/dp"
 import { getItem } from "../items/getItem"
 import { lightSourcesList } from "../items/lists"
 

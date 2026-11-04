@@ -1,5 +1,5 @@
 import { getEntityFamilies } from '../_main'
-import { gDP } from '../arxLib/DPOperations'
+import { gDP } from '../arxLib/dp'
 
 const DEFAULT_MAX_BOUNCES = 20
 const RAY_EPSILON = 0.05

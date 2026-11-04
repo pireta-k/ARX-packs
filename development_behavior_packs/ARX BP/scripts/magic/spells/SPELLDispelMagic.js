@@ -1,4 +1,4 @@
-import { sDP } from "../../arxLib/DPOperations"
+import { sDP } from "../../arxLib/dp"
 import { getScore, setScore } from '../../arxLib/scoresOperations'
 import { sl } from "../../lang/fetchLocalization"
 

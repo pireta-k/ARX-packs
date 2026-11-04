@@ -1,4 +1,4 @@
-import { iDP, sDP } from '../../arxLib/DPOperations'
+import { iDP, sDP } from '../../arxLib/dp'
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { useStaff } from '../on_use_magic_items'
 import { system } from "@minecraft/server"

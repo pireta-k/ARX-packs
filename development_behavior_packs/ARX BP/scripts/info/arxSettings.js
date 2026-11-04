@@ -1,5 +1,5 @@
 import { ModalFormData, ActionFormData, FormCancelationReason } from "@minecraft/server-ui"
-import { gDP, sDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/dp"
 import { fl, getPlayerLanguage, langMap } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
 import { world } from "@minecraft/server"

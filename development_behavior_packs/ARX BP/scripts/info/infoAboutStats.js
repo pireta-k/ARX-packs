@@ -2,7 +2,7 @@ import { ActionFormData } from "@minecraft/server-ui"
 import { getScore } from "../arxLib/scoresOperations"
 import { XP } from "../skills"
 import { defineCastDistance } from "../magic/castJSSpell"
-import { gDP } from "../arxLib/DPOperations"
+import { gDP } from "../arxLib/dp"
 
 // UI
 export function infoAboutStats(p) {

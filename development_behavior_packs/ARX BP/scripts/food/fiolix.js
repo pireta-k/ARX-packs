@@ -1,5 +1,5 @@
 import { Player } from "@minecraft/server";
-import { gDP, sDP } from "../arxLib/DPOperations";
+import { gDP, sDP } from "../arxLib/dp";
 import { sl } from "../lang/fetchLocalization";
 
 /**

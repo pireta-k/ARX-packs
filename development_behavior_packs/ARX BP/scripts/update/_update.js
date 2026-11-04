@@ -2,7 +2,7 @@
 
 import { Player, system, world } from "@minecraft/server";
 import { isArxVersionValid, RELEASE } from "../_main"
-import { gDP, sDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/dp"
 import { updateRegistry } from "./updateRegistry";
 import { MessageFormData } from "@minecraft/server-ui";
 import { fl } from "../lang/fetchLocalization";

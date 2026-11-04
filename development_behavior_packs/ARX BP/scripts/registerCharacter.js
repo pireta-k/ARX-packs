@@ -1,6 +1,6 @@
 import { ModalFormData, MessageFormData, ActionFormData } from "@minecraft/server-ui"
 import { getScore, setScore } from "./arxLib/scoresOperations"
-import { gDP, sDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/dp"
 import { world } from "@minecraft/server"
 import { fl } from "./lang/fetchLocalization"
 import { RELEASE } from "./_main"
@@ -29,13 +29,6 @@ export async function registerCharacter(player) {
                     player.teleport(gDP(world, 'worldSpawnPoint'), { dimension: world.getDimension('minecraft:overworld'), checkForBlocks: false, keepVelocity: false })
                 }
             })
-    }
-    // Player isn't verified
-    else if (world.getDynamicProperty('requireUserVerification') && player.getDynamicProperty('verify') === false) {
-        const form = new ActionFormData()
-            .title(fl(player, 'lobby.registration.cannot_registrate.title'))
-            .body(`Добро пожаловать в Аркс, §a${player.name}§f!\n\nДождитесь, пока вас верифицируют! Верификация означает, что вы можете играть здесь.\n\nВам сразу же выдадут верификацию, как удостоверяется, что вы §aзнаете правила§f и §aимеете подходящий скин§f.\n\n\n\n\n\n\n\nВы получите сообщение, когда вас верифицируют.`)
-            .show(player)
     }
     // Everything is fine
     else {

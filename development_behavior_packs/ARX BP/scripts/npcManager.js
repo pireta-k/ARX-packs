@@ -2,7 +2,7 @@ import { Entity, system, world } from "@minecraft/server"
 import { sleep } from "./arxLib/time"
 import { Vector } from "./arxLib/math"
 import { Chat } from "./chat"
-import { gDP, sDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/dp"
 
 /*====================================
 Dynamic NPC Manager (DNPCM)

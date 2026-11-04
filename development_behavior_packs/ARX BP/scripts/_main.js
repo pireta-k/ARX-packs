@@ -30,13 +30,13 @@ import './arxLib/weather'
 
 import { registerPlayerVars } from "./registerPlayerVars"
 import { checkForItem } from "./items/checkForItem"
-import { gDP, iDP, sDP } from "./arxLib/DPOperations"
+import { gDP, iDP, sDP } from "./arxLib/dp"
 import { checkForTrait } from "./traits/traitsOperations"
 import { getPlayersInRadius } from "./getPlayersInRadius"
 import { getItem } from "./items/getItem"
 import { onWeaponInventoryChange, grantWeaponXpFromDamage, openWeaponSkillPick, WEAPON_SKILL_COMMAND } from "./items/weaponSkills"
 import { getActiveStaffChannel } from "./magic/getActiveStaffChannel"
-import { isAdmin, getAdmins, getHoster } from './arxLib/admin'
+import { getAdmins } from './arxLib/admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
 import { setSBPoint } from "./sb/structureBuilder"
 import { emote, emotionsList } from './emote'
@@ -85,9 +85,9 @@ export function isArxVersionValid(version) {
     if (!version.every(v => typeof v === 'number')) return false
     return true
 }
-if (!isArxVersionValid(RELEASE.version)) {
-    console.warn(`Arx version, provided in _main.js, doesn't look valid`)
-}
+
+// Check provided Arx version (it's quite important because update system checks this version to detect updates)
+if (!isArxVersionValid(RELEASE.version)) console.warn(`Arx version, provided in _main.js, doesn't look valid`)
 
 world.afterEvents.playerButtonInput.subscribe((event) => {
     const button = event.button
@@ -112,16 +112,14 @@ world.afterEvents.playerButtonInput.subscribe((event) => {
     }
 })
 
+const inventoryContainerCache = new Cache()
 // Item change
 world.afterEvents.playerInventoryItemChange.subscribe((event) => {
     const p = event.player
     const item = event.itemStack
     if (item) {
         if (item.typeId in bannedItems) {
-            const inventory = p.getComponent('minecraft:inventory')
-            const container = inventory.container
-
-            if (!container.isValid) return
+            const container = inventoryContainerCache.get(p, () => p.getComponent('minecraft:inventory')?.container)
 
             container.setItem(event.slot, undefined)
             const bannedItemData = bannedItems[item.typeId]
@@ -133,14 +131,17 @@ world.afterEvents.playerInventoryItemChange.subscribe((event) => {
             return // Exit
         }
 
-        // Commands core to recount player's weight on the next tick.
-        // Prevents multiple recounts on the same tick
-        p.recountWeightOnNextTick = true
-
-        weighAnalysis(p)
-
         onWeaponInventoryChange(event)
     }
+    // Recount player's weight on the end of a current tick.
+    // Prevents multiple recounts on the same tick
+    if (!p.recountWeightOnNextTick) {
+        system.run(() => {
+            weighAnalysis(p)
+            p.recountWeightOnNextTick = false
+        })
+    }
+    p.recountWeightOnNextTick = true
 })
 
 // A player has spawned
@@ -168,12 +169,6 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
     // Is this the thirst time a player entered Arx?
     const playedBefore = player.getDynamicProperty('hasEverPlayedArx')
     if (!playedBefore) {
-        // Notify admins about requred verification
-        if (world.getDynamicProperty('requireUserVerification')) {
-            for (const admin of getAdmins()) {
-                slfs(admin, 'lobby.new_player_entered_arx', [player.name])
-            }
-        }
         // Check GM
         if (player.getGameMode() === 'Creative') {
             player.setGameMode("Survival")

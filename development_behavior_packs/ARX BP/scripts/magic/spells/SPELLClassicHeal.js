@@ -1,4 +1,4 @@
-import { sDP } from "../../arxLib/DPOperations"
+import { sDP } from "../../arxLib/dp"
 
 // Реген
 export function classicHeal(entity, spellData, time, power) {

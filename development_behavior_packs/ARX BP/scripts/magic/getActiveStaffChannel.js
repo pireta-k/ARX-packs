@@ -2,7 +2,7 @@
 // channels - число каналов, которое мы рассматриваем
 // considerChannelHolding - стоит ли нам обращать внимание на правило удержания канала?
 
-import { sDP } from "../arxLib/DPOperations";
+import { sDP } from "../arxLib/dp";
 
 export function getActiveStaffChannel(player, channels, considerChannelHolding = true, forceChannelHolding = false) {
 

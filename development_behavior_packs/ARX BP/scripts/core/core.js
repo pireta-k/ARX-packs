@@ -13,7 +13,7 @@ import { channelRomanNums } from '../magic/channelRomanNums'
 import { weighAnalysis } from '../weighAnalysis'
 import { checkForTrait } from "../traits/traitsOperations"
 import { killingTimeAnimDelay, animate_killing_time } from './animate_killing_time'
-import { sDP, iDP, gDP } from '../arxLib/DPOperations'
+import { sDP, iDP, gDP } from '../arxLib/dp'
 import { acquireTrait } from "../traits/traitsOperations"
 import { sendToActionBar, actionBarCoreTick } from './actionBarCore'
 import { ambienceCoreTick } from './ambience_core'
@@ -26,7 +26,6 @@ import { Cache } from "../arxLib/cache"
 
 // Other core parts
 import { getNearestPlayer } from "../getNearestPlayer"
-import { queueCommand } from "../commandQueue"
 import { msgFromGuide } from "../chat"
 import { getEntityFamilies } from "../_main"
 import { getHoster } from "../arxLib/admin"
@@ -870,9 +869,11 @@ export const coreFramework = {
                             player.teleport(entity.location)
                             player.runCommand('camera @s fade time 0 0 1 color 200 0 150')
                             player.runCommand('event entity @e[type=arx:magic_beacon, r = 0.1] arx:suicide')
-                            queueCommand(player, "playsound spell.beacon @a ~ ~ ~")
-                            player.runCommand('particle arx:portal_fog')
-                            queueCommand(player, "camerashake add @a[r=8] 1 0.1")
+                            system.run(() => {
+                                player.runCommand("playsound spell.beacon @a ~ ~ ~")
+                                player.runCommand('particle arx:portal_fog')
+                                player.runCommand("camerashake add @a[r=8] 1 0.1")
+                            })
                             break
                         }
                     }
@@ -930,16 +931,6 @@ export const coreFramework = {
         operations: (data) => {
             for (const player of data.players) {
                 weighAnalysis(player)
-            }
-        }
-    },
-    weightRecountOnItemPickUp: {
-        tickSpeed: 1,
-        preFilterPlayers: p => p.recountWeightOnNextTick,
-        operations: (data) => {
-            for (const p of data.playersF) {
-                weighAnalysis(p)
-                p.recountWeightOnNextTick = false
             }
         }
     },

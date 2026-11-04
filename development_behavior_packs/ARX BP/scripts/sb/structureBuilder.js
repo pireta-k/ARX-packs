@@ -1,6 +1,6 @@
 import { world, system, BlockPermutation } from "@minecraft/server"
 import { checkForItem } from "../items/checkForItem"
-import { gDP, sDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/dp"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
 import { sleep } from "../arxLib/time"

@@ -1,4 +1,4 @@
-import { iDP, sDP, gDP } from '../../arxLib/DPOperations'
+import { iDP, sDP, gDP } from '../../arxLib/dp'
 import { setScore } from '../../arxLib/scoresOperations'
 import { system } from "@minecraft/server"
 import { sl } from '../../lang/fetchLocalization'

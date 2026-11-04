@@ -1,13 +1,11 @@
 // Imports
-import { world, EntityComponentTypes, EquipmentSlot, system, Entity, Player } from "@minecraft/server"
-import { queueCommand } from './commandQueue'
-import { checkForItem } from "./items/checkForItem"
+import { world, system, Entity, Player } from "@minecraft/server"
 import { sl, fl } from "./lang/fetchLocalization"
 
 import { runeCiphers } from './magic/rune_cipher_list'
 import { cipherRuneSequence } from './magic/on_use_magic_items'
 
-import { gDP, sDP } from "./arxLib/DPOperations"
+import { gDP, sDP } from "./arxLib/dp"
 import { isAdmin, getAdmins } from './arxLib/admin'
 import { NPCManager } from "./npcManager"
 import { getDistanceBetween, getEntityFamilies } from "./_main"
@@ -324,107 +322,6 @@ export async function parceMessage(player, trimmedMessage) {
             }
         }
 
-        else if (command[0] == "!sdp") {
-            if (isAdmin(player)) {
-                if (!command[1] || !command[2]) {
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cФормат: §f!sdp §f<ключ> <значение> [игрок]" } ] }`);
-                } else {
-                    let targetPlayer = player;
-
-                    // Поиск игрока, если указан
-                    if (command[3]) {
-
-                        const playerName = command.slice(3).join(' ').trim()
-
-                        targetPlayer = world.getPlayers().find(p =>
-                            p.name.toLowerCase() === playerName.toLowerCase()
-                        );
-                    }
-
-                    if (!targetPlayer) {
-                        queueCommand(player, `tellraw @s { "rawtext": [{ "text": "§cИгрок ${command[3]} не найден" }] }`);
-                    } else {
-
-                        // Определение типа значения
-                        let value;
-                        if (!isNaN(command[2])) {
-                            value = parseFloat(command[2]); // Число
-                        } else if (command[2].toLowerCase() === "true") {
-                            value = true; // Булево true
-                        } else if (command[2].toLowerCase() === "false") {
-                            value = false; // Булево false
-                        } else {
-                            value = command[2]; // Строка
-                        }
-
-                        // Установка свойства
-                        sDP(targetPlayer, command[1], value)
-
-                        queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§dDP§f ${command[1]} §dигрока §f${targetPlayer.name}§d изменено на §f${value}" } ] }`);
-                    }
-                }
-            } else {
-                sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
-        else if (command[0] == "!gdp") { // Get Dynamic Property
-            if (isAdmin(player)) {
-                if (!command[1]) { queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cИспользуйте формат §f!§cgdp §f<dynamicProperty>" } ] }`) }
-                else {
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§bDP§f §f<${command[1]}>§b имеет значение §f${player.getDynamicProperty(command[1])}" } ] }`)
-                }
-            }
-            else {
-                sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
-        else if (command[0] == "!gp") { // Get Property
-            if (isAdmin(player)) {
-                if (!command[1]) { queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cИспользуйте формат §f!§cgdp §f<property>" } ] }`) }
-                else {
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§bDP§f §f<${command[1]}>§b имеет значение §f${player.getProperty(command[1])}" } ] }`)
-                }
-            }
-            else {
-                sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
-        else if (command[0] == "!verify") { // Верификация игрока
-            if (!isAdmin(player)) sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            else if (!world.getDynamicProperty('requireUserVerification')) player.sendMessage('§cВерификация отключена глобально')
-            else if (!command[1]) player.sendMessage('§cИспользуйте формат §f!§cverify §f<игрок>')
-            else {
-                const playerNickName = command.slice(1).join(' ')
-
-                const targetPlayer = world.getPlayers().find(p =>
-                    p.name.toLowerCase() === playerNickName.trim().toLowerCase()
-                )
-
-                if (!targetPlayer) {
-                    queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§cИгрок с ником §f${playerNickName}§c не найден" } ] }`)
-                } else {
-                    if (targetPlayer.getDynamicProperty('verify') == true) { // Если уже верифицирован
-                        queueCommand(player, `tellraw @s { "rawtext": [ { "text": "§eИгрок §f${playerNickName}§e уже верифицирован" } ] }`)
-                    } else {
-                        player.sendMessage(`§aВыдана верификация§f игроку §a${targetPlayer.name}`)
-                        targetPlayer.sendMessage("§aВам выдана верификация!§f Вы можете приступать к созданию персонажа.")
-                        // Говорим, как начать создание персонажа
-                        let textToSend
-                        switch (targetPlayer.inputInfo.lastInputModeUsed) {
-                            case 'KeyboardAndMouse': textToSend = 'Для этого подойдите к статуе <Создать персонажа> и нажмите на неё правой кнопкой мыши.'; break
-                            case 'Touch': textToSend = 'Для этого подойдите к статуе <Создать персонажа> и долго зажмите на ней пальцем.'
-                        }
-                        if (textToSend) targetPlayer.sendMessage(textToSend)
-                        queueCommand(targetPlayer, 'playsound random.orb @s ~ ~ ~ ')
-                        sDP(targetPlayer, 'verify', true)
-                    }
-                }
-            }
-        }
-
         else {
             player.sendMessage(`§cТакой команды Аркса не существует.`)
         }
@@ -665,43 +562,26 @@ function speechEmote(player, phrase) {
     // Пример: вывод статистики в консоль
     // console.warn('Phrase Stats:', JSON.stringify(phraseStats), "Высшее значение:", processPhraseStats(phraseStats));
 
-    // Дальнейшая обработка phraseStats для выбора эмоции и воспроизведения её
+    // Speech animation
+    /** @type {string} */
+    let animation
     switch (processPhraseStats(phraseStats)) {
-        case 'negativeMeaning':
-            queueCommand(player, "playanimation @s animation.player.speechemote.negativemeaning")
-            break
-        case 'positiveMeaning':
-            queueCommand(player, "playanimation @s animation.player.speechemote.positivemeaning")
-            break
-        case 'anger':
-            queueCommand(player, "playanimation @s animation.player.speechemote.anger")
-            break
-        case 'fear':
-            queueCommand(player, "playanimation @s animation.player.speechemote.fear")
-            break
-        case 'sadness':
-            queueCommand(player, "playanimation @s animation.player.speechemote.sadness")
-            break
-        case 'excitement':
-            queueCommand(player, "playanimation @s animation.player.speechemote.excitement")
-            break
-        case 'request':
-            queueCommand(player, "playanimation @s animation.player.speechemote.request")
-            break
-        case 'informationSeeking':
-            queueCommand(player, "playanimation @s animation.player.speechemote.informationseeking")
-            break
-        case 'threat':
-            queueCommand(player, "playanimation @s animation.player.speechemote.threat")
-            break
-        case 'greet':
-            queueCommand(player, "playanimation @s animation.player.speechemote.greet")
-            break
-
-        case 'noStats':
-            queueCommand(player, "playanimation @s animation.player.speechemote.nostats")
-            break
+        case 'negativeMeaning': animation = "playanimation @s animation.player.speechemote.negativemeaning"; break
+        case 'positiveMeaning': animation = "playanimation @s animation.player.speechemote.positivemeaning"; break
+        case 'anger': animation = "playanimation @s animation.player.speechemote.anger"; break
+        case 'fear': animation = "playanimation @s animation.player.speechemote.fear"; break
+        case 'sadness': animation = "playanimation @s animation.player.speechemote.sadness"; break
+        case 'excitement': animation = "playanimation @s animation.player.speechemote.excitement"; break
+        case 'request': animation = "playanimation @s animation.player.speechemote.request"; break
+        case 'informationSeeking': animation = "playanimation @s animation.player.speechemote.informationseeking"; break
+        case 'threat': animation = "playanimation @s animation.player.speechemote.threat"; break
+        case 'greet': animation = "playanimation @s animation.player.speechemote.greet"; break
+        case 'noStats': animation = "playanimation @s animation.player.speechemote.nostats"; break
     }
+
+    system.run(() => {
+        player.runCommand("playanimation @s " + animation)
+    })
 
     return phraseStats; // Возвращаем статистику для дальнейшего использования
 }

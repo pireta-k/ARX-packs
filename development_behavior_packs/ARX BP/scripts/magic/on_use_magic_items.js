@@ -7,7 +7,7 @@ import { findSpell } from "./findSpell"
 import { getActiveStaffChannel } from './getActiveStaffChannel'
 import { XP } from "../skills";
 import { manageCD } from "../manageCD";
-import { gDP, iDP, sDP } from "../arxLib/DPOperations";
+import { gDP, iDP, sDP } from "../arxLib/dp";
 import { spellRegistry } from "./spells/_spellRegistry";
 import { getItem } from '../items/getItem'
 import { channelRomanNums } from "./channelRomanNums";

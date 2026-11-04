@@ -1,5 +1,4 @@
-import { gDP, sDP } from "./arxLib/DPOperations"
-import { skills } from "./skills"
+import { gDP, sDP } from "./arxLib/dp"
 
 // Эта функция устанавливает игроку значения переменных в дефолтные
 export function registerPlayerVars(player) {

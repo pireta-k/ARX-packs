@@ -13,7 +13,7 @@ import { infoAboutArxDevs } from "./devs"
 import { questsInfo } from '../quests'
 
 import { getStabilityTestResult } from '../stabilityTesting'
-import { gDP } from "../arxLib/DPOperations"
+import { gDP } from "../arxLib/dp"
 import { fl } from "../lang/fetchLocalization"
 import { isAdmin } from "../arxLib/admin"
 import { launchCameraUI } from "../camera/launchCameraUI"

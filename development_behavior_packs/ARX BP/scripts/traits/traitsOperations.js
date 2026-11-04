@@ -1,6 +1,6 @@
 import { traitsList } from './traitsList'
-import { queueCommand } from '../commandQueue'
-import { gDP, sDP } from '../arxLib/DPOperations';
+import { gDP, sDP } from '../arxLib/dp';
+import { Player } from '@minecraft/server';
 
 // Черты хранятся в dynamicProperty игрока вида trait:traitId = ( 0 === нет черты || 1 === есть черта || 2 === закреп )
 
@@ -20,7 +20,7 @@ export function acquireTrait(player, weights = undefined, traitName = undefined)
             console.warn(`[Traits] Попытка выдать несуществующую черту: ${traitName} игроку ${player.name}`);
         }
 
-        return; // Завершаем, если черта была указана
+        return
     }
 
 
@@ -122,6 +122,14 @@ function accureTrait(player, traitId) {
 
 
 // Функция сообщает игроку о том, что черта выдана
+/**
+ * 
+ * @param {Player} player 
+ * @param {string} traitName 
+ * @param {string} traitDescription 
+ * @param {*} type 
+ * @param {boolean} is_locked 
+ */
 function reportAboutAcquiringTrait(player, traitName, traitDescription, type, is_locked = false) {
     // Type может быть 0 = positive || 1 = neutral || 2 = negative
 
@@ -151,8 +159,8 @@ function reportAboutAcquiringTrait(player, traitName, traitDescription, type, is
     player.sendMessage(`${icon} ${getTypeRU}§r§f ${traitTypeRU} черта характера§f: ${traitName}\n§7§o(${traitDescription})`)
 
     // Шлём в титл
-    queueCommand(player, `title @s subtitle ${getTypeRU}§r§f черта: ${traitTypeRU.slice(0, 2)}${traitName}`)
-    queueCommand(player, `title @s title ${icon}`)
+    player.runCommand(`title @s subtitle ${getTypeRU}§r§f черта: ${traitTypeRU.slice(0, 2)}${traitName}`)
+    player.runCommand(`title @s title ${icon}`)
 }
 
 

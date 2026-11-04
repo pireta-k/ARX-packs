@@ -2,7 +2,7 @@ import { Player, world } from "@minecraft/server";
 import { ActionFormData, FormCancelationReason, ModalFormData } from "@minecraft/server-ui";
 import { UI } from "../arxLib/UI"
 import { RELEASE } from "../_main"
-import { gDP, sDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/dp"
 import { defaultLanguage, fl, langMap } from "../lang/fetchLocalization"
 import { coreFramework, coreErrorCounts, corePing } from "../core/core"
 

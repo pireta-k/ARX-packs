@@ -1,6 +1,6 @@
 import { system, EntityComponentTypes, EquipmentSlot } from "@minecraft/server"
 import { ActionFormData } from "@minecraft/server-ui"
-import { gDP, sDP } from "../arxLib/DPOperations"
+import { gDP, sDP } from "../arxLib/dp"
 import { getItem } from "./getItem"
 import { fl } from "../lang/fetchLocalization"
 

@@ -1,4 +1,4 @@
-import { sDP } from "../../arxLib/DPOperations"
+import { sDP } from "../../arxLib/dp"
 
 const allowedPowers = [0, 1, 2, 3]
 

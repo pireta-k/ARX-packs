@@ -1,7 +1,7 @@
 import { world, system } from "@minecraft/server"
 import { ActionFormData } from "@minecraft/server-ui"
 import { getEntitiesInCube } from '../core/music_core'
-import { iDP, sDP } from "../arxLib/DPOperations"
+import { iDP, sDP } from "../arxLib/dp"
 
 // Взаимодействуем с мечом призыва демона
 export function interactWithViciousDemonSpawner(player) {

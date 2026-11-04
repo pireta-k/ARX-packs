@@ -5,7 +5,7 @@ import { acssStorage } from "../sb/acssStorage"
 import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
 import { sleep } from "../arxLib/time";
 import { world } from "@minecraft/server";
-import { sDP } from "../arxLib/DPOperations"
+import { sDP } from "../arxLib/dp"
 
 /**
  * @typedef {Object} SingleUpdate

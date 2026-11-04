@@ -20,7 +20,7 @@ import { dispelMagic } from './SPELLDispelMagic'
 import { dispelEffects } from './SPELLDispelEffects'
 
 // Other
-import { iDP, sDP } from '../../arxLib/DPOperations'
+import { iDP, sDP } from '../../arxLib/dp'
 import { setScore, getScore } from '../../arxLib/scoresOperations';
 import { getEntityFamilies } from '../../_main';
 import { system } from "@minecraft/server"

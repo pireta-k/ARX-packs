@@ -4,7 +4,7 @@ import { getEntityFamilies } from '../_main';
 import { system, MolangVariableMap } from "@minecraft/server"
 import { spellRegistry } from './spells/_spellRegistry';
 import { checkForItem } from '../items/checkForItem';
-import { gDP, sDP } from '../arxLib/DPOperations';
+import { gDP, sDP } from '../arxLib/dp';
 import { rayCast } from './rayCast';
 import { XP } from '../skills';
 import { spellDistanceRingsList } from '../items/lists';

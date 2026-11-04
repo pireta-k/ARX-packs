@@ -2,7 +2,7 @@
 
 import { checkForItem } from './items/checkForItem'
 import { checkForTrait } from './traits/traitsOperations'
-import { gDP, iDP, sDP } from './arxLib/DPOperations'
+import { gDP, iDP, sDP } from './arxLib/dp'
 import { Player } from '@minecraft/server'
 import { fl } from './lang/fetchLocalization'
 import { xpBonusRingsList } from './items/lists'

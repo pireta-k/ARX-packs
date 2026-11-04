@@ -1,6 +1,6 @@
 // This file edits vanilla prototyes
 import { System, World, world, Entity, Player, ItemStack } from "@minecraft/server"
-import { sDP, iDP, gDP } from "./arxLib/DPOperations"
+import { sDP, iDP, gDP } from "./arxLib/dp"
 import { Vector } from "./arxLib/math"
 import { Weather } from "./arxLib/weather"
 import { customDimensionIds } from "./_main"
