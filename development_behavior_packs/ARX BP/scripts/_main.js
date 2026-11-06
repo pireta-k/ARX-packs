@@ -1095,6 +1095,39 @@ system.beforeEvents.startup.subscribe(initEvent => {
             }
         }
     )
+
+    // Eval
+    ccr.registerCommand(
+        {
+            name: 'arx:eval',
+            description: 'Run a JS code',
+            permissionLevel: CommandPermissionLevel.Admin,
+            cheatsRequired: true,
+            mandatoryParameters: [
+                {
+                    name: 'arx:command',
+                    type: CustomCommandParamType.String
+                }
+            ]
+        },
+        (origin, command) => {
+            const me = origin.initiator ?? origin.sourceEntity
+            if (!gDP(world, 'allowUnsafeCommands')) {
+                me.sendMessage('§cUnsafe commands are disabled in your world')
+                return
+            }
+            try {
+                const rayEntity = me.getEntitiesFromViewDirection()[0]?.entity
+                const rayBlock = me.getBlockFromViewDirection({ 'includePassableBlocks': true })?.block
+                
+                const result = eval(command)
+                me.sendMessage(result)
+            }
+            catch (error) {
+                me.sendMessage('§cEval runtime error§f: ' + error)
+            }
+        }
+    )
 })
 
 // Попадание сняряда по сущности

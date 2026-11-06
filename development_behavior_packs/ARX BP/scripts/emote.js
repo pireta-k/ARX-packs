@@ -1,10 +1,16 @@
 import { fl, sl } from "./lang/fetchLocalization";
-import { system } from "@minecraft/server"
+import { Player, system } from "@minecraft/server"
 
-// Emotions
+/** @typedef {string} Emotion */
+
+/** @type {Emotion[]} */
 export const emotionsList = ["sit", "sit_alt", "lie_on_back", "lie_on_belly", "lie_star", "lie_on_right_side", "lie_on_left_side", "sit_like_gangster", "show_item", "hands_up", "half_sit", "facepalm", "proud", "sad", "whiny", "monk_pose", "think", "sit_on_knees", "bind_right_arm", "bind_left_arm"]
 
-// Emote
+/**
+ * Run emotion
+ * @param {Player} p 
+ * @param {Emotion} emotion 
+ */
 export function emote(p, emotion) {
 
     // Knocked

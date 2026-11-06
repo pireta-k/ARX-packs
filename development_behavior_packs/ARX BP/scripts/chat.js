@@ -280,7 +280,6 @@ world.beforeEvents.chatSend.subscribe(async (eventData) => {
     eventData.cancel = true // Prevent sending a message to a "vanilla" chat
 
     let trimmedMessage = eventData.message.trim()
-
     const commandList = trimmedMessage.split(" ++ ").filter(item => item !== "")
 
     for (let command of commandList) {
@@ -290,44 +289,17 @@ world.beforeEvents.chatSend.subscribe(async (eventData) => {
 
 /**
  * @param {Player} player 
- * @param {string} trimmedMessage 
+ * @param {string} message 
  */
-export async function parceMessage(player, trimmedMessage) {
-    if (trimmedMessage.startsWith("!")) { // Если это команда Аркса
-        // command содержит в себе список из последовательности введенных слов в команде
-        const command = trimmedMessage.split(/\s+/)
-
-        if (command[0] == "!eval") { // Eval функция
-            if (isAdmin(player)) {
-                const codeToEval = trimmedMessage.slice(5);
-                try {
-                    const rayEntity = player.getEntitiesFromViewDirection()[0]?.entity
-                    const rayBlock = player.getBlockFromViewDirection({ 'includePassableBlocks': true })?.block
-                    const me = player
-                    let result
-                    await system.run(() => {
-                        try {
-                            result = eval(codeToEval)
-                            // Send a result to the player
-                            player.sendMessage(`§aResult§f: ${result}`)
-                        } catch (innerError) {
-                            player.sendMessage(`§cEval runtime error§f: ${innerError.message}`)
-                        }
-                    })
-                } catch (error) {
-                    player.sendMessage(`§cEval syntax error§f: ${error.message}`)
-                }
-            } else {
-                sl(player, 'chat.command.unable_to_use_cus_admin_rights_required')
-            }
-        }
-
-        else {
-            player.sendMessage(`§cТакой команды Аркса не существует.`)
-        }
-    }
-    else { // Сообщение - не команда Аркса. Обработать и отправить
-        new Chat.Message(player, trimmedMessage).send()
+export async function parceMessage(player, message) {
+    const thirstSymb = message[0]
+    // Speech types
+    if (thirstSymb === '!') new Chat.Message(player, message.slice(1).trim(), { type: 'shout' }).send()
+    if (thirstSymb === '#') new Chat.Message(player, message.slice(1).trim(), { type: 'global' }).send()
+    if (thirstSymb === '*') new Chat.Message(player, message.slice(1).trim(), { type: 'action' }).send()
+    if (thirstSymb === '.') new Chat.Message(player, message.slice(1).trim(), { type: 'whisper' }).send()
+    else { // Default speech
+        new Chat.Message(player, message).send()
     }
 }
 

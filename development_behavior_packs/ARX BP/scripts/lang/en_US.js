@@ -49,8 +49,6 @@ export const enLocalization = {
     'food.type.herbal': 'Herbal',
     'food.type.sweet': 'Sweet',
 
-    'chat.command.unable_to_use_cus_admin_rights_required': '§cUnable to use this command without admin rights',
-
     'book_demon.damage': 'The demon makes you feel pain!',
     'book_demon.regen': 'The demon heals you!',
     'book_demon.grants_coal': 'The demon grants you... a piece of coal',

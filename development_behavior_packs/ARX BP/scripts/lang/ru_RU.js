@@ -16,8 +16,6 @@ export const ruLocalization = {
     'food.normal_taste': 'Нормально.',
     'food.happiness_bonus': 'Бонус счастья',
 
-    'chat.command.unable_to_use_cus_admin_rights_required': '§cНевозможно использовать эту команду без прав модератора.',
-
     'magic.rune_writed_into_cannel': '§6$0$ §bзаписана в §6$1$§b канал',
     'magic.staff.channel': '§b$0$ §fканал',
     'magic.spell.discovered': 'Открыто §dновое заклинание§f $0$!',
