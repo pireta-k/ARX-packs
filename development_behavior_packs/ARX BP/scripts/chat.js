@@ -229,8 +229,8 @@ export class Chat {
             if (this.#sourceEntity.typeId === 'minecraft:player' && !['action', 'global'].includes(this.type)) {
                 const p = this.#sourceEntity
                 const amulet = getItem(p, 'legs')
-                const amuletId = amulet.typeId
-                if (amuletId.startsWith('arx:amul_hypersynergy')) {
+                const amuletId = amulet?.typeId
+                if (amulet && amuletId.startsWith('arx:amul_hypersynergy')) {
                     const words = this.rawText.split(' ')
                     let rune = words[0]
                     if (words.length === 1) {
@@ -295,9 +295,9 @@ export async function parceMessage(player, message) {
     const thirstSymb = message[0]
     // Speech types
     if (thirstSymb === '!') new Chat.Message(player, message.slice(1).trim(), { type: 'shout' }).send()
-    if (thirstSymb === '#') new Chat.Message(player, message.slice(1).trim(), { type: 'global' }).send()
-    if (thirstSymb === '*') new Chat.Message(player, message.slice(1).trim(), { type: 'action' }).send()
-    if (thirstSymb === '.') new Chat.Message(player, message.slice(1).trim(), { type: 'whisper' }).send()
+    else if (thirstSymb === '#') new Chat.Message(player, message.slice(1).trim(), { type: 'global' }).send()
+    else if (thirstSymb === '*') new Chat.Message(player, message.slice(1).trim(), { type: 'action' }).send()
+    else if (thirstSymb === '.') new Chat.Message(player, message.slice(1).trim(), { type: 'whisper' }).send()
     else { // Default speech
         new Chat.Message(player, message).send()
     }
@@ -538,17 +538,17 @@ function speechEmote(player, phrase) {
     /** @type {string} */
     let animation
     switch (processPhraseStats(phraseStats)) {
-        case 'negativeMeaning': animation = "playanimation @s animation.player.speechemote.negativemeaning"; break
-        case 'positiveMeaning': animation = "playanimation @s animation.player.speechemote.positivemeaning"; break
-        case 'anger': animation = "playanimation @s animation.player.speechemote.anger"; break
-        case 'fear': animation = "playanimation @s animation.player.speechemote.fear"; break
-        case 'sadness': animation = "playanimation @s animation.player.speechemote.sadness"; break
-        case 'excitement': animation = "playanimation @s animation.player.speechemote.excitement"; break
-        case 'request': animation = "playanimation @s animation.player.speechemote.request"; break
-        case 'informationSeeking': animation = "playanimation @s animation.player.speechemote.informationseeking"; break
-        case 'threat': animation = "playanimation @s animation.player.speechemote.threat"; break
-        case 'greet': animation = "playanimation @s animation.player.speechemote.greet"; break
-        case 'noStats': animation = "playanimation @s animation.player.speechemote.nostats"; break
+        case 'negativeMeaning': animation = "animation.player.speechemote.negativemeaning"; break
+        case 'positiveMeaning': animation = "animation.player.speechemote.positivemeaning"; break
+        case 'anger': animation = "animation.player.speechemote.anger"; break
+        case 'fear': animation = "animation.player.speechemote.fear"; break
+        case 'sadness': animation = "animation.player.speechemote.sadness"; break
+        case 'excitement': animation = "animation.player.speechemote.excitement"; break
+        case 'request': animation = "animation.player.speechemote.request"; break
+        case 'informationSeeking': animation = "animation.player.speechemote.informationseeking"; break
+        case 'threat': animation = "animation.player.speechemote.threat"; break
+        case 'greet': animation = "animation.player.speechemote.greet"; break
+        case 'noStats': animation = "animation.player.speechemote.nostats"; break
     }
 
     system.run(() => {

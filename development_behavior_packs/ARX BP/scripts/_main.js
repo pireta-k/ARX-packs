@@ -23,7 +23,6 @@ import './items/on_use_general'
 import './magic/on_use_magic_items'
 import './stabilityTesting'
 import './camera/processCamera'
-import './sb/structureBuilder'
 import './blocksHistory'
 import './update/_update'
 import './arxLib/weather'
@@ -38,7 +37,7 @@ import { onWeaponInventoryChange, grantWeaponXpFromDamage, openWeaponSkillPick, 
 import { getActiveStaffChannel } from "./magic/getActiveStaffChannel"
 import { getAdmins } from './arxLib/admin'
 import { isPlayerCompletelyLoaded } from "./isPlayerCompletelyLoaded"
-import { setSBPoint } from "./sb/structureBuilder"
+import { SB } from "./sb/structureBuilder"
 import { emote, emotionsList } from './emote'
 import { Rob } from "./rob"
 import { Knockout } from "./knockout"
@@ -51,6 +50,7 @@ import { random } from "./arxLib/random"
 import { bannedItems } from "./items/banned"
 import { Cache } from "./arxLib/cache"
 import { strengthRingsList } from "./items/lists"
+import { sPerm } from "./arxLib/shortcuts"
 
 /**
  * Type of Arx release
@@ -825,10 +825,10 @@ system.beforeEvents.startup.subscribe(initEvent => {
         (origin, arg0) => {
             const p = origin.initiator ?? origin.sourceEntity
             if (arg0 === "p1") {
-                setSBPoint(p, 1, p.location)
+                SB.api.setPoint(p, 1, p.location)
             }
             else if (arg0 === "p2") {
-                setSBPoint(p, 2, p.location)
+                SB.api.setPoint(p, 2, p.location)
             }
             return { status: CustomCommandStatus.Success }
         }
@@ -1081,18 +1081,20 @@ system.beforeEvents.startup.subscribe(initEvent => {
                 me.sendMessage('§cUnsafe commands are disabled in your world')
                 return
             }
-            try {
-                const start = new Date()
-                for (let i = 0; i < 10000; i++) {
-                    eval(command)
+            system.run(() => {
+                try {
+                    const start = new Date()
+                    for (let i = 0; i < 10000; i++) {
+                        eval(command)
+                    }
+                    const end = new Date()
+                    const diff = end - start
+                    me.sendMessage('§bPing x10000§f: ' + diff + 'ms')
                 }
-                const end = new Date()
-                const diff = end - start
-                me.sendMessage('§bPing x10000§f: ' + diff + 'ms')
-            }
-            catch (error) {
-                me.sendMessage('§cError in eval§f: ' + error)
-            }
+                catch (error) {
+                    me.sendMessage('§cEval runtime error§f: ' + error)
+                }
+            })
         }
     )
 
@@ -1116,16 +1118,24 @@ system.beforeEvents.startup.subscribe(initEvent => {
                 me.sendMessage('§cUnsafe commands are disabled in your world')
                 return
             }
-            try {
-                const rayEntity = me.getEntitiesFromViewDirection()[0]?.entity
-                const rayBlock = me.getBlockFromViewDirection({ 'includePassableBlocks': true })?.block
-                
-                const result = eval(command)
+
+            const rayEntity = me.getEntitiesFromViewDirection()[0]?.entity
+            const rayBlock = me.getBlockFromViewDirection({ 'includePassableBlocks': true })?.block
+
+            system.run(() => {
+                let result
+                try {
+                    result = eval(command)
+                }
+                catch (err) {
+                    me.sendMessage('§cEval runtime error§f: ' + err)
+                    return
+                }
+
+                if (typeof result === 'object') result = JSON.stringify(result)
+                else if (typeof result === 'number' || result === undefined || isNaN(result)) result = String(result)
                 me.sendMessage(result)
-            }
-            catch (error) {
-                me.sendMessage('§cEval runtime error§f: ' + error)
-            }
+            })
         }
     )
 })

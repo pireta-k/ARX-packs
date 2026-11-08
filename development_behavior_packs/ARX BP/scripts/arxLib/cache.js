@@ -20,15 +20,16 @@ export class Cache {
      * Get a value, using cache. For async use getAsync()
      * @param {any} key - unique something. Cache system gets cache by this key.
      * @param {() => any} func - a function to get a value if it's not in cache
+     * @param {...*} args - args to calculate a function with 
      * @returns {any}
      */
-    get(key, func) {
+    get(key, func, ...args) {
         // Get from cache
         if (this.map.has(key)) return this.map.get(key)
         // Run directly
         let result
         try {
-            result = func()
+            result = func(...args)
         }
         catch (error) {
             console.error(error, error.stack)

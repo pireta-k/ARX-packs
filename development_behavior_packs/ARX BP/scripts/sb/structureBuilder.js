@@ -1,4 +1,4 @@
-import { world, system, BlockPermutation } from "@minecraft/server"
+import { world, system, BlockPermutation, Player } from "@minecraft/server"
 import { checkForItem } from "../items/checkForItem"
 import { gDP, sDP } from "../arxLib/dp"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
@@ -11,6 +11,65 @@ let ACSSStorage = {}
 
 // StructureBuilder namespace - sb
 
+/** StructureBuilder */
+export class SB {
+    static api = {
+        point: {
+            /**
+            * Set SB point
+            * @param {Player} p 
+            * @param {Number} pointNum 
+            * @param {import("@minecraft/server").Vector3} loc 
+            */
+            set: (p, pointNum, loc) => {
+                // Unknown point number
+                if (!this.allowedPoints.includes(pointNum)) return
+                // Edit location
+                const locAdapted = {
+                    x: Math.trunc(loc.x),
+                    y: Math.trunc(loc.y),
+                    z: Math.trunc(loc.z)
+                }
+                // Get color
+                const color = pointNum === 1 ? '§a' : '§c'
+                // Set DP
+                sDP(p, this.api.private.getPointDp(pointNum), locAdapted)
+                // Send message
+                p.sendMessage(`Saved ${color}Point ${pointNum}`)
+            },
+
+            /**
+             * Get saved SP point 
+             * @param {Player} p 
+             * @param {Number} pointNum 
+             * @returns {import("@minecraft/server").Vector3}
+             */
+            get: (p, pointNum) => {
+
+            }
+        },
+        fill: () => {
+
+        },
+
+        private: {
+            /**
+             * @param {Number} pointNum 
+             * @returns {string}
+             */
+            getPointDp: (pointNum) => {
+                if (this.allowedPoints.includes(pointNum)) return 'sb:point' + pointNum
+                throw new Error('Cannot get a DP of an unknown point')
+            }
+        }
+    }
+
+    /** @type {Number[]} */
+    static allowedPoints = [1, 2]
+    /** @type {import("@minecraft/server").Vector3} */
+    static defaultPointCoords = { x: 0, y: 0, z: 0 }
+}
+
 // Catch player's intercations with blocks
 world.afterEvents.playerSwingStart.subscribe((event) => {
     const p = event.player
@@ -18,31 +77,11 @@ world.afterEvents.playerSwingStart.subscribe((event) => {
 
     if (b && checkForItem(p, "mainhand", 'arx:structurebuilder_hammer')) {
         try {
-            setSBPoint(p, 1, b.location)
+            SB.api.point.set(p, 1, b.location)
         }
         catch { } // Block is too far away
     }
 })
-
-const allowedPoints = [1, 2]
-export function setSBPoint(p, pointNum, loc) {
-    // Unknown point number
-    if (!allowedPoints.includes(pointNum)) return
-    // Edit location
-    const locAdapted = {
-        x: Math.trunc(loc.x),
-        y: Math.trunc(loc.y),
-        z: Math.trunc(loc.z)
-    }
-    // Get color
-    const color = pointNum === 1 ? '§a' : '§c'
-    // Set DP
-    sDP(p, `sb:point${pointNum}`, locAdapted)
-    // Send message
-    p.sendMessage(`Saved ${color}Point ${pointNum}`)
-}
-
-const defaultCoords = { x: 0, y: 0, z: 0 }
 
 const SB_UI_ICON = 'textures/ui/sb/'
 
@@ -477,14 +516,14 @@ export async function onUseSBHammer(p) {
     if (!sneaking) { // Save point
         const b = p.getBlockFromViewDirection()?.block
         try {
-            setSBPoint(p, 2, b.location)
+            SB.api.setPoint(p, 2, b.location)
         }
         catch { } // Block is too far away
     }
     else {
 
-        const point1 = gDP(p, 'sb:point1') ?? defaultCoords
-        const point2 = gDP(p, 'sb:point2') ?? defaultCoords
+        const point1 = gDP(p, 'sb:point1') ?? SB.defaultPointCoords
+        const point2 = gDP(p, 'sb:point2') ?? SB.defaultPointCoords
         const hasAllPoints = point1 && point2
         const d = p.dimension
 
