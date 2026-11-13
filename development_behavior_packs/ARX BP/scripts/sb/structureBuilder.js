@@ -1,15 +1,32 @@
-import { world, system, BlockPermutation, Player } from "@minecraft/server"
+import { world, system, BlockPermutation, Player, Dimension, Block } from "@minecraft/server"
 import { checkForItem } from "../items/checkForItem"
 import { gDP, sDP } from "../arxLib/dp"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
 import { sleep } from "../arxLib/time"
-import { runJob } from "../arxLib/runJob"
+import { runJob, runJobDynamic } from "../arxLib/runJob"
+import { Cache } from "../arxLib/cache"
+import { Vector } from "../arxLib/math"
+import { obj2str, str2obj } from "../arxLib/converters"
 
 
 let ACSSStorage = {}
+/** Path to SB icons folder */
+const SB_UI_ICON_PATH = 'textures/ui/sb/'
+/** Limit of recursion deletions */
+const RECURSIVE_DELETE_LIMIT = 8000
 
 // StructureBuilder namespace - sb
+
+/** @typedef {'success' | 'fail'} SBAPIOperationResponse */
+/**
+ * @typedef {object} SBAPIFillOptions
+ * @prop {string[] | undefined} [affectedBlockTypes=undefined] - blocks to replace
+ */
+/**
+ * @typedef {object} SBAPISetPointOptions
+ * @prop {boolean} [shutUp=false] - do not send a message
+ */
 
 /** StructureBuilder */
 export class SB {
@@ -20,8 +37,10 @@ export class SB {
             * @param {Player} p 
             * @param {Number} pointNum 
             * @param {import("@minecraft/server").Vector3} loc 
+            * @param {SBAPISetPointOptions} options
             */
-            set: (p, pointNum, loc) => {
+            set: (p, pointNum, loc, options = {}) => {
+
                 // Unknown point number
                 if (!this.allowedPoints.includes(pointNum)) return
                 // Edit location
@@ -30,12 +49,13 @@ export class SB {
                     y: Math.trunc(loc.y),
                     z: Math.trunc(loc.z)
                 }
-                // Get color
-                const color = pointNum === 1 ? '§a' : '§c'
                 // Set DP
                 sDP(p, this.api.private.getPointDp(pointNum), locAdapted)
-                // Send message
-                p.sendMessage(`Saved ${color}Point ${pointNum}`)
+
+                if (!options?.shutUp) {
+                    const color = pointNum === 1 ? '§a' : '§c'
+                    p.sendMessage(`Saved ${color}Point ${pointNum}`)
+                }
             },
 
             /**
@@ -45,11 +65,126 @@ export class SB {
              * @returns {import("@minecraft/server").Vector3}
              */
             get: (p, pointNum) => {
-
+                return gDP(p, this.api.private.getPointDp(pointNum)) ?? this.defaultPointCoords
             }
         },
-        fill: () => {
 
+        /**
+         * Fill an area with blocks
+         * @param {Dimension} dimension
+         * @param {import("@minecraft/server").Vector3} pos1
+         * @param {import("@minecraft/server").Vector3} pos2
+         * @param {string} blockTypeToFillWith
+         * @param {SBAPIFillOptions} [options={}]
+         * @returns {Promise<SBAPIOperationResponse>}
+         */
+        fill: async (dimension, pos1, pos2, blockTypeToFillWith, options = {}) => {
+            if (options?.affectedBlockTypes && !Array.isArray(options?.affectedBlockTypes)) throw new Error('Invalid argument in SB API fill(): options.affectedBlockTypes expected type: Array')
+            const affectedBlockTypes = options?.affectedBlockTypes
+
+            const bma = new BlocksMegaArray(dimension, pos1, pos2)
+
+            try {
+                if (!affectedBlockTypes) { // Replace all
+                    for await (const b of bma) {
+                        b.setType(blockTypeToFillWith)
+                    }
+                }
+                else { // Replace selective
+                    for await (const b of bma) {
+                        if (affectedBlockTypes.includes(b.typeId)) b.setType(blockTypeToFillWith)
+                    }
+                }
+                return 'success'
+            }
+
+            catch (error) {
+                return 'fail'
+            }
+        },
+
+        /**
+         * Recursive delete (flood fill from Point 1, same block id)
+         * @param {Dimension} dimension 
+         * @param {import("@minecraft/server").Vector3} pos1
+         * @returns {Promise<SBAPIOperationResponse>}
+         */
+        async recursiveDelete(dimension, pos1) {
+            const initialBlock = dimension?.getBlock(pos1)
+            if (!initialBlock) return 'fail'
+            if (!dimension.isChunkLoaded(pos1)) return 'fail'
+            const desiredId = initialBlock.typeId
+            if (desiredId === 'minecraft:air') return 'fail'
+            const neighbourOffsets = [
+                { x: 0, y: 1, z: 0 },
+                { x: 0, y: -1, z: 0 },
+                { x: 1, y: 0, z: 0 },
+                { x: -1, y: 0, z: 0 },
+                { x: 0, y: 0, z: 1 },
+                { x: 0, y: 0, z: -1 },
+            ]
+            const megaArrayBorders = {
+                min: {
+                    x: Infinity, y: Infinity, z: Infinity
+                },
+                max: {
+                    x: -Infinity, y: -Infinity, z: -Infinity
+                }
+            }
+
+            /** @type {string[]} */
+            const processedBlocks = []
+            /** @type {string[]} set of coord JSON strings for blocks to process */
+            const blocksToProcess = [obj2str(initialBlock.location)]
+            /** @type {Set<string>} set of coord JSON strings for blocks to replace. Add initial block */
+            const blocksToReplace = new Set(blocksToProcess)
+
+            let iteration = 0
+            // Process blocks
+            await runJobDynamic((data) => {
+                if (blocksToProcess.length === 0 || RECURSIVE_DELETE_LIMIT < data.index) {
+                    data.stop = true
+                    return
+                }
+
+                const currentPos = str2obj(blocksToProcess.shift())
+                if (!dimension.isChunkLoaded(currentPos)) return
+
+                // Edit borders
+                megaArrayBorders.max.x = Math.max(megaArrayBorders.max.x, currentPos.x)
+                megaArrayBorders.max.y = Math.max(megaArrayBorders.max.y, currentPos.y)
+                megaArrayBorders.max.z = Math.max(megaArrayBorders.max.z, currentPos.z)
+                megaArrayBorders.min.x = Math.min(megaArrayBorders.min.x, currentPos.x)
+                megaArrayBorders.min.y = Math.min(megaArrayBorders.min.y, currentPos.y)
+                megaArrayBorders.min.z = Math.min(megaArrayBorders.min.z, currentPos.z)
+
+                for (const offset of neighbourOffsets) {
+                    // Get neighbour block
+                    const neighbourPos = Vector.sum(offset, currentPos)
+                    if (!dimension.isChunkLoaded(neighbourPos)) return
+                    const neighbourBlock = dimension.getBlock(neighbourPos)
+
+                    // Check it and add it
+                    const neighbourPosStr = obj2str(neighbourPos)
+                    if (!processedBlocks.includes(neighbourPosStr) && neighbourBlock.typeId === desiredId) {
+                        blocksToProcess.push(neighbourPosStr)
+                        blocksToReplace.add(neighbourPosStr)
+                        processedBlocks.push(neighbourPosStr)
+                    }
+                }
+            })
+
+            // Delete
+            const bma = new BlocksMegaArray(dimension, megaArrayBorders.min, megaArrayBorders.max)
+            for await (const bmaBlock of bma) {
+                const bmaBlockPosStr = obj2str(bmaBlock.location)
+                if (blocksToReplace.has(bmaBlockPosStr)) {
+                    blocksToReplace.delete(bmaBlockPosStr)
+                    bmaBlock.setType('minecraft:air')
+                }
+            }
+
+            return 'success'
         },
 
         private: {
@@ -82,12 +217,6 @@ world.afterEvents.playerSwingStart.subscribe((event) => {
         catch { } // Block is too far away
     }
 })
-
-const SB_UI_ICON = 'textures/ui/sb/'
-
-const RECURSIVE_DELETE_LIMIT = 8000
-/** Max region volume for full-region undo snapshot (delete / fill) */
-const UNDO_MAX_VOLUME = 120000
 
 /** @type {Map<string, { dimensionId: string, blocks: { x: number, y: number, z: number, id: string, perms?: object }[] }>} */
 const sbUndoByPlayer = new Map()
@@ -511,20 +640,24 @@ class BlocksMegaArray {
 }
 
 // Use hammer (Right-click)
+/**
+ * @param {Player} p 
+ */
 export async function onUseSBHammer(p) {
     const sneaking = p.inputInfo.getButtonState("Sneak") === 'Pressed'
     if (!sneaking) { // Save point
         const b = p.getBlockFromViewDirection()?.block
         try {
-            SB.api.setPoint(p, 2, b.location)
+            SB.api.point.set(p, 2, b.location)
         }
-        catch { } // Block is too far away
+        catch {
+            console.log('Block detection error')
+        } // Block is too far away
     }
     else {
 
-        const point1 = gDP(p, 'sb:point1') ?? SB.defaultPointCoords
-        const point2 = gDP(p, 'sb:point2') ?? SB.defaultPointCoords
-        const hasAllPoints = point1 && point2
+        const point1 = SB.api.point.get(p, 1)
+        const point2 = SB.api.point.get(p, 2)
         const d = p.dimension
 
         // Form for player
@@ -537,10 +670,6 @@ export async function onUseSBHammer(p) {
         const dy = Math.abs(point1.y - point2.y) + 1
         const dz = Math.abs(point1.z - point2.z) + 1
 
-        const minX = Math.min(point1.x, point2.x)
-        const minY = Math.min(point1.y, point2.y)
-        const minZ = Math.min(point1.z, point2.z)
-
         const volume = dx * dy * dz
 
         body += "\n§bVolume§f: " + volume + ' blocks'
@@ -548,56 +677,35 @@ export async function onUseSBHammer(p) {
         form.body(body)
 
         // Buttons
-        if (hasAllPoints) {
-            form.button('Delete blocks', `${SB_UI_ICON}delete_blocks`)
-            form.button('Recursive delete blocks', `${SB_UI_ICON}delete_blocks_recursive`)
-            form.button('Fill with block', `${SB_UI_ICON}fill`)
-            form.button('Replace blocks', `${SB_UI_ICON}replace`)
-            form.button('Save ACSS', `${SB_UI_ICON}save_acss`)
-            form.button('Load ACSS', `${SB_UI_ICON}load_acss`)
-            form.button(getUndoButtonLabel(p))
-        }
+        form.button('Delete blocks', `${SB_UI_ICON_PATH}delete_blocks`)
+        form.button('Recursive delete blocks', `${SB_UI_ICON_PATH}delete_blocks_recursive`)
+        form.button('Fill with block', `${SB_UI_ICON_PATH}fill`)
+        form.button('Replace blocks', `${SB_UI_ICON_PATH}replace`)
+        form.button('Save ACSS', `${SB_UI_ICON_PATH}save_acss`)
+        form.button('Load ACSS', `${SB_UI_ICON_PATH}load_acss`)
+        form.button(getUndoButtonLabel(p))
 
         form.show(p).then(async r => {
             switch (r.selection) {
                 case 0: // Delete blocks
                     {
-                        const canUndo = volume <= UNDO_MAX_VOLUME
-                        const undoBlocks = canUndo ? [] : null
                         p.sendMessage(`§bDeleting... (${volume} blocks)`)
-                        for await (const b of new BlocksMegaArray(d, point1, point2, { allowUnsafeOptimisation: true })) {
-                            try {
-                                if (undoBlocks) undoBlocks.push(captureBlockForUndo(b))
-                                b.setType('minecraft:air')
-                            }
-                            catch { }
-                        }
-                        if (undoBlocks?.length) setSbUndo(p, d, undoBlocks)
-                        else {
-                            markSbUndoOperation(p)
-                            if (!canUndo) p.sendMessage(`§eUndo not saved (volume > ${UNDO_MAX_VOLUME})`)
-                        }
-                        p.sendMessage('§bCompleted')
+                        const response = await SB.api.fill(p.dimension, point1, point2, 'minecraft:air')
+                        if (response === 'success') p.sendMessage('§bCompleted')
+                        else p.sendMessage('§bAn error occured. Try again')
                     }
                     break
 
                 case 1: // Recursive delete (flood fill from Point 1, same block id)
                     {
-                        const { deleted, limitHit, targetId, undoBlocks } = recursiveDeleteSameBlocks(d, point1)
-                        if (!targetId || targetId === 'minecraft:air') {
-                            p.sendMessage('§cPoint 1 is air or unreachable — nothing deleted')
-                            break
-                        }
-                        if (undoBlocks.length) setSbUndo(p, d, undoBlocks)
-                        else markSbUndoOperation(p)
-                        let msg = `§bRecursive delete: ${deleted} × ${targetId}`
-                        if (limitHit) msg += ` §e(limit ${RECURSIVE_DELETE_LIMIT})`
-                        p.sendMessage(msg)
+                        const response = await SB.api.recursiveDelete(p.dimension, point1)
+                        if (response === 'success') p.sendMessage('§bRecursive delete success')
+                        else p.sendMessage('§cRecursive delete fail')
                     }
                     break
 
                 case 2: // Fill blocks
-                    const formFill = new ModalFormData()
+                    new ModalFormData()
                         .title("Fill with block")
                         .textField(`Enter a block ID`, "namespace:id")
                         .submitButton('Fill')
@@ -608,33 +716,15 @@ export async function onUseSBHammer(p) {
 
                                 p.sendMessage(`§bFilling... (${volume} blocks)`)
                                 const blockId = r.formValues[0].trim()
-                                const canUndo = volume <= UNDO_MAX_VOLUME
-                                const undoBlocks = canUndo ? [] : null
-                                let fillOk = true
-
-                                for await (const b of new BlocksMegaArray(d, point1, point2)) {
-                                    try {
-                                        if (undoBlocks) undoBlocks.push(captureBlockForUndo(b))
-                                        b.setType(blockId)
-                                    }
-                                    catch (error) {
-                                        p.sendMessage(`§cError. Probably "${blockId}" isn't an id of an actual block`)
-                                        fillOk = false
-                                        break
-                                    }
-                                }
-                                if (fillOk && undoBlocks?.length) setSbUndo(p, d, undoBlocks)
-                                else if (fillOk) {
-                                    markSbUndoOperation(p)
-                                    if (!canUndo) p.sendMessage(`§eUndo not saved (volume > ${UNDO_MAX_VOLUME})`)
-                                }
-                                if (fillOk) p.sendMessage('§bCompleted')
+                                const response = await SB.api.fill(p.dimension, point1, point2, blockId)
+                                if (response === 'success') p.sendMessage('§bCompleted')
+                                else p.sendMessage(`§cError. Probably "${blockId}" isn't an id of an actual block`)
                             }
                         })
                     break
 
                 case 3: // Replace blocks
-                    const formReplace = new ModalFormData()
+                    new ModalFormData()
                         .title("Replace blocks")
                         .textField(`Block to replace ID`, "namespace:id")
                         .textField(`New block ID`, "namespace:id")
@@ -746,8 +836,8 @@ export async function onUseSBHammer(p) {
                                 await ACSSLoadFromDPForm.show(p).then(async r => {
 
                                     if (r.formValues) {
-                                        const responce = r.formValues[0].trim()
-                                        rawACSS = gDP(p, responce)
+                                        const response = r.formValues[0].trim()
+                                        rawACSS = gDP(p, response)
                                     }
                                 })
                                 break

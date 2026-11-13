@@ -96,9 +96,9 @@ world.afterEvents.playerButtonInput.subscribe((event) => {
 
     if (button === 'Sneak') {
         if (state === 'Pressed') {
-            // Обновляем данные о посохе
             const item = getItem(player, 'mainhand')
             if (item) {
+                // Update staff display data
                 const itemTags = item.getTags()
                 let staffChannels
                 for (const tag of itemTags) {
@@ -797,7 +797,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
     ccr.registerCommand(
         {
             name: WEAPON_SKILL_COMMAND,
-            description: 'Apply an upgrade to you weapon',
+            description: 'Apply an upgrade to your weapon',
             permissionLevel: CommandPermissionLevel.Any,
             cheatsRequired: false,
         },
@@ -808,7 +808,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         }
     )
     // Structure Builder
-    ccr.registerEnum('arx:sbOptions', ['p1', 'p2'])
+    ccr.registerEnum('arx:sbOptions', ['p1', 'p2', 'fill', 'recursive-delete'])
     ccr.registerCommand(
         {
             name: 'arx:sb',
@@ -820,58 +820,28 @@ system.beforeEvents.startup.subscribe(initEvent => {
                     name: 'arx:sbOptions',
                     type: CustomCommandParamType.Enum
                 }
-            ]
-        },
-        (origin, arg0) => {
-            const p = origin.initiator ?? origin.sourceEntity
-            if (arg0 === "p1") {
-                SB.api.setPoint(p, 1, p.location)
-            }
-            else if (arg0 === "p2") {
-                SB.api.setPoint(p, 2, p.location)
-            }
-            return { status: CustomCommandStatus.Success }
-        }
-    )
-    // sDP
-    ccr.registerEnum('arx:sdpOptions0', ['me', 'world'])
-    ccr.registerEnum('arx:sdpOptions1', ['number', 'bool', 'string'])
-    ccr.registerCommand(
-        {
-            name: 'arx:sdp',
-            description: 'Set Dynamic Property',
-            permissionLevel: CommandPermissionLevel.GameDirectors,
-            cheatsRequired: true,
-            mandatoryParameters: [
-                { // target
-                    name: 'arx:sdpOptions0',
-                    type: CustomCommandParamType.Enum
-                },
-                { // data type
-                    name: 'arx:sdpOptions1',
-                    type: CustomCommandParamType.Enum
-                },
-                { // dp name
-                    name: 'arx:dpName',
-                    type: CustomCommandParamType.String
-                },
-                { // value
-                    name: 'arx:value',
-                    type: CustomCommandParamType.String
+            ],
+            optionalParameters: [
+                {
+                    name: 'blockToFillWith',
+                    type: CustomCommandParamType.BlockType
                 }
             ]
         },
-        (origin, arg0, arg1, arg2, arg3) => {
+        (origin, arg0, arg1) => {
             const p = origin.initiator ?? origin.sourceEntity
-            let entityToSetDP = arg1 === 'world' ? world : p
-
-            if (arg1 === 'number') arg3 = Number(arg3)
-            if (arg1 === 'bool') {
-                if (arg3.toLowerCase() === 'true') arg3 = true
-                else arg3 = false
+            if (arg0 === "p1") {
+                SB.api.point.set(p, 1, p.location)
             }
-            sDP(entityToSetDP, arg2, arg3)
-
+            else if (arg0 === "p2") {
+                SB.api.point.set(p, 2, p.location)
+            }
+            else if (arg0 === 'fill') {
+                SB.api.fill(p.dimension, SB.api.point.get(p, 1), SB.api.point.get(p, 2), arg1 ?? 'minecraft:air').then(result => p.sendMessage(result))
+            }
+            else if (arg0 === 'recursive-delete') {
+                system.run(() => { SB.api.recursiveDelete(p.dimension, SB.api.point.get(p, 1)).then(result => p.sendMessage(result)) })
+            }
             return { status: CustomCommandStatus.Success }
         }
     )
@@ -954,28 +924,6 @@ system.beforeEvents.startup.subscribe(initEvent => {
             return { status: CustomCommandStatus.Success }
         }
     )
-    // Pos
-    ccr.registerCommand(
-        {
-            name: 'arx:pos',
-            description: 'Get my coordinates',
-            permissionLevel: CommandPermissionLevel.Admin,
-            cheatsRequired: true,
-        },
-        origin => {
-            const player = origin.initiator ?? origin.sourceEntity
-            if (player.location) {
-                const { x, y, z } = player.location;
-                const xPos = x.toFixed(1);
-                const yPos = y.toFixed(1);
-                const zPos = z.toFixed(1);
-
-                player.sendMessage(`Pos > ${xPos} ${yPos} ${zPos}`);
-            } else {
-                player.sendMessage("Cannot get your position");
-            }
-        }
-    )
     // SetName
     ccr.registerCommand(
         {
@@ -1015,7 +963,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         },
         origin => {
             const player = origin.initiator ?? origin.sourceEntity
-            system.run(() => { infoScreen(player) })
+            system.run(() => infoScreen(player))
         }
     )
     // Menu short
@@ -1028,7 +976,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         },
         origin => {
             const player = origin.initiator ?? origin.sourceEntity
-            system.run(() => { infoScreen(player) })
+            system.run(() => infoScreen(player))
         }
     )
 
@@ -1042,7 +990,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         },
         origin => {
             const player = origin.initiator ?? origin.sourceEntity
-            system.run(() => { Knockout.suicide(player) })
+            system.run(() => Knockout.suicide(player))
         }
     )
 
@@ -1136,6 +1084,24 @@ system.beforeEvents.startup.subscribe(initEvent => {
                 else if (typeof result === 'number' || result === undefined || isNaN(result)) result = String(result)
                 me.sendMessage(result)
             })
+        }
+    )
+
+    ccr.registerCommand(
+        {
+            name: 'arx:remove-system-tickingareas',
+            description: 'Remove tickingareas, created by Arx',
+            permissionLevel: CommandPermissionLevel.Admin,
+            cheatsRequired: true
+        },
+        (origin) => {
+            const me = origin.initiator ?? origin.sourceEntity
+            if (!gDP(world, 'allowUnsafeCommands')) {
+                me.sendMessage('§cUnsafe commands are disabled in your world')
+                return
+            }
+
+            world.tickingAreaManager.removeAllTickingAreas()
         }
     )
 })

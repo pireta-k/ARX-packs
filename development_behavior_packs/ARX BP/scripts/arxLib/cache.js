@@ -5,10 +5,9 @@ let allCaches = new Set()
  * @property {boolean} [saveUndefined=false] - save undefined to cache? False by default
  */
 
+/** Arx cache system */
 export class Cache {
-    /**
-     * @param {CacheOptions} cacheOptions 
-     */
+    /** @param {CacheOptions} cacheOptions */
     constructor(cacheOptions = {}) {
         this.map = new Map()
         this.saveUndefined = !!cacheOptions.saveUndefined 
@@ -45,13 +44,13 @@ export class Cache {
      * @param {() => Promise<any>} func - an async function to get a value if it's not in cache
      * @returns {any}
      */
-    async getAsync(key, func) {
+    async getAsync(key, func, ...args) {
         // Get from cache
         if (this.map.has(key)) return this.map.get(key)
         // Run directly
         let result
         try {
-            result = await func()
+            result = await func(...args)
         }
         catch (error) {
             console.error(error, error.stack)

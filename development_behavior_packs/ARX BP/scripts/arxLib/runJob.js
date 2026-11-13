@@ -22,3 +22,21 @@ export function runJob(array, callback) {
         })())
     })
 }
+
+/** @param {(data: { index: Number, stop: Boolean }) => Void} callback */
+export function runJobDynamic(callback) {
+    return new Promise(resolve => {
+        const data = { index: 0, stop: false };
+
+        system.runJob((function* gen() {
+            while (!data.stop) {
+                callback(data);
+                
+                data.index++
+                yield;
+            }
+
+            resolve();
+        })());
+    });
+}

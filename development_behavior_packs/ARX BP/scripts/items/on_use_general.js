@@ -27,8 +27,9 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         // Test
         case "arx:mod_sword":
             if (manageCD(player)) {
-                player.test = 'abc'
-                console.warn(player.test)
+                const b1 = player.dimension.getBlock(player.location)
+                const b2 = player.dimension.getBlock(player.location)
+                console.warn(b1 === b2)
             }
             break
 
@@ -72,93 +73,6 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
         case 'arx:book_case_d':
             player.runCommand('clear @s arx:book_case_d')
             player.runCommand('loot give @s loot "custom/book_case_d"')
-            break
-
-        // Readable
-        case "arx:cultists_letter":
-            player.sendMessage("§lПисьмо без названия\n§r§fВнимание! Вы вторглись на чужие земли без разрешения. Ваше грязное присутствие оскверняет великого Раттекса. Предупреждаем: не смейте общаться с разумными крысами, иначе ваша гниль заразит их. Убирайтесь с этих земель, пока мы еще настроены на мирное решение.\n\n§oСтражи священного порядка")
-            break
-        case "arx:cultists_letter_ii":
-            player.sendMessage("§lПриказ Раттекса\n§r§fСлушайте голос великого Раттекса. Он в ярости от людей! Их шаги оскорбляют нашу священную землю, их дыхание заражает воздух, их города - гной на теле нашего мира, который создан для нас, избранных. Недостойные люди отвергли нашу милость разрешить им уйти по-хорошему, и мы исполняем священный долг, очищая эту землю от грязи во имя священного Раттекса.\n\nЧеловек - зараза. Он пришёл на наши земли, выжигая огнём наши дома, извращая нашу священную магию и вольно пользуясь нашей священной руной. Они пробрались к сбившимся с пути в бар и веселятся с ними, оскорбляя весь крысиный народ!\n\nПоэтому слушай и повинуйся! Человек - враг. Каждый уцелевший - оскорбление Раттекса. Каждое убийство человека - священно.\n\n§oАкх-цхакель, воплощая слова священного Раттекса")
-            break
-        case "arx:book_about_ancients":
-            player.runCommand("function books/storybooks/book_about_ancients")
-            break
-        case "arx:book_about_march":
-            player.runCommand("function books/storybooks/book_about_march")
-            break
-        case "arx:book_about_tsaskhin":
-            player.runCommand("function books/storybooks/book_about_tsaskhin")
-            break
-
-        case "arx:book_asarocchi_i":
-            player.runCommand("function books/storybooks/book_asarocchi_i")
-            break
-        case "arx:book_asarocchi_ii":
-            player.runCommand("function books/storybooks/book_asarocchi_ii")
-            break
-        case "arx:book_asarocchi_iii":
-            player.runCommand("function books/storybooks/book_asarocchi_iii")
-            break
-        case "arx:book_asarocchi_iv":
-            player.runCommand("function books/storybooks/book_asarocchi_iv")
-            break
-        case "arx:book_asarocchi_ix":
-            player.runCommand("function books/storybooks/book_asarocchi_ix")
-            break
-        case "arx:book_asarocchi_v":
-            player.runCommand("function books/storybooks/book_asarocchi_v")
-            break
-        case "arx:book_asarocchi_vi":
-            player.runCommand("function books/storybooks/book_asarocchi_vi")
-            break
-        case "arx:book_asarocchi_vii":
-            player.runCommand("function books/storybooks/book_asarocchi_vii")
-            break
-        case "arx:book_asarocchi_viii":
-            player.runCommand("function books/storybooks/book_asarocchi_viii")
-            break
-        case "arx:book_asarocchi_x":
-            player.runCommand("function books/storybooks/book_asarocchi_x")
-            break
-
-        case "arx:book_dext":
-            player.runCommand("function books/storybooks/book_dext")
-            break
-        case "arx:book_dragon_artifacts":
-            player.runCommand("function books/storybooks/book_dragon_artifacts")
-            break
-        case "arx:book_golfari":
-            player.runCommand("function books/storybooks/book_golfari")
-            break
-        case "arx:book_holy_sakura":
-            player.runCommand("function books/storybooks/book_holy_sakura")
-            break
-        case "arx:book_legend_of_fallen_god":
-            player.runCommand("function books/storybooks/book_legend_of_fallen_god")
-            break
-        case "arx:book_mage_notes":
-            player.runCommand("function books/storybooks/book_mage_notes")
-            break
-        case "arx:book_nameless_paladin":
-            player.runCommand("function books/storybooks/book_nameless_paladin")
-            break
-        case "arx:book_of_immortal_eagle":
-            player.runCommand("function books/storybooks/book_of_immortal_eagle")
-            break
-        case "arx:book_philosophy":
-            player.runCommand("function books/storybooks/book_philosophy")
-            break
-        case "arx:book_thinking_about_gods":
-            player.runCommand("function books/storybooks/book_thinking_about_gods")
-            break
-        case "arx:book_wandering_puppet":
-            player.runCommand("function books/storybooks/book_wandering_puppet")
-            break
-
-        // Читаемые иностранные
-        case "arx:book_oculus_primae_maledictionis":
-            player.runCommand("function books/storybooks/foreign/book_oculus_primae_maledictionis")
             break
 
         // Особые 

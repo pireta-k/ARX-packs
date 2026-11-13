@@ -14,6 +14,7 @@ import { getItem } from './items/getItem'
  * @typedef {keyof typeof skills} Skill
  */
 
+/** Arx XP system. Contains only static functions */
 export class XP {
     /**
      * Increase player's skill progress. 
