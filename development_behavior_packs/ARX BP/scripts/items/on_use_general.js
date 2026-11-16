@@ -1,6 +1,6 @@
 // Imports - Minecraft
-import { world, EntityComponentTypes, ItemComponentTypes, EquipmentSlot, system, TicksPerSecond, MolangVariableMap } from "@minecraft/server";
-import { ActionFormData } from "@minecraft/server-ui";
+import { world, system, TicksPerSecond, ItemStack, EntityComponent, EntityComponentTypes, EquipmentSlot, EntitySwingSource } from "@minecraft/server";
+import { ActionFormData, CustomForm, ModalFormData, ObservableBoolean, ObservableString } from "@minecraft/server-ui";
 
 import { setScore } from "../arxLib/scoresOperations";
 import { getNearestPlayer } from "../getNearestPlayer"
@@ -10,32 +10,57 @@ import { manageCD } from "../manageCD";
 import { clearTraits, acquireTrait } from '../traits/traitsOperations'
 import { iDP, sDP, gDP } from "../arxLib/dp";
 import { sl } from "../lang/fetchLocalization";
-import { onUseSBHammer } from "../sb/structureBuilder";
+import { onUseSBHammer, SB } from "../sb/structureBuilder";
 import { prospect, runProspection } from '../sb/prospect'
-import { sleep } from "../arxLib/time";
-import { Quest } from '../quests'
-import { Vector } from "../arxLib/math";
 import { consumeFiolix } from "../food/fiolix";
 import { random } from "../arxLib/random";
+import { getItem } from "./getItem";
 
-// Использование предметов
-world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем юзание предмета на ПКМ
-    const player = event.source; // Получаем объект игрока
-    const item = player.getComponent(EntityComponentTypes.Equippable).getEquipment(EquipmentSlot.Mainhand)
+// RMB
+world.afterEvents.itemUse.subscribe(async (event) => {
+    const player = event.source
+    /** @type {ItemStack} */
+    const item = getItem(player, 'mainhand')
     switch (event.itemStack.typeId) {
 
         // Test
         case "arx:mod_sword":
             if (manageCD(player)) {
-                const b1 = player.dimension.getBlock(player.location)
-                const b2 = player.dimension.getBlock(player.location)
-                console.warn(b1 === b2)
+
             }
             break
 
         // StructureBuilder Hammer
         case "arx:structurebuilder_hammer":
             onUseSBHammer(player)
+            break
+
+        // JS console
+        case 'arx:js_console':
+            const oldJS = String(gDP(item, 'js') || '')
+            const oldReportSuccess = gDP(item, 'reportSuccess', true)
+
+            const codeToEval = new ObservableString(oldJS, { clientWritable: true })
+            codeToEval.subscribe(callback => {
+                sDP(item, 'js', callback)
+            })
+
+            const reportSuccessToggle = new ObservableBoolean(oldReportSuccess, { clientWritable: true })
+            reportSuccessToggle.subscribe(callback => {
+                sDP(item, 'reportSuccess', callback)
+            })
+
+            new CustomForm(player, new ObservableString('JS console settings'))
+                .textField('Eval', codeToEval)
+                .toggle('Report success', reportSuccessToggle)
+                .show().then(r => {
+                    // Overwrite an item
+                    let code = String(gDP(item, 'js'))
+                    if (code.length > 30) code = code.slice(0, 30) + '...'
+                    if (code) item.setLore([code])
+                    player.getComponent(EntityComponentTypes.Equippable)?.setEquipment(EquipmentSlot.Mainhand, item)
+                })
+
             break
 
         // Cigarettes
@@ -466,6 +491,44 @@ world.afterEvents.itemUse.subscribe(async (event) => { // Обнаружаем �
                     player.runCommand('playanimation @s animation.block.veryheavy.a')
                 }
             }
+    }
+})
+
+// LMB
+world.afterEvents.playerSwingStart.subscribe((event) => {
+    const p = event.player
+    const item = event.heldItemStack
+
+    if (!item || event.swingSource === EntitySwingSource.DropItem) return
+
+    switch (item.typeId) {
+        case 'arx:structurebuilder_hammer':
+            const b = p.getBlockFromViewDirection()?.block
+            if (b) {
+                try {
+                    SB.api.point.set(p, 1, b.location)
+                }
+                catch { } // Block is too far away
+            }
+            break
+
+        case 'arx:js_console':
+            const command = gDP(item, 'js')
+            const reportSuccess = gDP(item, 'reportSuccess', true)
+            if (command === undefined) {
+                p.sendMessage('§cNo code to execute')
+                break
+            }
+
+            try {
+                const result = eval(command)
+                if (reportSuccess) p.sendMessage(String(result))
+            }
+            catch (error) {
+                p.sendMessage('§cEval runtime error: ' + error)
+            }
+
+            break
     }
 })
 

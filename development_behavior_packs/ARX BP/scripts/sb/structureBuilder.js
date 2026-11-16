@@ -205,19 +205,6 @@ export class SB {
     static defaultPointCoords = { x: 0, y: 0, z: 0 }
 }
 
-// Catch player's intercations with blocks
-world.afterEvents.playerSwingStart.subscribe((event) => {
-    const p = event.player
-    const b = p.getBlockFromViewDirection()?.block
-
-    if (b && checkForItem(p, "mainhand", 'arx:structurebuilder_hammer')) {
-        try {
-            SB.api.point.set(p, 1, b.location)
-        }
-        catch { } // Block is too far away
-    }
-})
-
 /** @type {Map<string, { dimensionId: string, blocks: { x: number, y: number, z: number, id: string, perms?: object }[] }>} */
 const sbUndoByPlayer = new Map()
 /** Players who completed at least one undo-eligible SB operation (delete / fill / replace / recursive delete) */

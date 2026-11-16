@@ -238,7 +238,8 @@ item.arx:scientific_book=§r§fНаучная книга §b[Rare]\n§7§oХра
 item.arx:exquisite_leather=§r§fИзысканная кожа §b[Rare]\n§7§oКачественный материал для экипировки
 
 
-item.arx:mod_sword=§r§fМеч модератора §e[Ебалосносное]
+item.arx:mod_sword=§r§fAdmin's sword §q[Creative]
+item.arx:js_console=§r§fJS console §q[Creative]
 
 
 entity.arx:resurrected_armor_stand.name=Воскесший маникен
