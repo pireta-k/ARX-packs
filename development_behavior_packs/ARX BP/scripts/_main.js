@@ -1,7 +1,7 @@
 // ARX javascript
 
 // Imports - Minecraft
-import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond, EntityHealthComponent } from "@minecraft/server"
+import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond, EntityHealthComponent, Dimension } from "@minecraft/server"
 
 import './vanillaPrototypes'
 
@@ -51,7 +51,7 @@ import { bannedItems } from "./items/banned"
 import { Cache } from "./arxLib/cache"
 import { strengthRingsList } from "./items/lists"
 import { sPerm } from "./arxLib/shortcuts"
-import { RLE } from "./arxLib/converters"
+import { RLE, str2obj } from "./arxLib/converters"
 
 /**
  * Type of Arx release
@@ -70,7 +70,7 @@ import { RLE } from "./arxLib/converters"
  */
 export const RELEASE = {
     type: "alpha",
-    version: [0, 2, 37],
+    version: [0, 2, 48],
     repository: 'https://github.com/pireta-k/ARX-packs'
 }
 
@@ -145,9 +145,9 @@ world.afterEvents.playerInventoryItemChange.subscribe((event) => {
     p.recountWeightOnNextTick = true
 })
 
-// A player has spawned
+// A player spawned
 world.afterEvents.playerSpawn.subscribe(async (event) => {
-    const player = event.player; // Получаем объект игрока
+    const player = event.player
     player.runCommand("function javascript/scores_autoreg")
 
     player.nameTag = player.RPName ?? ''
@@ -168,8 +168,7 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
     }
 
     // Is this the thirst time a player entered Arx?
-    const playedBefore = player.getDynamicProperty('hasEverPlayedArx')
-    if (!playedBefore) {
+    if (!gDP(player, 'hasEverPlayedArx')) {
         // Check GM
         if (player.getGameMode() === 'Creative') {
             player.setGameMode("Survival")
@@ -195,11 +194,6 @@ world.afterEvents.playerSpawn.subscribe(async (event) => {
 world.afterEvents.entitySpawn.subscribe((spawnEvent) => {
     const entity = spawnEvent.entity
 
-    if (entity.typeId === 'arx:hungry_rat' || entity.typeId === 'arx:larva') {
-        if (isEntityInCube(entity, [-2274, 13, 1773], [-2205, 45, 1839]) || isEntityInCube(entity, [-2225, 24, 1839], [-2255, 30, 1868])) {
-            entity.remove()
-        }
-    }
     if (entity.typeId === 'arx:grass_generator_launcher') {
         for (let i = 0; i < (Math.random() * 20 + 5); i++) {
             generateGrass({ x: entity.location.x + Math.random() * 42 - 21, y: entity.location.y + Math.random() * 4 - 2, z: entity.location.z + Math.random() * 42 - 21 }, entity.dimension)
@@ -207,35 +201,40 @@ world.afterEvents.entitySpawn.subscribe((spawnEvent) => {
         entity.remove()
     }
 
-    if (entity.typeId === 'arx:wandering_flame_of_mines') sDP(entity, 'dynamicLightPower', 9)
-    if (entity.typeId === 'arx:wandering_flame_of_night') sDP(entity, 'dynamicLightPower', 12)
+    else if (entity.typeId === 'arx:wandering_flame_of_mines') sDP(entity, 'dynamicLightPower', 9)
+    else if (entity.typeId === 'arx:wandering_flame_of_night') sDP(entity, 'dynamicLightPower', 12)
 })
 
+/**
+ * Creates grass realistically
+ * @param {import("@minecraft/server").Vector3} vector3 
+ * @param {Dimension} dimension 
+ */
 export function generateGrass(vector3, dimension) {
-    // Нам не нужно генерировать траву нигде, кроме верхнего мира
     if (dimension.id !== 'minecraft:overworld') return
+    if (!dimension.isChunkLoaded(vector3)) return
 
-    // Далее код генерации травы
     const currentBlock = dimension.getBlock(vector3)
-    // Если текущий блок - не воздух, ничего не делаем
     if (currentBlock?.typeId !== 'minecraft:air') return
-    // Получаем блок ниже
-    const blockBelow = dimension.getBlock({ x: vector3.x, y: vector3.y - 1, z: vector3.z });
+    const blockBelow = currentBlock.below()
     // Если не трава, ничего не делаем
-    if (blockBelow.typeId !== 'minecraft:grass_block') return
+    if (blockBelow?.typeId !== 'minecraft:grass_block') return
 
     // Определяем, что ставить
     const grassRand = Math.random()
-    let blockToPaste
-    if (grassRand < 0.1) blockToPaste = 'minecraft:tall_grass'
-    else if (grassRand < 0.15) blockToPaste = 'arx:stones'
-    else if (grassRand < 0.18) blockToPaste = 'arx:kavra'
-    else blockToPaste = 'minecraft:short_grass'
+    let blockIdToPaste
+    if (grassRand < 0.1) blockIdToPaste = 'minecraft:tall_grass'
+    else if (grassRand < 0.15) blockIdToPaste = 'arx:stones'
+    else if (grassRand < 0.18) blockIdToPaste = 'arx:kavra'
+    else blockIdToPaste = 'minecraft:short_grass'
 
-    const coords = `${vector3.x} ${vector3.y} ${vector3.z}`
-    dimension.runCommand(`fill ${coords} ${coords} ${blockToPaste}`)
+    currentBlock.setType(blockIdToPaste)
 }
 
+/**
+ * @param {Player} player 
+ * @returns {number}
+ */
 function calculateStrength(player) {
     let basicStrength = 0.5
 
@@ -262,8 +261,8 @@ function calculateStrength(player) {
 
     // Traits
     if (checkForTrait(player, 'loner')) {
-        const playersNearLoner = getPlayersInRadius(player, 8)
-        if (playersNearLoner.length > 0) basicStrength -= 0.5
+        const playersNearLoner = world.getPlayers({ location: player.location, maxDistance: 8 })
+        if (playersNearLoner.length > 1) basicStrength -= 0.5
         else basicStrength += 0.5
     }
 
@@ -277,7 +276,7 @@ function calculateStrength(player) {
     if (gDP(player, 'statsBonusByFiolix') > 0) basicStrength += 2
 
     // Воздействие стресса
-    switch (player.getDynamicProperty('stressLevel')) {
+    switch (gDP(player, 'stressLevel')) {
         case 4: basicStrength -= checkForTrait(player, 'conscious') ? 3 : 4; break
         case 3: basicStrength -= 2; break
         case 2: basicStrength -= 1; break
@@ -295,7 +294,7 @@ function calculateStrength(player) {
     if ((feetItemId === gladiatorRingId || offhandItemId === gladiatorRingId) && basicStrength > 1) basicStrength = 1
 
     // Штраф от запрета атаки
-    if (player?.getDynamicProperty("prohibit_damage") > 0) basicStrength -= 99999
+    if (player.getDynamicProperty("prohibit_damage") > 0) basicStrength -= 99999
 
     // Штрафовое срезание от отката
     basicStrength -= Math.ceil(player.getDynamicProperty("attackCD") / 20) * 4

@@ -2,11 +2,14 @@
 
 import { Cache } from "./cache";
 
+const str2objCache = new Cache()
 export function str2obj(str) {
-    return JSON.parse(str)
+    if (typeof str !== 'string') throw new Error('Cannot parse a non-string value')
+    return str2objCache.get(str, JSON.parse, str)
 }
 
 export function obj2str(obj) {
+    if (typeof obj !== 'object') throw new Error('Cannot stringify a value that in not an object')
     return JSON.stringify(obj)
 }
 
@@ -26,7 +29,7 @@ const md5Cache = new Cache()
  * @returns {String}
  */
 export function md5(str) {
-    md5Cache.get(str, encodeMD5, str)
+    return md5Cache.get(str, encodeMD5, str)
 }
 function encodeMD5(str) {
     function cmn(q, a, b, x, s, t) { a = add32(add32(a, q), add32(x, t)); return add32((a << s) | (a >>> (32 - s)), b); }

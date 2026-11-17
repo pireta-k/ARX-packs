@@ -1,6 +1,6 @@
 // Imports - Minecraft
 import { world, system, TicksPerSecond, ItemStack, EntityComponent, EntityComponentTypes, EquipmentSlot, EntitySwingSource } from "@minecraft/server";
-import { ActionFormData, CustomForm, ModalFormData, ObservableBoolean, ObservableString } from "@minecraft/server-ui";
+import { ActionFormData, CustomForm, ModalFormData, ObservableBoolean, ObservableNumber, ObservableString } from "@minecraft/server-ui";
 
 import { setScore } from "../arxLib/scoresOperations";
 import { getNearestPlayer } from "../getNearestPlayer"
@@ -15,6 +15,7 @@ import { prospect, runProspection } from '../sb/prospect'
 import { consumeFiolix } from "../food/fiolix";
 import { random } from "../arxLib/random";
 import { getItem } from "./getItem";
+import { str2obj, obj2str, md5 } from "../arxLib/converters";
 
 // RMB
 world.afterEvents.itemUse.subscribe(async (event) => {
@@ -38,13 +39,26 @@ world.afterEvents.itemUse.subscribe(async (event) => {
         // JS console
         case 'arx:js_console':
             const oldJS = String(gDP(item, 'js') || '')
-            const oldReportSuccess = gDP(item, 'reportSuccess', true)
-
             const codeToEval = new ObservableString(oldJS, { clientWritable: true })
             codeToEval.subscribe(callback => {
                 sDP(item, 'js', callback)
             })
 
+            const oldRepeats = +gDP(item, 'repeats', 1)
+            const repeats = new ObservableString(String(oldRepeats), { clientWritable: true })
+            repeats.subscribe(callback => {
+                const number = parseInt(callback.trim())
+                if (number < 1) console.error('Cannot set a non-number times of repeat')
+                else sDP(item, 'repeats', callback)
+            })
+
+            const oldCheckDelay = gDP(item, 'checkDelay', false)
+            const checkDelayToggle = new ObservableBoolean(oldCheckDelay, { clientWritable: true })
+            checkDelayToggle.subscribe(callback => {
+                sDP(item, 'checkDelay', callback)
+            })
+
+            const oldReportSuccess = gDP(item, 'reportSuccess', true)
             const reportSuccessToggle = new ObservableBoolean(oldReportSuccess, { clientWritable: true })
             reportSuccessToggle.subscribe(callback => {
                 sDP(item, 'reportSuccess', callback)
@@ -52,7 +66,9 @@ world.afterEvents.itemUse.subscribe(async (event) => {
 
             new CustomForm(player, new ObservableString('JS console settings'))
                 .textField('Eval', codeToEval)
-                .toggle('Report success', reportSuccessToggle)
+                .textField('Repeat, times', repeats)
+                .toggle('Check delay', checkDelayToggle)
+                .toggle('Send result in chat', reportSuccessToggle)
                 .show().then(r => {
                     // Overwrite an item
                     let code = String(gDP(item, 'js'))
@@ -515,18 +531,46 @@ world.afterEvents.playerSwingStart.subscribe((event) => {
         case 'arx:js_console':
             const command = gDP(item, 'js')
             const reportSuccess = gDP(item, 'reportSuccess', true)
+            const checkDelay = gDP(item, 'checkDelay', false)
+            const repeats = gDP(item, 'repeats', 1)
             if (command === undefined) {
                 p.sendMessage('§cNo code to execute')
                 break
             }
 
+            // Vars
+            const me = p
+            const rayEntity = me.getEntitiesFromViewDirection()[0]?.entity
+            const rayBlock = me.getBlockFromViewDirection({ 'includePassableBlocks': true })?.block
+
+            let startDate
+            let endDate
+            let result
+
+            if (checkDelay) startDate = new Date()
+
             try {
-                const result = eval(command)
-                if (reportSuccess) p.sendMessage(String(result))
+                if (repeats === 1) result = eval(command)
+                else {
+                    let thirtsPass = true
+                    for (let i = 0; i < repeats; i++) {
+                        const cycleResult = eval(command)
+                        if (thirtsPass) {
+                            result = cycleResult
+                            thirtsPass = false
+                        }
+                    }
+                }
+
+                if (reportSuccess) {
+                    p.sendMessage(String(result))
+                }
             }
             catch (error) {
-                p.sendMessage('§cEval runtime error: ' + error)
+                p.sendMessage('§cEval runtime error§f: ' + error)
             }
+
+            if (checkDelay) p.sendMessage('§bPing§f: ' + (new Date() - startDate) + 'ms')
 
             break
     }
