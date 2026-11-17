@@ -7,7 +7,7 @@ import { sleep } from "../arxLib/time"
 import { runJob, runJobDynamic } from "../arxLib/runJob"
 import { Cache } from "../arxLib/cache"
 import { Vector } from "../arxLib/math"
-import { obj2str, str2obj } from "../arxLib/converters"
+import { obj2str, RLE, str2obj } from "../arxLib/converters"
 
 
 let ACSSStorage = {}
@@ -205,28 +205,12 @@ export class SB {
     static defaultPointCoords = { x: 0, y: 0, z: 0 }
 }
 
-/** @type {Map<string, { dimensionId: string, blocks: { x: number, y: number, z: number, id: string, perms?: object }[] }>} */
-const sbUndoByPlayer = new Map()
-/** Players who completed at least one undo-eligible SB operation (delete / fill / replace / recursive delete) */
-const sbUndoHadOperationByPlayer = new Set()
-const FACE_NEIGHBOR_OFFSETS = [
-    { x: 1, y: 0, z: 0 },
-    { x: -1, y: 0, z: 0 },
-    { x: 0, y: 1, z: 0 },
-    { x: 0, y: -1, z: 0 },
-    { x: 0, y: 0, z: 1 },
-    { x: 0, y: 0, z: -1 },
-]
-
-function blockLocKey(x, y, z) {
-    return `${x}|${y}|${z}`
-}
-
-function getSbUndoPlayerKey(p) {
-    return String(gDP(p, 'id') ?? p.id)
-}
-
+/**
+ * Get block data for undo. Works only for loaded blocks
+ * @param {Block} b 
+ */
 function captureBlockForUndo(b) {
+    if (!b) return
     const loc = b.location
     const states = b.permutation.getAllStates()
     const perms = {}
@@ -244,179 +228,6 @@ function captureBlockForUndo(b) {
         id: b.typeId,
         perms: hasPerms ? perms : undefined,
     }
-}
-
-function setSbUndo(p, dimension, blocks) {
-    if (!blocks.length) return
-    sbUndoHadOperationByPlayer.add(getSbUndoPlayerKey(p))
-    sbUndoByPlayer.set(getSbUndoPlayerKey(p), {
-        dimensionId: dimension.id,
-        blocks,
-    })
-}
-
-function markSbUndoOperation(p) {
-    sbUndoHadOperationByPlayer.add(getSbUndoPlayerKey(p))
-}
-
-function getUndoButtonLabel(p) {
-    const key = getSbUndoPlayerKey(p)
-    if (sbUndoByPlayer.has(key)) return 'Undo\n§o§aAvailable'
-    if (!sbUndoHadOperationByPlayer.has(key)) return 'Undo\n§o§vNothing to undo'
-    return 'Undo\n§o§cUnavailable'
-}
-
-function getUndoBounds(blocks) {
-    let minX = Infinity
-    let minY = Infinity
-    let minZ = Infinity
-    let maxX = -Infinity
-    let maxY = -Infinity
-    let maxZ = -Infinity
-
-    for (const entry of blocks) {
-        minX = Math.min(minX, entry.x)
-        minY = Math.min(minY, entry.y)
-        minZ = Math.min(minZ, entry.z)
-        maxX = Math.max(maxX, entry.x)
-        maxY = Math.max(maxY, entry.y)
-        maxZ = Math.max(maxZ, entry.z)
-    }
-
-    return {
-        p1: { x: minX, y: minY, z: minZ },
-        p2: { x: maxX, y: maxY, z: maxZ },
-    }
-}
-
-function buildUndoBlockMap(blocks) {
-    const map = new Map()
-    for (const entry of blocks) {
-        map.set(blockLocKey(entry.x, entry.y, entry.z), entry)
-    }
-    return map
-}
-
-function restoreUndoBlock(b, entry) {
-    if (entry.perms && Object.keys(entry.perms).length > 0) {
-        b.setPermutation(BlockPermutation.resolve(entry.id, entry.perms))
-    } else {
-        b.setType(entry.id)
-    }
-}
-
-async function applySbUndo(p) {
-    try {
-        const snap = sbUndoByPlayer.get(getSbUndoPlayerKey(p))
-        if (!snap) {
-            p.sendMessage('§cNothing to undo')
-            return false
-        }
-
-        const d = p.dimension
-        if (d.id !== snap.dimensionId) {
-            p.sendMessage('§cUndo is for another dimension — go back or run a new operation')
-            return false
-        }
-
-        if (!snap.blocks.length) {
-            sbUndoByPlayer.delete(getSbUndoPlayerKey(p))
-            p.sendMessage('§cNothing to undo')
-            return false
-        }
-
-        p.sendMessage(`§bUndo... (${snap.blocks.length} blocks)`)
-        const undoMap = buildUndoBlockMap(snap.blocks)
-        const { p1, p2 } = getUndoBounds(snap.blocks)
-        let restored = 0
-
-        for await (const b of new BlocksMegaArray(d, p1, p2)) {
-            const entry = undoMap.get(blockLocKey(b.location.x, b.location.y, b.location.z))
-            if (!entry) continue
-            try {
-                restoreUndoBlock(b, entry)
-                restored++
-            } catch { }
-        }
-
-        sbUndoByPlayer.delete(getSbUndoPlayerKey(p))
-        p.sendMessage(`§bUndo done`)
-        return restored > 0
-    } catch (error) {
-        console.error(`[StructureBuilder] applySbUndo: ${error}`)
-        return false
-    }
-}
-
-/**
- * Flood-delete blocks with the same typeId as the seed at start (6 face neighbors only).
- * @returns {{ deleted: number, limitHit: boolean, targetId: string | null, undoBlocks: object[] }}
- */
-function recursiveDeleteSameBlocks(d, start, limit = RECURSIVE_DELETE_LIMIT) {
-    const seed = {
-        x: Math.floor(start.x),
-        y: Math.floor(start.y),
-        z: Math.floor(start.z),
-    }
-
-    let seedBlock
-    try {
-        seedBlock = d.getBlock(seed)
-    } catch {
-        return { deleted: 0, limitHit: false, targetId: null, undoBlocks: [] }
-    }
-
-    const targetId = seedBlock.typeId
-    if (targetId === 'minecraft:air') {
-        return { deleted: 0, limitHit: false, targetId, undoBlocks: [] }
-    }
-
-    const visited = new Set()
-    const queue = [seed]
-    const undoBlocks = []
-    let deleted = 0
-    let limitHit = false
-
-    while (queue.length > 0 && deleted < limit) {
-        const loc = queue.shift()
-        const key = blockLocKey(loc.x, loc.y, loc.z)
-        if (visited.has(key)) continue
-        visited.add(key)
-
-        let block
-        try {
-            block = d.getBlock(loc)
-        } catch {
-            continue
-        }
-
-        if (block.typeId !== targetId) continue
-
-        try {
-            undoBlocks.push(captureBlockForUndo(block))
-            block.setType('minecraft:air')
-            deleted++
-        } catch {
-            continue
-        }
-
-        if (deleted >= limit) {
-            limitHit = true
-            break
-        }
-
-        for (const o of FACE_NEIGHBOR_OFFSETS) {
-            const nx = loc.x + o.x
-            const ny = loc.y + o.y
-            const nz = loc.z + o.z
-            const nKey = blockLocKey(nx, ny, nz)
-            if (!visited.has(nKey)) {
-                queue.push({ x: nx, y: ny, z: nz })
-            }
-        }
-    }
-
-    return { deleted, limitHit, targetId, undoBlocks }
 }
 
 const BMA_DEFAULT_AXIS_ORDER = 'yxz'
@@ -483,7 +294,7 @@ function buildB3dFromBlockMap(blockMap, size, axisOrder, symPerBlock) {
         if (idx === undefined) continue
         blocks3DArray += indexToSymbol(idx, PALETTE_ALPHABET, symPerBlock)
     }
-    return RLE(blocks3DArray, 'compress', symPerBlock)
+    return RLE.encode(blocks3DArray, symPerBlock)
 }
 
 function pickBestAcssAxisOrder(blockMap, size, symPerBlock, ultraCompact) {
@@ -515,6 +326,9 @@ function resolveAcssAxisOrder(head) {
     return resolveBlocksMegaArrayAxisOrder({ forceAxisOrder: head?.a })
 }
 
+/**
+ * The core part of SB. Allows to iterate blocks array
+ */
 class BlocksMegaArray {
     /**
      * @param {import("@minecraft/server").Dimension} dimension
@@ -529,7 +343,6 @@ class BlocksMegaArray {
 
         this.dimension = dimension
         this.axisOrder = resolveBlocksMegaArrayAxisOrder(options)
-        this.allowUnsafeOptimisation = options.allowUnsafeOptimisation ?? false
 
         // Anchor is a Vector3 vertex of MegaArray with smallest values
         this.anchor = {
@@ -562,11 +375,6 @@ class BlocksMegaArray {
         }
     }
 
-    // Iterator, like main iterator, but with runJob optimizaion. TO-DO
-    runJob() {
-
-    }
-
     // Main blocks iterator
     async *[Symbol.asyncIterator]() {
         for (const chunk of this.iterMegaChunks()) {
@@ -578,18 +386,14 @@ class BlocksMegaArray {
                 max: { x: Math.min(chunk.absPos.x + 31, this.top.x), y: chunk.height.max, z: Math.min(chunk.absPos.z + 31, this.top.z) }
             }
 
-            const allowSkipTicking = this.allowUnsafeOptimisation && chunk.isLoaded()
-
-            if (!allowSkipTicking) {
-                await chunk.startTick()
-            }
+            await chunk.startTick()
 
             // Iterate and yield blocks (default axis order: y desc → x asc → z asc)
             for (const coord of iterateActiveAreaByAxisOrder(activeArea, this.axisOrder)) {
                 yield this.dimension.getBlock(coord)
             }
 
-            if (!allowSkipTicking) await chunk.delTick()
+            await chunk.delTick()
         }
     }
 
@@ -1496,7 +1300,7 @@ export async function loadACSS(rawACSS, d, position, applyDenyBlocks, placement 
     }
 
     // Unwind b3d RLE
-    const fullb3d = RLE(blocks3D, 'decompress', symPerBlock)
+    const fullb3d = RLE.decode(blocks3D, symPerBlock)
 
     // Validate volume 
     const defactoVolume = fullb3d.length / symPerBlock // Volume in blocks
@@ -1565,66 +1369,6 @@ async function placeStructureBlockPlane(d, minX, y, minZ, maxX, maxZ, blockId) {
     const p2 = { x: maxX, y, z: maxZ }
     for await (const b of new BlocksMegaArray(d, p1, p2)) {
         b.setType(blockId)
-    }
-}
-
-/**
- * RLE для палитры с фиксированной длиной символа
- * @param {string} str - Входная строка
- * @param {'compress'|'decompress'} mode - Режим
- * @param {number} spb - Длина одного символа палитры (из head.spb)
- * @returns {string} - Результат
- */
-function RLE(str, mode = 'compress', spb = 1) {
-    if (mode === 'decompress') {
-        let result = ''
-        let i = 0
-
-        while (i < str.length) {
-            // 1. Читаем число (повторы)
-            let numStr = ''
-            while (i < str.length && /\d/.test(str[i])) {
-                numStr += str[i]
-                i++
-            }
-            const count = numStr ? parseInt(numStr, 10) : 1
-
-            // 2. Читаем символ ФИКСИРОВАННОЙ длины
-            if (i + spb > str.length) {
-                console.warn(`RLE: Truncated symbol at pos ${i} (need ${spb}, got ${str.length - i})`)
-                break // или throw new Error(...)
-            }
-            const symbol = str.slice(i, i + spb)
-            i += spb
-
-            // 3. Повторяем
-            result += symbol.repeat(count)
-        }
-        return result
-    }
-
-    else { // compress
-        if (!str || str.length % spb !== 0) {
-            console.warn(`RLE: Input length ${str?.length} not divisible by spb=${spb}`)
-            return str
-        }
-
-        let result = ''
-        let i = 0
-
-        while (i < str.length) {
-            const symbol = str.slice(i, i + spb)
-            let count = 1
-            i += spb
-
-            while (i + spb <= str.length && str.slice(i, i + spb) === symbol) {
-                count++
-                i += spb
-            }
-
-            result += (count > 1 ? count : '') + symbol
-        }
-        return result
     }
 }
 

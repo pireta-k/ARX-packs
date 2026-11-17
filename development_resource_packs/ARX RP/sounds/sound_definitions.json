@@ -813,14 +813,5 @@
             "stream": true
          }
       ]
-   },
-   "Bad_Piggies_Building_Contraptions": {
-      "category": "music",
-      "sounds": [
-         {
-            "name": "sounds/music/Bad_Piggies_Building_Contraptions",
-            "stream": true
-         }
-      ]
    }
 }

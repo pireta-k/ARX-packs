@@ -1,15 +1,23 @@
 // ARX music core
 
 // Imports
-import { world } from "@minecraft/server"
+import { Player, world } from "@minecraft/server"
 import { sDP } from "../arxLib/dp"
 import { checkForItem } from "../items/checkForItem"
 import { isDay } from "../arxLib/time"
 
 const musicOptions = { fade: 2, loop: true }
 
-// All locations.
-// Priority - if conditions for more then 1 locations met, system would choose location with less priority
+/**
+ * @typedef {object} Location
+ * @prop {number} priority - If conditions for more then 1 locations met, system would choose location with less priority
+ * @prop {(player: Player) => boolean} condition - If true, player is inside this location
+ * @prop {string} music - Music to play in this location
+ */
+
+/** All locations
+ * @type {Record<string, Location>}
+ */
 const musicLocations = {
     // Mines
     "upperMines": {
@@ -214,12 +222,6 @@ const musicLocations = {
         priority: 0,
         condition: (player) => player.getDynamicProperty('respawnDelay') > 0,
         music: 'Clean_Soul'
-    },
-    // Special conditions
-    "building": {
-        priority: 1,
-        condition: (player) => checkForItem(player, 'mainhand', 'arx:structurebuilder_hammer'),
-        music: 'Bad_Piggies_Building_Contraptions'
     },
 }
 

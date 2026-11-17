@@ -917,6 +917,13 @@
 
 		"arx_small_box": {
 			"textures": "textures/blocks/furniture/small_box"
+		},
+
+		"arx:grass_low": {
+			"textures": "textures/blocks/nature/grass/grass_low"
+		},
+		"arx:grass_very_low": {
+			"textures": "textures/blocks/nature/grass/grass_very_low"
 		}
 	}
 } 

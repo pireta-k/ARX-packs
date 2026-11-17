@@ -1,5 +1,7 @@
 // There are functions to convert values
 
+import { Cache } from "./cache";
+
 export function str2obj(str) {
     return JSON.parse(str)
 }
@@ -16,12 +18,17 @@ export function vectorXYZ2XZ(vectorXYZ) {
     return { x: vectorXYZ.x, z: vectorXYZ.z }
 }
 
+const md5Cache = new Cache()
+
 /**
- * Make a md5 hash from a string
+ * Make a md5 hash from a string. Uses cache
  * @param {String} str 
  * @returns {String}
  */
 export function md5(str) {
+    md5Cache.get(str, encodeMD5, str)
+}
+function encodeMD5(str) {
     function cmn(q, a, b, x, s, t) { a = add32(add32(a, q), add32(x, t)); return add32((a << s) | (a >>> (32 - s)), b); }
     function ff(a, b, c, d, x, s, t) { return cmn((b & c) | ((~b) & d), a, b, x, s, t); }
     function gg(a, b, c, d, x, s, t) { return cmn((b & d) | (c & (~d)), a, b, x, s, t); }
@@ -123,11 +130,75 @@ export function md5(str) {
     return hex(md51(str));
 }
 
-class RLE {
-    static code(value) {
+/** RLE codec */
+export class RLE {
+    /**
+     * Apply RLE encoding
+     * It optimises long strings. Sample: 'aaaaaabc' -> '6abc'
+     * @param {string} str - String to encode
+     * @param {number} [symbolsPerItem=1] - How many symbols counts as 1 letter
+     * @returns {string}
+     */
+    static encode(str, symbolsPerItem = 1) {
+        const run = function () {
+            if (/\d/.test(str)) throw new Error('Cannot encode a string with RLE because it contains numbers')
+            if (typeof symbolsPerItem !== 'number' || symbolsPerItem < 1 || str.length % symbolsPerItem !== 0) throw new Error('Cannot encode a string with RLE because it\'s symbolsPerItem is inappropriate')
 
+            let i = 0
+            let result = ''
+
+            // Get repeats
+            while (i < str.length) {
+                const symbol = str.slice(i, i + symbolsPerItem)
+                let itemsInRow = 1
+                i += symbolsPerItem
+
+                while (i + symbolsPerItem <= str.length && str.slice(i, i + symbolsPerItem) === symbol) {
+                    itemsInRow++
+                    i += symbolsPerItem
+                }
+
+                result += (itemsInRow > 1 ? itemsInRow : '') + symbol
+            }
+
+            return result
+        }
+        return this.encodeCache.get(str + ':$:' + symbolsPerItem, run, str, symbolsPerItem)
     }
-    static decode(value) {
-        
+    static encodeCache = new Cache()
+    /**
+     * Decode RLE
+     * Sample: '2ad4c' -> 'aadcccc'
+     * @param {string} str 
+     * @param {number} symbolsPerItem 
+     */
+    static decode(str, symbolsPerItem = 1) {
+        const run = function () {
+            if (typeof symbolsPerItem !== 'number' || symbolsPerItem < 1) throw new Error('Cannot encode a string with RLE because it\'s symbolsPerItem is inappropriate')
+
+            let result = ''
+            let i = 0
+
+            while (i < str.length) {
+                // Get number of repeats
+                let numStr = ''
+                while (i < str.length && /\d/.test(str[i])) {
+                    numStr += str[i]
+                    i++
+                }
+                const count = numStr ? parseInt(numStr, 10) : 1
+
+                // Read symbol
+                if (i + symbolsPerItem > str.length) throw new Error(`RLE: Truncated symbol at pos ${i} (need ${symbolsPerItem}, got ${str.length - i})`)
+                const symbol = str.slice(i, i + symbolsPerItem)
+                i += symbolsPerItem
+
+                // Set
+                result += symbol.repeat(count)
+            }
+            return result
+        }
+        return this.decodeCache.get(str + ':$:' + symbolsPerItem, run, str, symbolsPerItem)
     }
+    static decodeCache = new Cache()
 }

@@ -51,6 +51,7 @@ import { bannedItems } from "./items/banned"
 import { Cache } from "./arxLib/cache"
 import { strengthRingsList } from "./items/lists"
 import { sPerm } from "./arxLib/shortcuts"
+import { RLE } from "./arxLib/converters"
 
 /**
  * Type of Arx release

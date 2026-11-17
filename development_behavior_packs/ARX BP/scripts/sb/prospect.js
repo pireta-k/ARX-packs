@@ -13,6 +13,17 @@ const terrainAreaLock = {
     waiters: [],
 }
 
+/**
+ * Prspector. It is commonly used to analyse seed
+ */
+class Prospector {
+    static api = {
+        prospect: async () => {
+            
+        }
+    }
+}
+
 const clamp01 = (n) => Math.max(0, Math.min(1, n))
 
 // === Direction presets (primitive rays; symmetric expansion adds opposite signs) ===
