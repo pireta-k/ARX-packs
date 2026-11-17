@@ -1,7 +1,7 @@
 // This file edits vanilla prototyes
 import { System, World, world, Entity, Player, ItemStack } from "@minecraft/server"
 import { sDP, iDP, gDP } from "./arxLib/dp"
-import { Vector } from "./arxLib/math"
+import { vector } from "./arxLib/3d"
 import { Weather } from "./arxLib/weather"
 import { customDimensionIds } from "./_main"
 
@@ -39,7 +39,7 @@ function editVanillaPrototypes() {
 
         Object.defineProperty(Entity.prototype, 'isMoving', { get: function () { return Object.values(this.getVelocity()).some(axis => Math.abs(axis) > 0.05) } })
 
-        Object.defineProperty(Entity.prototype, 'isUnderground', { get: function () { return !!this.dimension.getBlockAbove(Vector.upLift(this.location, 2)) } })
+        Object.defineProperty(Entity.prototype, 'isUnderground', { get: function () { return !!this.dimension.getBlockAbove(vector.upLift(this.location, 2)) } })
         Object.defineProperty(Entity.prototype, 'isInRain', { get: function () { return !this.isUnderground && new Weather(this.dimension).isRaining() } })
     }
 

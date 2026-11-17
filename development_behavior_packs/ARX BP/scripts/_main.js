@@ -44,7 +44,7 @@ import { Knockout } from "./knockout"
 import { UI } from "./arxLib/UI"
 import { infoScreen } from "./info/_infoScreen"
 import { sleep } from "./arxLib/time"
-import { Vector } from "./arxLib/math"
+import { vector } from "./arxLib/3d"
 import { playSound } from "./arxLib/audio"
 import { random } from "./arxLib/random"
 import { bannedItems } from "./items/banned"
@@ -1243,8 +1243,8 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
         incScore(player, 'count_hits')
     }
     else if (damaged.typeId === "arx:whipping_dummy") { // Если ранили куклу для битья
-        damaged?.runCommand(`tellraw @a[r=8] { "rawtext": [ { "text": "§cDMG >>> §l§f${hurtEvent.damage.toFixed(1)}" } ] }`)
-        const randomIndex = Math.floor(Math.random() * 4 + 1)
+        world.getPlayers({location: damaged.location, maxDistance: 8}).forEach(p => p.sendMessage(`§cDMG >>> §l§f${hurtEvent.damage.toFixed(1)}`))
+        const randomIndex = random.int(1, 4)
         damaged?.runCommand(`effect @s instant_health 1 255 true`)
 
         if (damageCause != "fire" && damageCause != "fireTick" && damageCause != "lava") {
@@ -1389,8 +1389,8 @@ world.afterEvents.entityDie.subscribe(async event => {
 
     if (e.typeId === 'arx:rat_ghost') {
 
-        const locationToFartParticles = Vector.upLift(e.location)
-        const locationToFartParticlesHigh = Vector.upLift(locationToFartParticles)
+        const locationToFartParticles = vector.upLift(e.location)
+        const locationToFartParticlesHigh = vector.upLift(locationToFartParticles)
         const initialLocation = e.location
         const d = e.dimension
 

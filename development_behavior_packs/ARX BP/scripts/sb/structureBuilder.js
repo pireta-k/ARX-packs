@@ -4,7 +4,7 @@ import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
 import { sleep } from "../arxLib/time"
 import { runJobAsync, runJobDynamic } from "../arxLib/runJob"
-import { Vector } from "../arxLib/math"
+import { vector } from "../arxLib/3d"
 import { obj2str, RLE, str2obj } from "../arxLib/converters"
 
 
@@ -158,7 +158,7 @@ export class SB {
 
                 for (const offset of neighbourOffsets) {
                     // Get neighbour block
-                    const neighbourPos = Vector.sum(offset, currentPos)
+                    const neighbourPos = vector.sum(offset, currentPos)
                     if (!dimension.isChunkLoaded(neighbourPos)) return
                     const neighbourBlock = dimension.getBlock(neighbourPos)
 
@@ -204,135 +204,14 @@ export class SB {
 }
 
 /**
- * Get block data for undo. Works only for loaded blocks
- * @param {Block} b 
- */
-function captureBlockForUndo(b) {
-    if (!b) return
-    const loc = b.location
-    const states = b.permutation.getAllStates()
-    const perms = {}
-    let hasPerms = false
-    for (const k in states) {
-        if (states[k] !== undefined) {
-            perms[k] = states[k]
-            hasPerms = true
-        }
-    }
-    return {
-        x: loc.x,
-        y: loc.y,
-        z: loc.z,
-        id: b.typeId,
-        perms: hasPerms ? perms : undefined,
-    }
-}
-
-const BMA_DEFAULT_AXIS_ORDER = 'yxz'
-const BMA_ALL_AXIS_ORDERS = ['xyz', 'xzy', 'yxz', 'yzx', 'zxy', 'zyx']
-
-/** @param {{ forceAxisOrder?: string }} [options] */
-function resolveBlocksMegaArrayAxisOrder(options = {}) {
-    const raw = String(options.forceAxisOrder ?? BMA_DEFAULT_AXIS_ORDER).toLowerCase().replace(/\s/g, '')
-    if (!/^[xyz]{3}$/.test(raw) || new Set(raw).size !== 3) {
-        console.warn(`BlocksMegaArray: invalid forceAxisOrder "${options.forceAxisOrder}", using ${BMA_DEFAULT_AXIS_ORDER}`)
-        return BMA_DEFAULT_AXIS_ORDER
-    }
-    return raw
-}
-
-const BMA_AXIS_ITER = {
-    x: { minKey: 'min', maxKey: 'max', coord: 'x', dir: 'asc' },
-    y: { minKey: 'min', maxKey: 'max', coord: 'y', dir: 'desc' },
-    z: { minKey: 'min', maxKey: 'max', coord: 'z', dir: 'asc' },
-}
-
-function* iterateActiveAreaByAxisOrder(activeArea, axisOrder) {
-    const order = axisOrder.split('')
-
-    function* walk(depth, coord) {
-        if (depth >= 3) {
-            yield { x: coord.x, y: coord.y, z: coord.z }
-            return
-        }
-
-        const axis = order[depth]
-        const spec = BMA_AXIS_ITER[axis]
-        const min = activeArea[spec.minKey][spec.coord]
-        const max = activeArea[spec.maxKey][spec.coord]
-
-        if (spec.dir === 'desc') {
-            for (let v = max; v >= min; v--) {
-                coord[spec.coord] = v
-                yield* walk(depth + 1, coord)
-            }
-        } else {
-            for (let v = min; v <= max; v++) {
-                coord[spec.coord] = v
-                yield* walk(depth + 1, coord)
-            }
-        }
-    }
-
-    yield* walk(0, { x: 0, y: 0, z: 0 })
-}
-
-function buildActiveAreaFromSize(size) {
-    return {
-        min: { x: 0, y: 0, z: 0 },
-        max: { x: size[0] - 1, y: size[1] - 1, z: size[2] - 1 },
-    }
-}
-
-function buildB3dFromBlockMap(blockMap, size, axisOrder, symPerBlock) {
-    const activeArea = buildActiveAreaFromSize(size)
-    let blocks3DArray = ''
-    for (const coord of iterateActiveAreaByAxisOrder(activeArea, axisOrder)) {
-        const idx = blockMap.get(`${coord.x},${coord.y},${coord.z}`)
-        if (idx === undefined) continue
-        blocks3DArray += indexToSymbol(idx, PALETTE_ALPHABET, symPerBlock)
-    }
-    return RLE.encode(blocks3DArray, symPerBlock)
-}
-
-function pickBestAcssAxisOrder(blockMap, size, symPerBlock, ultraCompact) {
-    if (!ultraCompact) {
-        return {
-            axisOrder: BMA_DEFAULT_AXIS_ORDER,
-            b3d: buildB3dFromBlockMap(blockMap, size, BMA_DEFAULT_AXIS_ORDER, symPerBlock),
-        }
-    }
-
-    let bestOrder = BMA_DEFAULT_AXIS_ORDER
-    let bestB3d = buildB3dFromBlockMap(blockMap, size, BMA_DEFAULT_AXIS_ORDER, symPerBlock)
-    let bestLen = bestB3d.length
-
-    for (const order of BMA_ALL_AXIS_ORDERS) {
-        if (order === BMA_DEFAULT_AXIS_ORDER) continue
-        const b3d = buildB3dFromBlockMap(blockMap, size, order, symPerBlock)
-        if (b3d.length < bestLen) {
-            bestLen = b3d.length
-            bestOrder = order
-            bestB3d = b3d
-        }
-    }
-
-    return { axisOrder: bestOrder, b3d: bestB3d }
-}
-
-function resolveAcssAxisOrder(head) {
-    return resolveBlocksMegaArrayAxisOrder({ forceAxisOrder: head?.a })
-}
-
-/**
  * @typedef BlocksMegaArrayOptions
- * @prop {boolean} [runViaRunJob=false] - if true, will work slowly and gently. If false, will work very fast and cause lags
+ * @prop {boolean} [runViaRunJob=false] - if true, works slowly and gently. If false, works ~20% faster but can cause lags
  */
 
 /**
  * The core part of SB. Allows to iterate blocks array
  */
-class BlocksMegaArray {
+export class BlocksMegaArray {
     static instancesCreated = 0
 
     /**
@@ -400,8 +279,9 @@ class BlocksMegaArray {
             await chunk.startTick()
 
             // Iterate and yield blocks (axis order: y desc → x asc → z asc)
-            if (!this.runViaRunJob) yield* this.#iterateBlocksInArea(activeArea.min, activeArea.max)
-            else yield* await runJobAsync(this.#iterateBlocksInArea(activeArea.min, activeArea.max))
+            if (this.runViaRunJob) yield* await runJobAsync(this.#iterateBlocksInArea(activeArea.min, activeArea.max))
+            else yield* this.#iterateBlocksInArea(activeArea.min, activeArea.max)
+
             await chunk.delTick()
         }
     }
@@ -679,39 +559,8 @@ export async function onUseSBHammer(p) {
     }
 }
 
-const ACSS_VERSION = 2
-const PALETTE_ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
-const ACSS_FORCE_ANCHOR_BLOCK = 'arx:acss_anchor'
-/** ACSS string codec: JSON " → #, block-state ' → @ (quote-free for embedding) */
-const ACSS_STR_QUOTE = '#'
-const ACSS_PERM_QUOTE = '@'
-
-function acss2str(obj) {
-    return JSON.stringify(obj).replace(/"/g, ACSS_STR_QUOTE)
-}
-
-function str2acss(str) {
-    if (str.includes('"')) return JSON.parse(str)
-    // Previous codec version (JSON used @)
-    if (str.startsWith('@{') || str.startsWith('{@')) {
-        return JSON.parse(str.replace(/@/g, '"'))
-    }
-    return JSON.parse(str.replace(/#/g, '"'))
-}
-
 // Chest slot 0: renamed paper → loot table path (matches /loot insert … loot "path")
 // Example nameTag: chests/test
-
-const LOOT_CONTAINER_BLOCKS = new Set([
-    'minecraft:chest',
-    'minecraft:trapped_chest',
-    'minecraft:barrel',
-])
-
-const IGNORED_ENTITY_TYPES = new Set([
-    'minecraft:player',
-    'minecraft:item',
-])
 
 function stripMinecraftNamespace(typeId) {
     return typeId.startsWith('minecraft:') ? typeId.slice(10) : typeId

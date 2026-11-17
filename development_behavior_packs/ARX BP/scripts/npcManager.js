@@ -1,6 +1,6 @@
 import { Entity, system, world } from "@minecraft/server"
 import { sleep } from "./arxLib/time"
-import { Vector } from "./arxLib/math"
+import { vector } from "./arxLib/3d"
 import { Chat } from "./chat"
 import { gDP, sDP } from "./arxLib/dp"
 
@@ -1262,7 +1262,7 @@ export class NPCManager {
      */
     static addOffset(e, vector) {
         const offset = e.gDP(dPPrefix + 'offset') ?? { x: 0, y: 0, z: 0 }
-        return Vector.sum(vector, offset)
+        return vector.sum(vector, offset)
     }
 
     /**
