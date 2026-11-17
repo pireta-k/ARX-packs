@@ -1,11 +1,9 @@
-import { world, system, BlockPermutation, Player, Dimension, Block } from "@minecraft/server"
-import { checkForItem } from "../items/checkForItem"
+import { world, BlockPermutation, Player, Dimension, Block, System, system } from "@minecraft/server"
 import { gDP, sDP } from "../arxLib/dp"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
 import { sleep } from "../arxLib/time"
-import { runJob, runJobDynamic } from "../arxLib/runJob"
-import { Cache } from "../arxLib/cache"
+import { runJobAsync, runJobDynamic } from "../arxLib/runJob"
 import { Vector } from "../arxLib/math"
 import { obj2str, RLE, str2obj } from "../arxLib/converters"
 
@@ -82,7 +80,7 @@ export class SB {
             if (options?.affectedBlockTypes && !Array.isArray(options?.affectedBlockTypes)) throw new Error('Invalid argument in SB API fill(): options.affectedBlockTypes expected type: Array')
             const affectedBlockTypes = options?.affectedBlockTypes
 
-            const bma = new BlocksMegaArray(dimension, pos1, pos2)
+            const bma = new BlocksMegaArray(dimension, pos1, pos2, { runViaRunJob: true })
 
             try {
                 if (!affectedBlockTypes) { // Replace all
@@ -99,6 +97,7 @@ export class SB {
             }
 
             catch (error) {
+                console.error(error, error.stack)
                 return 'fail'
             }
         },
@@ -139,7 +138,6 @@ export class SB {
             /** @type {Set<string>} set of coord JSON strings for blocks to replace. Add initial block */
             const blocksToReplace = new Set(blocksToProcess)
 
-            let iteration = 0
             // Process blocks
             await runJobDynamic((data) => {
                 if (blocksToProcess.length === 0 || RECURSIVE_DELETE_LIMIT < data.index) {
@@ -327,22 +325,32 @@ function resolveAcssAxisOrder(head) {
 }
 
 /**
+ * @typedef BlocksMegaArrayOptions
+ * @prop {boolean} [runViaRunJob=false] - if true, will work slowly and gently. If false, will work very fast and cause lags
+ */
+
+/**
  * The core part of SB. Allows to iterate blocks array
  */
 class BlocksMegaArray {
+    static instancesCreated = 0
+
     /**
-     * @param {import("@minecraft/server").Dimension} dimension
-     * @param {{x:number,y:number,z:number}} pos1
-     * @param {{x:number,y:number,z:number}} pos2
-     * @param {{ forceAxisOrder?: string }} [options] forceAxisOrder — permutation of x,y,z (default 'yxz')
+     * @param {Dimension} dimension
+     * @param {import("@minecraft/server").Vector3} pos1
+     * @param {import("@minecraft/server").Vector3} pos2
+     * @param {BlocksMegaArrayOptions} [options]
      */
     constructor(dimension, pos1, pos2, options = {}) {
         if (!dimension || typeof pos1 !== "object" || typeof pos2 !== "object") {
             console.warn('Trying to create BlocksMegaArray with irrelevant positions')
         }
 
+        this.id = Date.now() + '_' + BlocksMegaArray.instancesCreated++
+        /** @type {string} */
+        this.tickingAreaName = 'sb:' + this.id
         this.dimension = dimension
-        this.axisOrder = resolveBlocksMegaArrayAxisOrder(options)
+        this.runViaRunJob = options.runViaRunJob || false
 
         // Anchor is a Vector3 vertex of MegaArray with smallest values
         this.anchor = {
@@ -364,8 +372,11 @@ class BlocksMegaArray {
         }
     }
 
-    // Itearator. Iterates by megachunks
-    // Megachunk is a 3D mass of blocks with x size = 32, y size = world hight, z size = 32
+    /** 
+     * Itearator. Iterates by megachunks
+     * Megachunk is a 3D mass of blocks with x size = 32, y size = world hight, z size = 32
+     * @yields {BlocksMegaArray.MegaChunk} 
+     */
     *iterMegaChunks() {
         const CHUNK_SIZE = 32
         for (let cx = 0; cx < this.size.x; cx += CHUNK_SIZE) {
@@ -388,17 +399,34 @@ class BlocksMegaArray {
 
             await chunk.startTick()
 
-            // Iterate and yield blocks (default axis order: y desc → x asc → z asc)
-            for (const coord of iterateActiveAreaByAxisOrder(activeArea, this.axisOrder)) {
-                yield this.dimension.getBlock(coord)
-            }
-
+            // Iterate and yield blocks (axis order: y desc → x asc → z asc)
+            if (!this.runViaRunJob) yield* this.#iterateBlocksInArea(activeArea.min, activeArea.max)
+            else yield* await runJobAsync(this.#iterateBlocksInArea(activeArea.min, activeArea.max))
             await chunk.delTick()
+        }
+    }
+
+    /**
+     * @param {import("@minecraft/server").Vector3} min 
+     * @param {import("@minecraft/server").Vector3} max 
+     */
+    *#iterateBlocksInArea(min, max) {
+        for (let y = max.y; y >= min.y; y--) {
+            for (let x = min.x; x <= max.x; x++) {
+                for (let z = min.z; z <= max.z; z++) {
+                    yield this.dimension.getBlock({ x: x, y: y, z: z })
+                }
+            }
         }
     }
 
     // MegaChunk class
     static MegaChunk = class {
+        /**
+         * @param {number} posX 
+         * @param {number} posZ 
+         * @param {BlocksMegaArray} parent 
+         */
         constructor(posX, posZ, parent) {
             this.parent = parent
             this.relPos = { x: posX, z: posZ } // Relative to Mega Array position
@@ -409,14 +437,13 @@ class BlocksMegaArray {
         // Start ticking
         async startTick() {
             await this.delTick()
-            await validateTickingAreaLoading(this.parent.dimension, { x: this.absPos.x, z: this.absPos.z }, { x: this.absPos.x + 31, z: this.absPos.z + 31 }, 'sb', true)
+            await validateTickingAreaLoading(this.parent.dimension, this.absPos, { x: this.absPos.x + 31, z: this.absPos.z + 31 }, this.parent.tickingAreaName, true)
         }
 
         // Stop ticking
         async delTick() {
-            try {
-                world.tickingAreaManager.removeTickingArea('sb')
-            } catch (error) { } // removeTickingArea throws an error if a tickingarea with desired id does not exist. Ignore.
+            const exists = world.tickingAreaManager.getAllTickingAreas().some(ta => ta.identifier === this.parent.tickingAreaName)
+            if (exists) world.tickingAreaManager.removeTickingArea(this.parent.tickingAreaName)
         }
 
         // Can the chunk be loaded without custom tickingarea?

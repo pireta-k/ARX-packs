@@ -13,7 +13,7 @@ export function runJob(array, callback) {
             let index = 0;
             for (const value of array) {
                 callback(value, index)
-                
+
                 index++
                 yield;
             }
@@ -31,7 +31,6 @@ export function runJobDynamic(callback) {
         system.runJob((function* gen() {
             while (!data.stop) {
                 callback(data);
-                
                 data.index++
                 yield;
             }
@@ -39,4 +38,21 @@ export function runJobDynamic(callback) {
             resolve();
         })());
     });
+}
+
+export function runJobAsync(generator) {
+    return new Promise((resolve, reject) => {
+        const results = []
+        system.runJob((function* () {
+            try {
+                for (const item of generator) {
+                    results.push(item)
+                    yield
+                }
+                resolve(results)
+            } catch (err) {
+                reject(err)
+            }
+        })())
+    })
 }

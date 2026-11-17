@@ -808,7 +808,7 @@ system.beforeEvents.startup.subscribe(initEvent => {
         }
     )
     // Structure Builder
-    ccr.registerEnum('arx:sbOptions', ['p1', 'p2', 'fill', 'recursive-delete'])
+    ccr.registerEnum('arx:sbOptions', ['p1', 'p2', 'fill', 'recursive-delete', 'clear-stuck-tickingareas'])
     ccr.registerCommand(
         {
             name: 'arx:sb',
@@ -837,10 +837,22 @@ system.beforeEvents.startup.subscribe(initEvent => {
                 SB.api.point.set(p, 2, p.location)
             }
             else if (arg0 === 'fill') {
-                SB.api.fill(p.dimension, SB.api.point.get(p, 1), SB.api.point.get(p, 2), arg1 ?? 'minecraft:air').then(result => p.sendMessage(result))
+                system.run(() => { SB.api.fill(p.dimension, SB.api.point.get(p, 1), SB.api.point.get(p, 2), arg1 ?? 'minecraft:air').then(result => p.sendMessage(result)) })
             }
             else if (arg0 === 'recursive-delete') {
                 system.run(() => { SB.api.recursiveDelete(p.dimension, SB.api.point.get(p, 1)).then(result => p.sendMessage(result)) })
+            }
+            else if (arg0 === 'clear-stuck-tickingareas') {
+                system.run(() => {
+                    let counter = 0
+                    world.tickingAreaManager.getAllTickingAreas().forEach(ta => {
+                        if (ta.identifier.startsWith('sb:')) {
+                            world.tickingAreaManager.removeTickingArea(ta)
+                            counter++
+                        }
+                    })
+                    p.sendMessage('Removed ' + counter + ' SB tickingareas')
+                })
             }
             return { status: CustomCommandStatus.Success }
         }

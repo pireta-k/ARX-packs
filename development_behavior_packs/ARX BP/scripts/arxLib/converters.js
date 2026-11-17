@@ -1,4 +1,4 @@
-// There are functions to convert values
+// Here are functions to convert values
 
 import { Cache } from "./cache";
 
@@ -21,7 +21,7 @@ export function vectorXYZ2XZ(vectorXYZ) {
     return { x: vectorXYZ.x, z: vectorXYZ.z }
 }
 
-const md5Cache = new Cache()
+const md5Cache = new Cache({ limit: 1000 })
 
 /**
  * Make a md5 hash from a string. Uses cache
@@ -168,7 +168,7 @@ export class RLE {
         }
         return this.encodeCache.get(str + ':$:' + symbolsPerItem, run, str, symbolsPerItem)
     }
-    static encodeCache = new Cache()
+    static encodeCache = new Cache({ limit: 1000 })
     /**
      * Decode RLE
      * Sample: '2ad4c' -> 'aadcccc'
@@ -203,5 +203,5 @@ export class RLE {
         }
         return this.decodeCache.get(str + ':$:' + symbolsPerItem, run, str, symbolsPerItem)
     }
-    static decodeCache = new Cache()
+    static decodeCache = new Cache({ limit: 1000 })
 }
