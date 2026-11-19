@@ -13,7 +13,7 @@ import { VectorXZ, Vector2, Vector3 } from '@minecraft/server'
  */
 
 export const vector = {
-    vectorKeys: ['x', 'y', 'z', 'w'],
+    vectorAxes: ['x', 'y', 'z', 'w'],
 
     /** 
      * @param {VectorAny} vectorA 
@@ -22,9 +22,9 @@ export const vector = {
      */
     sum(vectorA, vectorB) {
         let result = {}
-        for (const key of this.vectorKeys) {
-            if (Object.hasOwn(vectorA, key) || Object.hasOwn(vectorB, key)) {
-                result[key] = (vectorA[key] ?? 0) + (vectorB[key] ?? 0)
+        for (const axis of this.vectorAxes) {
+            if (Object.hasOwn(vectorA, axis) || Object.hasOwn(vectorB, axis)) {
+                result[axis] = (vectorA[axis] ?? 0) + (vectorB[axis] ?? 0)
             }
         }
         return result
@@ -55,5 +55,47 @@ export const space = {
             if (location[axis] < min || location[axis] > max) return false
         }
         return true
+    },
+
+    /**
+     * Get min and max bounds of a space
+     * @param {VectorAny} spaceCornerA 
+     * @param {VectorAny} spaceCornerB 
+     * @returns {{min: VectorAny, max: VectorAny}}
+     */
+    getSpaceBounds(spaceCornerA, spaceCornerB) {
+        const min = {}
+        const max = {}
+
+        for (const axis of vector.vectorAxes) {
+            const hasA = Object.hasOwn(spaceCornerA, axis)
+            const hasB = Object.hasOwn(spaceCornerB, axis)
+            if (hasA !== hasB) return undefined // Vectors are different
+            if (hasA === true) {
+                min[axis] = Math.min(spaceCornerA[axis], spaceCornerB[axis])
+                max[axis] = Math.max(spaceCornerA[axis], spaceCornerB[axis])
+            }
+        }
+
+        return { min, max }
+    },
+
+    /**
+     * Get size values of a space on every axis.
+     * @param {VectorAny} spaceCornerA 
+     * @param {VectorAny} spaceCornerB 
+     * @returns {VectorAny}
+     */
+    getSpaceSize(spaceCornerA, spaceCornerB) {
+        result = {}
+        for (const axis of vector.vectorAxes) {
+            const hasA = Object.hasOwn(spaceCornerA, axis)
+            const hasB = Object.hasOwn(spaceCornerB, axis)
+            if (hasA !== hasB) return undefined // Vectors are different
+            if (hasA == true) {
+                result[axis] = Math.abs(spaceCornerA[axis] - spaceCornerB[axis]) + 1
+            }
+        }
+        return result
     }
 }

@@ -205,3 +205,81 @@ export class RLE {
     }
     static decodeCache = new Cache({ limit: 1000 })
 }
+
+/**
+ * @typedef CreatePaletteFromArrayOptions
+ * @prop {string} paletteAlphabet
+ */
+/** @typedef {string} PaletteKey */
+/** @typedef {string} PaletteItem */
+/**
+ * @typedef {Record<PaletteKey, PaletteItem>} PalettizerPalette
+ */
+
+/** Class to operate palettes */
+export class Palettizer {
+    static defaultPaletteAlphabet = 'abcdefghijklmnopqrstuvwxyz'
+
+    /**
+     * Create a palette from an array of items
+     * It assigns keys to unique items
+     * @param {PaletteItem[]} itemsArray 
+     * @param {CreatePaletteFromArrayOptions} options 
+     */
+    static createPaletteFromArray(itemsArray, options = {}) {
+        if (!itemsArray || itemsArray.length === 0) return {}
+        const paletteAlphabet = options.paletteAlphabet ?? this.defaultPaletteAlphabet
+        const uniqueItems = new Set(itemsArray)
+        const uniqueItemsArray = [...uniqueItems]
+
+        const alphabetLength = paletteAlphabet.length
+        const numOfUniqueItems = uniqueItems.size
+
+        const symbolsPerItem = Math.ceil(Math.log(numOfUniqueItems) / Math.log(alphabetLength)) // Always the same length for all the items
+
+        /**
+         * Returns a palette key
+         * @param {number} index 
+         * @returns {PaletteKey}
+         */
+        function indexToKey(index) {
+            let key = ''
+
+            for (let i = 0; i < symbolsPerItem; i++) {
+                key = paletteAlphabet[index % alphabetLength] + key
+                index = Math.floor(index / alphabetLength)
+            }
+
+            return key
+        }
+
+        /** @type {PalettizerPalette} */
+        let palette = {}
+
+        for (let i = 0; i < numOfUniqueItems; i++) {
+            const item = uniqueItemsArray[i]
+            const key = indexToKey(i)
+            palette[key] = item
+        }
+        return { symbolsPerItem, palette }
+    }
+
+    /**
+     * Create a new Palettizer to operate a palette
+     * @param {PalettizerPalette} palette 
+     * @param {number} symbolsPerItem 
+     */
+    constructor(palette, symbolsPerItem) {
+        this.palette = palette
+        this.symbolsPerItem = symbolsPerItem
+    }
+
+    get(key) {
+        return this.palette[key]
+    }
+
+    dispose() {
+        this.palette = undefined
+        this.symbolsPerItem = undefined
+    }
+}
