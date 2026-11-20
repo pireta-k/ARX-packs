@@ -1,6 +1,6 @@
 import { setScore } from "../arxLib/scoresOperations"
 import { createProspectionTarget, runProspection, validateTickingAreaLoading } from "../sb/prospect"
-import { loadACSS } from "../sb/structureBuilder"
+import { ACSS } from "../sb/acss"
 import { acssStorage } from "../sb/acssStorage"
 import { isPlayerCompletelyLoaded } from "../isPlayerCompletelyLoaded"
 import { sleep } from "../arxLib/time";

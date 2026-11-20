@@ -1,4 +1,4 @@
-import { Block, Entity, ItemStack, Player, World } from "@minecraft/server"
+import { Block, BlockComponentTypes, Entity, ItemStack, Player, World } from "@minecraft/server"
 import { str2obj, obj2str } from "./converters"
 
 const specialDataTypePrefix = 'JSON$'
@@ -23,26 +23,19 @@ export function sDP(object, DPName, value) {
     //     console.warn(`sDP(): cannot write a NaN`)
     // }
 
-    // Get the old value of this DP
-    const oldValue = object.getDynamicProperty(DPName)
-
-    // Special data format that can't be hadled just by obj.setDynamicProperty()
+    // Object
     if (value !== null && typeof value === 'object') {
         value = specialDataTypePrefix + obj2str(value)
     }
-    // If the new value is not equal to the old value, write the new value
-    if (oldValue !== value) {
-        try { // I use try - catch, because sometimes system can throw an error when trying to sDP at imcopletely loaded player. It just can be ignored
-            object.setDynamicProperty(DPName, value)
-        }
-        catch (error) {
-            let objData = 'unknown'
-            if (object instanceof World) objData = 'world'
-            else if (object instanceof Player) objData = `player ${object.name}`
-            else if (object instanceof Entity) objData = `entity ${object.typeId}`
-            else if (object instanceof ItemStack) objData = `item ${object.type}`
-            console.log(`sDP(): an unexpected problem with writing DP to Object: ${error}${error.stack}\nObject data: ${objData}\nSetting ${value} to DP ${DPName}`)
-        }
+
+    // Block
+    if (object instanceof Block) {
+        const dpComp = object.getComponent(BlockComponentTypes.DynamicProperties)
+        if (!dpComp?.isValid) return false
+        dpComp.set(DPName, value)
+    }
+    else { // Non-block
+        object.setDynamicProperty(DPName, value)
     }
 
     return true
@@ -117,10 +110,19 @@ export function gDP(object, DPName, fallback = undefined) {
         return undefined
     }
 
-    // Get DP
-    let value = object.getDynamicProperty(DPName)
+    let value
 
-    // If DP is obj
+    // Block
+    if (object instanceof Block) {
+        const dpComp = object.getComponent(BlockComponentTypes.DynamicProperties)
+        if (!dpComp?.isValid) return null
+        value = dpComp.get(DPName)
+    }
+    else { // Non-block
+        value = object.getDynamicProperty(DPName)
+    }
+
+    // Deserialize if dp is an object
     if (typeof value === 'string' && value.startsWith(specialDataTypePrefix)) {
         try {
             const result = str2obj(value.slice(specialDataTypePrefix.length))
@@ -135,8 +137,7 @@ export function gDP(object, DPName, fallback = undefined) {
         }
     }
 
-    if (value === undefined) return fallback
-    return value
+    return value ?? fallback
 }
 
 export class DPManager {

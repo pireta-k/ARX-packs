@@ -208,10 +208,10 @@ export class RLE {
 
 /**
  * @typedef CreatePaletteFromArrayOptions
- * @prop {string} paletteAlphabet
+ * @prop {string} [paletteAlphabet]
  */
 /** @typedef {string} PaletteKey */
-/** @typedef {string} PaletteItem */
+/** @typedef {string | number | undefined} PaletteItem */
 /**
  * @typedef {Record<PaletteKey, PaletteItem>} PalettizerPalette
  */
@@ -233,9 +233,11 @@ export class Palettizer {
         const uniqueItemsArray = [...uniqueItems]
 
         const alphabetLength = paletteAlphabet.length
+        if (alphabetLength < 2) throw new Error('Palette alphabet must be >= 2 symbols')
         const numOfUniqueItems = uniqueItems.size
 
-        const symbolsPerItem = Math.ceil(Math.log(numOfUniqueItems) / Math.log(alphabetLength)) // Always the same length for all the items
+        let symbolsPerItem = 1
+        while (alphabetLength ** symbolsPerItem < numOfUniqueItems) symbolsPerItem++
 
         /**
          * Returns a palette key
@@ -261,7 +263,10 @@ export class Palettizer {
             const key = indexToKey(i)
             palette[key] = item
         }
-        return { symbolsPerItem, palette }
+
+        const palettizer = new Palettizer(palette, symbolsPerItem)
+
+        return { symbolsPerItem, palette, palettizer }
     }
 
     /**
@@ -272,14 +277,33 @@ export class Palettizer {
     constructor(palette, symbolsPerItem) {
         this.palette = palette
         this.symbolsPerItem = symbolsPerItem
+        this.paletteReversed = {}
+
+        for (const key in palette) {
+            this.paletteReversed[palette[key]] = key
+        }
     }
 
+    /**
+     * Get a palette value using a key
+     * @param {PaletteKey} key 
+     * @returns 
+     */
     get(key) {
         return this.palette[key]
     }
 
+    /**
+     * Get a palette key using a value
+     * @param {string} value 
+     */
+    getKey(value) {
+        return this.paletteReversed[value]
+    }
+
     dispose() {
         this.palette = undefined
+        this.paletteReversed = undefined
         this.symbolsPerItem = undefined
     }
 }

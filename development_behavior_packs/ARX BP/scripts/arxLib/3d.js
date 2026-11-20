@@ -1,5 +1,3 @@
-import { VectorXZ, Vector2, Vector3 } from '@minecraft/server'
-
 /**
  * @typedef {object} Vector4
  * @prop {number} x
@@ -9,7 +7,13 @@ import { VectorXZ, Vector2, Vector3 } from '@minecraft/server'
  */
 
 /**
- * @typedef {VectorXZ | Vector2 | Vector3 | Vector4} VectorAny
+ * @typedef {object} VectorXZ
+ * @prop {number} x
+ * @prop {number} z
+ */
+
+/**
+ * @typedef {VectorXZ | import("@minecraft/server").Vector2 | import("@minecraft/server").Vector3 | Vector4} VectorAny
  */
 
 export const vector = {
@@ -32,20 +36,44 @@ export const vector = {
 
     /**
      * Add to vector3's Y value a number (1 by default)
-     * @param {Vector3} vector 
+     * @param {import("@minecraft/server").Vector3} vector 
      * @param {Number} [number] 
      */
     upLift(vector, number = 1) {
         return { x: vector.x, y: vector.y + number, z: vector.z }
-    }
+    },
+
+    /**
+     * Turn a vector to a short string
+     * @param {import("@minecraft/server").Vector2 | import("@minecraft/server").Vector3 | Vector4} vector 
+     * @returns {string}
+     */
+    vector2str(vector) {
+        const values = []
+        for (const axis of this.vectorAxes) if (axis in vector) values.push(vector[axis])
+        return values.join('|')
+    },
+
+    /**
+     * Turn a string to a vector
+     * @param {string} str 
+     * @returns {import("@minecraft/server").Vector2 | import("@minecraft/server").Vector3 | Vector4}
+     */
+    str2vector(str) {
+        if (!str) return {}
+        const result = {}
+        const items = str.split('|').map(item => +item)
+        for (let i = 0; i < items.length; i++) result[this.vectorAxes[i]] = items[i]
+        return result
+    },
 }
 
 export const space = {
     /**
      * Is the location in box?
-     * @param {Vector3} boxCornerA 
-     * @param {Vector3} boxCornerB 
-     * @param {Vector3} location 
+     * @param {import("@minecraft/server").Vector3} boxCornerA 
+     * @param {import("@minecraft/server").Vector3} boxCornerB 
+     * @param {import("@minecraft/server").Vector3} location 
      * @returns {boolean}
      */
     isLocationInBox(boxCornerA, boxCornerB, location) {
@@ -87,7 +115,7 @@ export const space = {
      * @returns {VectorAny}
      */
     getSpaceSize(spaceCornerA, spaceCornerB) {
-        result = {}
+        const result = {}
         for (const axis of vector.vectorAxes) {
             const hasA = Object.hasOwn(spaceCornerA, axis)
             const hasB = Object.hasOwn(spaceCornerB, axis)

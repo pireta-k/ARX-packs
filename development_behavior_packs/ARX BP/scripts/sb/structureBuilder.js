@@ -6,9 +6,11 @@ import { sleep } from "../arxLib/time"
 import { runJobAsync, runJobDynamic } from "../arxLib/runJob"
 import { vector } from "../arxLib/3d"
 import { obj2str, RLE, str2obj } from "../arxLib/converters"
+import { ACSS } from "./acss"
 
 
-let ACSSStorage = {}
+/** A place to store ACSS. User's "save in RAM" option saves it here */
+let acssStorage = {}
 /** Path to SB icons folder */
 const SB_UI_ICON_PATH = 'textures/ui/sb/'
 /** Limit of recursion deletions */
@@ -265,7 +267,10 @@ export class BlocksMegaArray {
         }
     }
 
-    // Main blocks iterator
+    /**
+     * Main blocks iterator
+     * @returns {AsyncGenerator<Block>}
+     */
     async *[Symbol.asyncIterator]() {
         for (const chunk of this.iterMegaChunks()) {
             // The active area we need to process further
@@ -379,9 +384,8 @@ export async function onUseSBHammer(p) {
         form.button('Recursive delete blocks', `${SB_UI_ICON_PATH}delete_blocks_recursive`)
         form.button('Fill with block', `${SB_UI_ICON_PATH}fill`)
         form.button('Replace blocks', `${SB_UI_ICON_PATH}replace`)
-        form.button('Save ACSS', `${SB_UI_ICON_PATH}save_acss`)
-        form.button('Load ACSS', `${SB_UI_ICON_PATH}load_acss`)
-        form.button(getUndoButtonLabel(p))
+        form.button('Get ACSS', `${SB_UI_ICON_PATH}save_acss`)
+        form.button('Place ACSS', `${SB_UI_ICON_PATH}load_acss`)
 
         form.show(p).then(async r => {
             switch (r.selection) {
@@ -460,419 +464,98 @@ export async function onUseSBHammer(p) {
                         })
                     break
 
-                case 4: // Save ACSS
-                    const saveAcssOptions = await showSaveACSSOptionsForm(p)
-                    if (!saveAcssOptions) break
+                case 4: // Get ACSS
+                    {
+                        p.sendMessage(`§bSaving... (${volume} blocks)`)
+                        const acss = await ACSS.api.get(d, point1, point2)
+                        new ActionFormData()
+                            .title("Save ACSS")
+                            .button('Save in log')
+                            .button('Save in RAM')
+                            .button('Save in DP')
+                            .show(p).then(async r2 => {
+                                switch (r2.selection) {
 
-                    p.sendMessage(
-                        saveAcssOptions.ultraCompact
-                            ? `§bSaving §eultra compact§b... (${volume} blocks)`
-                            : `§bSaving... (${volume} blocks)`
-                    )
-                    const acss = await saveACSS(d, point1, point2, { ...saveAcssOptions, player: p })
-                    const ACSSSaveForm = new ActionFormData()
-                        .title("Save ACSS")
-                        .button('Save in log')
-                        .button('Save in RAM')
-                        .button('Save in DP')
-                    ACSSSaveForm.show(p).then(async r2 => {
-                        switch (r2.selection) {
+                                    case 0:
+                                        console.warn(acss)
+                                        p.sendMessage(`§bACSS sent to log, length: ${acss.length} symbols`)
+                                        break
 
-                            case 0:
-                                console.warn(acss)
-                                p.sendMessage(`§bACSS sent to log, length: ${acss.length} symbols`)
-                                break
+                                    case 1:
+                                        acssStorage[gDP(p.id)] = acss
+                                        p.sendMessage(`§bACSS saved in RAM, length: ${acss.length} symbols`)
+                                        break
 
-                            case 1:
-                                ACSSStorage[gDP(p, 'id')] = acss
-                                p.sendMessage(`§bACSS saved in RAM, length: ${acss.length} symbols`)
-                                break
+                                    case 2: {
+                                        const dpForm = await new ModalFormData()
+                                            .title("Save ACSS to DP")
+                                            .textField(`Enter DP name`, "any")
+                                            .submitButton('Save')
+                                            .show(p)
 
-                            case 2: {
-                                const dpForm = await new ModalFormData()
-                                    .title("Save ACSS to DP")
-                                    .textField(`Enter DP name`, "any")
-                                    .submitButton('Save')
-                                    .show(p)
+                                        if (dpForm.canceled || !dpForm.formValues) break
 
-                                if (dpForm.canceled || !dpForm.formValues) break
+                                        const dpName = dpForm.formValues[0]?.trim()
+                                        if (!dpName) {
+                                            p.sendMessage('§cDP name is empty - ACSS not saved')
+                                            break
+                                        }
 
-                                const dpName = dpForm.formValues[0]?.trim()
-                                if (!dpName) {
-                                    p.sendMessage('§cDP name is empty - ACSS not saved')
-                                    break
-                                }
-
-                                sDP(p, dpName, acss)
-                                p.sendMessage(`§bACSS saved in DP (${dpName}), length: ${acss.length} symbols`)
-                                break
-                            }
-                        }
-                    })
-                    break
-
-                case 5: // Load ACSS
-                    let rawACSS = ''
-
-                    const ACSSLoadForm = new ActionFormData()
-                        .title("Load ACSS")
-                        .button('Load from RAM')
-                        .button('Load from DP')
-                    await ACSSLoadForm.show(p).then(async r2 => {
-                        switch (r2.selection) {
-
-                            case 0:
-                                rawACSS = ACSSStorage[gDP(p, 'id')]
-                                break
-
-                            case 1:
-                                const ACSSLoadFromDPForm = new ModalFormData()
-                                    .title("Load ACSS from DP")
-                                    .textField(`Enter DP name`, "any")
-                                    .submitButton('Load')
-
-                                await ACSSLoadFromDPForm.show(p).then(async r => {
-
-                                    if (r.formValues) {
-                                        const response = r.formValues[0].trim()
-                                        rawACSS = gDP(p, response)
+                                        sDP(p, dpName, acss)
+                                        p.sendMessage(`§bACSS saved in DP (${dpName}), length: ${acss.length} symbols`)
+                                        break
                                     }
-                                })
-                                break
-                        }
-                    })
-
-                    if (!rawACSS) {
-                        p.sendMessage('§cCannot get ACSS this way. Aborted.')
-                        return null
+                                }
+                            })
                     }
-                    p.sendMessage(`§bLoading ACSS...`)
-                    await loadACSS(rawACSS, d, point1)
-                    p.sendMessage('§bACSS loaded')
+
                     break
 
-                case 6: // Undo (last delete / fill / replace / recursive delete this session)
-                    await applySbUndo(p)
+                case 5: // Place ACSS
+                    {
+                        let acss
+
+                        await new ActionFormData()
+                            .title("Place ACSS")
+                            .button('Load from RAM')
+                            .button('Load from DP')
+                            .show(p).then(async acssResponse => {
+
+                                switch (acssResponse.selection) {
+
+                                    case 0:
+                                        acss = acssStorage[p.id]
+                                        break
+
+                                    case 1:
+                                        const ACSSLoadFromDPForm = new ModalFormData()
+                                            .title("Load ACSS from DP")
+                                            .textField(`Enter DP name`, "any")
+                                            .submitButton('Load')
+
+                                        await ACSSLoadFromDPForm.show(p).then(r => {
+                                            if (r.formValues) {
+                                                const response = r.formValues[0].trim()
+                                                acss = gDP(p, response)
+                                            }
+                                        })
+                                        break
+                                }
+                            })
+
+                        if (!acss) {
+                            p.sendMessage('§cCannot get ACSS this way. Aborted.')
+                            break
+                        }
+                        p.sendMessage(`§bLoading ACSS...`)
+                        await ACSS.api.place(d, point1, acss)
+                        p.sendMessage('§bACSS loaded')
+                    }
+
                     break
             }
         })
     }
-}
-
-/** @returns {Promise<{ saveChestLoot: boolean, saveEntities: boolean, saveAnchors: boolean, ultraCompact: boolean } | null>} */
-async function showSaveACSSOptionsForm(p) {
-    const response = await new ModalFormData()
-        .title('ACSS options')
-        .toggle('Chest loot tables', {
-            defaultValue: true,
-            tooltip: 'Paper in slot 0: loot path in the name, e.g. acss/chests/test',
-        })
-        .toggle('Entities', {
-            defaultValue: true,
-            tooltip: 'Players and dropped items are ignored. Only entity type id is saved.',
-        })
-        .toggle('Anchors', {
-            defaultValue: true,
-            tooltip: 'Save arx:acss_anchor as force_anchor (void on load). Off: saved as the block itself.',
-        })
-        .toggle('Ultra compact', {
-            defaultValue: false,
-            tooltip: 'Very slow. Tries all 6 axis orders and keeps the smallest ACSS string (best RLE).',
-        })
-        .submitButton('Continue')
-        .show(p)
-
-    if (response.canceled || !response.formValues) return null
-
-    return {
-        saveChestLoot: !!response.formValues[0],
-        saveEntities: !!response.formValues[1],
-        saveAnchors: !!response.formValues[2],
-        ultraCompact: !!response.formValues[3],
-    }
-}
-
-/** @param {{ saveChestLoot?: boolean, saveEntities?: boolean, saveAnchors?: boolean, ultraCompact?: boolean, player?: import("@minecraft/server").Player }} [options] */
-async function saveACSS(d, p1, p2, options = {}) {
-    try {
-        const saveChestLoot = options.saveChestLoot !== false
-        const saveEntities = options.saveEntities !== false
-        const saveAnchors = options.saveAnchors !== false
-        const ultraCompact = !!options.ultraCompact
-        const player = options.player
-        const acss = {
-            head: {},
-            palette: {},
-            b3d: '',
-        }
-
-        acss.head = {
-            v: ACSS_VERSION,
-            s: [
-                Math.abs(p1.x - p2.x) + 1,
-                Math.abs(p1.y - p2.y) + 1,
-                Math.abs(p1.z - p2.z) + 1,
-            ],
-        }
-
-        const anchor = getStructureAnchor(p1, p2)
-        const corner = {
-            x: anchor.x + acss.head.s[0] - 1,
-            y: anchor.y + acss.head.s[1] - 1,
-            z: anchor.z + acss.head.s[2] - 1,
-        }
-
-        const volume = acss.head.s[0] * acss.head.s[1] * acss.head.s[2]
-        const pkSet = new Set()
-        const pvSet = new Set()
-        const uniqueBlocks = []
-        const uniqueBlockIndex = new Map()
-        const blockMap = new Map()
-        const lootChests = saveChestLoot ? [] : null
-        let forceAnchor = null
-        let blockPos = 0
-
-        for await (const b of new BlocksMegaArray(d, p1, p2)) {
-            const relativePos = {
-                x: b.location.x - anchor.x,
-                y: b.location.y - anchor.y,
-                z: b.location.z - anchor.z,
-            }
-            const relKey = `${relativePos.x},${relativePos.y},${relativePos.z}`
-
-            if (saveAnchors && b.typeId === ACSS_FORCE_ANCHOR_BLOCK) {
-                if (!forceAnchor) {
-                    forceAnchor = relativePos
-                } else {
-                    console.warn(`saveACSS: multiple ${ACSS_FORCE_ANCHOR_BLOCK} blocks found, using the first one`)
-                    try {
-                        player?.sendMessage(`§eWarning: multiple acss_anchor blocks found, using the first one`)
-                    } catch { }
-                }
-                const idx = collectBlockByData('structure_void', undefined, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
-                blockMap.set(relKey, idx)
-                blockPos++
-                continue
-            }
-
-            const idx = collectBlockFromWorld(b, pkSet, pvSet, uniqueBlocks, uniqueBlockIndex)
-            blockMap.set(relKey, idx)
-            blockPos++
-
-            if (lootChests && isLootContainerBlock(b.typeId)) {
-                const loot = readLootPathFromContainerBlock(b)
-                if (loot) {
-                    lootChests.push({
-                        x: relativePos.x,
-                        y: relativePos.y,
-                        z: relativePos.z,
-                        loot,
-                    })
-                }
-            }
-        }
-
-        if (blockPos !== volume) {
-            console.warn(`saveACSS: expected ${volume} blocks, scanned ${blockPos}`)
-        }
-
-        const pkPal = buildSymbolPalette(pkSet)
-        const pvPal = buildSymbolPalette(pvSet)
-        const symPerBlock = symbolsPerBlock(uniqueBlocks.length)
-        acss.head.spb = symPerBlock
-
-        for (let i = 0; i < uniqueBlocks.length; i++) {
-            const { id, perms } = uniqueBlocks[i]
-            const sym = indexToSymbol(i, PALETTE_ALPHABET, symPerBlock)
-            acss.palette[sym] = encodeBlockEntry(id, perms, pkPal.reverse, pvPal.reverse)
-        }
-
-        if (Object.keys(pkPal.palette).length) acss.pk = pkPal.palette
-        if (Object.keys(pvPal.palette).length) acss.pv = pvPal.palette
-
-        const { axisOrder, b3d } = pickBestAcssAxisOrder(blockMap, acss.head.s, symPerBlock, ultraCompact)
-        acss.b3d = b3d
-        if (axisOrder !== BMA_DEFAULT_AXIS_ORDER) acss.head.a = axisOrder
-
-        if (lootChests?.length) acss.lootChests = lootChests
-        if (saveAnchors && forceAnchor) acss.force_anchor = forceAnchor
-
-        if (saveEntities) {
-            const entityList = collectStructureEntities(d, anchor, corner)
-            const entities = encodeStructureEntities(entityList)
-            if (entities) {
-                acss.entities = entities
-                acss.head.spe = entities.spe
-                delete entities.spe
-            }
-        }
-
-        return acss2str(acss)
-    } catch (error) {
-        console.error(`[StructureBuilder] saveACSS: ${error}`)
-        return null
-    }
-}
-
-/**
- * @param {{x:number,y:number,z:number}} position — world position of the placement anchor
- * @param {object} [applyDenyBlocks] — if omitted, deny/allow planes are not placed
- * @param {number} [applyDenyBlocks.marginBelow=0] — extra blocks down from directly under the footprint (0 = y min−1)
- * @param {number} [applyDenyBlocks.marginXZ=0] — expand XZ rectangle on each side
- * @param {boolean} [applyDenyBlocks.allowAbove=false] — same-size allow plane flush above structure (y max+1)
- * @param {ACSSPlacement} [placement='corner'] — 'corner' (default): position = min corner; 'center': position = structure center; or custom {x,y,z} offset from min corner.
- * If ACSS has force_anchor, position is treated as that anchor and this param is ignored.
- */
-export async function loadACSS(rawACSS, d, position, applyDenyBlocks, placement = 'corner') {
-
-    // === ACSS validation ===
-    // Validate ACSS JSON
-    let acss = undefined
-    try {
-        acss = str2acss(rawACSS)
-    }
-    catch (error) {
-        console.warn(`§cACSS fatal error: ${error}.\nACSS loading aborted`)
-        return null
-    }
-    // ACSS basic check
-    if (!acss) {
-        console.warn('§cACSS error: No ACSS')
-        return null
-    }
-    // Validate headers
-    const version = acss.head?.v
-    if (version !== ACSS_VERSION) {
-        console.warn(`§cACSS error: unsupported version ${version}, expected ${ACSS_VERSION}`)
-        return null
-    }
-    const size = acss.head?.s
-    if (!size || typeof size !== 'object' || size.length !== 3 || size.some(n => n <= 0)) {
-        console.warn('§cACSS error: Incorrect 3Darray size in provided ACSS')
-        return null
-    }
-    const symPerBlock = acss.head?.spb
-    if (!symPerBlock || typeof symPerBlock !== 'number' || symPerBlock < 1) {
-        console.warn('§cACSS error: Incorrect SymbolsPerBlock in provided ACSS')
-        return null
-    }
-
-    // Validate palette
-    const palette = acss.palette
-    if (!palette || typeof palette !== 'object') {
-        console.warn('§cACSS error: Incorrect palette in provided ACSS')
-        return null
-    }
-
-    const pk = acss.pk ?? {}
-    const pv = acss.pv ?? {}
-    if (typeof pk !== 'object' || typeof pv !== 'object') {
-        console.warn('§cACSS error: invalid pk or pv palettes')
-        return null
-    }
-
-    // Validate b3d
-    const blocks3D = acss.b3d
-    if (!blocks3D || typeof blocks3D !== 'string') {
-        console.warn('§cACSS error: Incorrect blocks3D in provided ACSS')
-        return null
-    }
-
-    const forceAnchor = parseForceAnchor(acss.force_anchor, size)
-    const effectivePlacement = forceAnchor ?? placement
-    const { p1, p2 } = resolveACSSPlacement(position, size, effectivePlacement)
-    const axisOrder = resolveAcssAxisOrder(acss.head)
-
-    // Validate world borders fitting
-    const worldBorders = d.heightRange
-    if (worldBorders.min > p1.y || worldBorders.max < p2.y) {
-        console.warn('§cACSS error: Trying to place a ACSS beyond the world borders')
-        return null
-    }
-
-    // Unwind b3d RLE
-    const fullb3d = RLE.decode(blocks3D, symPerBlock)
-
-    // Validate volume 
-    const defactoVolume = fullb3d.length / symPerBlock // Volume in blocks
-    const expectedVolume = size[0] * size[1] * size[2]
-
-    if (defactoVolume !== expectedVolume) {
-        console.warn(`§cACSS error: expected b3d volume (${expectedVolume}) doesn't match with its defacto volume (${defactoVolume})`)
-        return null
-    }
-
-    try {
-        let blockIndex = 0
-        for await (const b of new BlocksMegaArray(d, p1, p2, { forceAxisOrder: axisOrder })) {
-            const offset = blockIndex * symPerBlock
-            const blockKey = fullb3d.slice(offset, offset + symPerBlock)
-            const blockDataRaw = acss.palette[blockKey]
-            const bd = decodeBlockEntry(blockDataRaw, pk, pv)
-            applyBlockFromACSS(b, bd)
-            blockIndex++
-        }
-
-        const anchor = getStructureAnchor(p1, p2)
-
-        if (applyDenyBlocks != null) {
-            await applyStructureDenyAllowPlanes(d, p1, p2, applyDenyBlocks)
-        }
-
-        await applyStructureChestLoot(d, anchor, p2, acss.lootChests)
-        spawnStructureEntities(d, anchor, acss.entities)
-    } catch (error) {
-        console.error(`[StructureBuilder] loadACSS: ${error}`)
-        return null
-    }
-}
-
-/** Deny under structure; optional allow flush on top (separate BlocksMegaArray pass). */
-async function applyStructureDenyAllowPlanes(d, p1, p2, cfg) {
-    try {
-        const marginBelow = Number(cfg.marginBelow ?? 0)
-        const marginXZ = Number(cfg.marginXZ ?? 0)
-        const allowAbove = !!cfg.allowAbove
-
-        const bounds = getStructureBounds(p1, p2)
-        const planeMinX = bounds.minX - marginXZ
-        const planeMaxX = bounds.maxX + marginXZ
-        const planeMinZ = bounds.minZ - marginXZ
-        const planeMaxZ = bounds.maxZ + marginXZ
-        const denyY = bounds.minY - 1 - marginBelow
-        const allowY = bounds.maxY + 1
-        const { min: worldMin, max: worldMax } = d.heightRange
-
-        if (denyY >= worldMin && denyY <= worldMax) {
-            await placeStructureBlockPlane(d, planeMinX, denyY, planeMinZ, planeMaxX, planeMaxZ, 'minecraft:deny')
-        }
-
-        if (allowAbove && allowY >= worldMin && allowY <= worldMax) {
-            await placeStructureBlockPlane(d, planeMinX, allowY, planeMinZ, planeMaxX, planeMaxZ, 'minecraft:allow')
-        }
-    } catch (error) {
-        console.error(`[StructureBuilder] applyStructureDenyAllowPlanes: ${error}`)
-    }
-}
-
-async function placeStructureBlockPlane(d, minX, y, minZ, maxX, maxZ, blockId) {
-    const p1 = { x: minX, y, z: minZ }
-    const p2 = { x: maxX, y, z: maxZ }
-    for await (const b of new BlocksMegaArray(d, p1, p2)) {
-        b.setType(blockId)
-    }
-}
-
-function indexToSymbol(index, alphabet, fixedLen) {
-    let sym = ''
-    const base = alphabet.length
-
-    for (let i = 0; i < fixedLen; i++) {
-        sym = alphabet[index % base] + sym;
-        index = Math.floor(index / base);
-    }
-
-    return sym
 }
 
 function getCoordinatesString(coords) {

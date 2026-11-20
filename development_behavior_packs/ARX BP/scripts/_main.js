@@ -1,7 +1,7 @@
 // ARX javascript
 
 // Imports - Minecraft
-import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond, EntityHealthComponent, Dimension } from "@minecraft/server"
+import { system, world, EntityComponentTypes, EquipmentSlot, Player, ItemStack, MolangVariableMap, CommandPermissionLevel, CustomCommandParamType, CustomCommandStatus, TicksPerSecond, EntityHealthComponent, Dimension, BlockComponentTypes, BlockTypes } from "@minecraft/server"
 
 import './vanillaPrototypes'
 
@@ -52,6 +52,8 @@ import { Cache } from "./arxLib/cache"
 import { strengthRingsList } from "./items/lists"
 import { sPerm } from "./arxLib/shortcuts"
 import { RLE, str2obj } from "./arxLib/converters"
+import { ACSS } from "./sb/acss"
+import { CustomForm, ObservableString } from "@minecraft/server-ui"
 
 /**
  * Type of Arx release
@@ -584,6 +586,7 @@ export const customDimensionIds = [
 system.beforeEvents.startup.subscribe(initEvent => {
     initEvent.blockComponentRegistry.registerCustomComponent('arx:blockInteration', {
         onPlayerInteract(event) { // Взаимодействие с блоком через ПКМ
+            const p = event.player
             const b = event.block
             let executeOnBlockPosition = `execute positioned ${b.location.x} ${b.location.y} ${b.location.z} run `
             switch (b.type.id) {
@@ -649,6 +652,24 @@ system.beforeEvents.startup.subscribe(initEvent => {
                         b.setPermutation(b.permutation.withState("arx:growth_stage", 5))
                         b.dimension.runCommand(executeOnBlockPosition + `loot spawn ~ ~ ~ loot "blocks/nature/grape_mature_finally"`)
                     }
+                    break
+
+                // ACSS anchor
+                case ACSS.anchorBlockTypeId:
+                    if (!p) break
+
+                    const dpComp = b.getComponent(BlockComponentTypes.DynamicProperties)
+                    const oldBlockTypeId = gDP(b, 'replaceWith', 'minecraft:structure_void')
+
+                    const blockToReplaceWithText = new ObservableString(oldBlockTypeId, { clientWritable: true })
+                    blockToReplaceWithText.subscribe(callback => {
+                        if (BlockTypes.get(callback)) dpComp.set('replaceWith', callback)
+                    })
+
+                    new CustomForm(p, "ACSS anchor")
+                        .label('Block typeId to replace anchor with\n')
+                        .textField('You can\'t enter a non-existent typeId', blockToReplaceWithText)
+                        .show()
                     break
             }
         }
@@ -1243,7 +1264,7 @@ world.afterEvents.entityHurt.subscribe((hurtEvent) => {
         incScore(player, 'count_hits')
     }
     else if (damaged.typeId === "arx:whipping_dummy") { // Если ранили куклу для битья
-        world.getPlayers({location: damaged.location, maxDistance: 8}).forEach(p => p.sendMessage(`§cDMG >>> §l§f${hurtEvent.damage.toFixed(1)}`))
+        world.getPlayers({ location: damaged.location, maxDistance: 8 }).forEach(p => p.sendMessage(`§cDMG >>> §l§f${hurtEvent.damage.toFixed(1)}`))
         const randomIndex = random.int(1, 4)
         damaged?.runCommand(`effect @s instant_health 1 255 true`)
 

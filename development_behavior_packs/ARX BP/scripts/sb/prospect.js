@@ -1,7 +1,7 @@
 import { Dimension, world } from "@minecraft/server"
 import { obj2str } from "../arxLib/converters"
 import { sleep } from "../arxLib/time"
-import { Vector } from "../arxLib/3d"
+import { vector } from "../arxLib/3d"
 
 const PROSPECTIONSTEP = 16
 const PROSP_PARALLEL = 8
