@@ -4,7 +4,6 @@ import { gDP, sDP } from "../arxLib/dp";
 import { BlocksMegaArray, SB } from "./structureBuilder";
 import { Block, Dimension, world, BlockComponentTypes } from '@minecraft/server'
 import { Cache } from "../arxLib/cache";
-import { sPerm } from "../arxLib/shortcuts";
 
 /**
  * @typedef {object} ACSO - Arx Compressed Structure Object
@@ -217,7 +216,7 @@ export class ACSS {
                 uniqueBlocks: Palettizer.createPaletteFromArray(acso.u.split('|'))
             }
 
-            const blocksArray = RLE.decode(acso.b)
+            const blocksArray = RLE.decode(acso.b, palettesData.uniqueBlocks.symbolsPerItem)
 
             /**
              * Parce block's string to block id and permutations
@@ -278,7 +277,6 @@ export class ACSS {
                 block.setType(data.typeId)
 
                 for (const permutationName in data.permutations) {
-                    console.warn(`Setting perm with name ${permutationName} to value ${data.permutations[permutationName]}`)
                     block.setPermutation(block.permutation.withState(permutationName, data.permutations[permutationName]))
                 }
 
@@ -304,7 +302,9 @@ export class ACSS {
                     if (typeof acso?.u !== 'string') return { isValid: false, reason: 'objectStructure' }
                     if (typeof acso?.b !== 'string') return { isValid: false, reason: 'objectStructure' }
                     const volume = space.getVolume(vector.str2vector(acso?.s))
-                    if (RLE.decode(acso?.b).length % volume !== 0) return { isValid: false, reason: 'blocksArrayLength' }
+                    const symbolsPerUniqueBlock = Palettizer.createPaletteFromArray(acso?.u?.split('|')).symbolsPerItem
+                    // console.warn(`ACSO no-RLE length: ${RLE.decode(acso?.b, symbolsPerUniqueBlock).length}, expectedLength: ${volume * symbolsPerUniqueBlock}`)
+                    if (RLE.decode(acso?.b, symbolsPerUniqueBlock).length !== volume * symbolsPerUniqueBlock) return { isValid: false, reason: 'blocksArrayLength' }
                 }
                 catch (err) {
                     console.warn('An error ocured while validating acss')

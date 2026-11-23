@@ -1,4 +1,4 @@
-import { world, BlockPermutation, Player, Dimension, Block, System, system, BlockTypes, BlockType } from "@minecraft/server"
+import { world, BlockPermutation, Player, Dimension, Block, System, system, BlockTypes, BlockType, MolangVariableMap } from "@minecraft/server"
 import { gDP, sDP } from "../arxLib/dp"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
@@ -7,10 +7,10 @@ import { runJobAsync, runJobDynamic } from "../arxLib/runJob"
 import { vector } from "../arxLib/3d"
 import { obj2str, RLE, str2obj } from "../arxLib/converters"
 import { ACSS } from "./acss"
-
+import { acssStorage } from "./acssStorage"
 
 /** A place to store ACSS. User's "save in RAM" option saves it here */
-let acssStorage = {}
+let acssTempStorage = {}
 /** Path to SB icons folder */
 const SB_UI_ICON_PATH = 'textures/ui/sb/'
 /** Limit of recursion deletions */
@@ -60,6 +60,7 @@ export class SB {
                 if (!options?.shutUp) {
                     const color = pointNum === 1 ? '§a' : '§c'
                     p.sendMessage(`Saved ${color}Point ${pointNum}`)
+                    this.api.private.drawPoint(p.dimension, locAdapted, pointNum)
                 }
             },
 
@@ -213,6 +214,23 @@ export class SB {
                 else return true
 
             },
+
+            /**
+             * Draw point
+             * @param {Dimension} dimension 
+             * @param {import("@minecraft/server").Vector3} location 
+             * @param {number} pointNum 
+             */
+            drawPoint(dimension, location, pointNum) {
+                if (!dimension.isChunkLoaded(location)) return
+                system.run(() => {
+                    location = vector.sum(location, { x: 0.5, y: 0.5, z: 0.5 })
+                    const molang = new MolangVariableMap()
+                    if (pointNum === 1) molang.setColorRGB('color', { red: 0, green: 1, blue: 0 })
+                    else if (pointNum === 2) molang.setColorRGB('color', { red: 1, green: 0, blue: 0 })
+                    dimension.spawnParticle('arx:sb_point', location, molang)
+                })
+            }
         }
     }
 
@@ -499,7 +517,7 @@ export async function onUseSBHammer(p) {
                                         break
 
                                     case 1:
-                                        acssStorage[p.id] = acss
+                                        acssTempStorage[p.id] = acss
                                         p.sendMessage(`§bACSS saved in RAM, length: ${acss.length} symbols`)
                                         break
 
@@ -536,12 +554,13 @@ export async function onUseSBHammer(p) {
                             .title("Place ACSS")
                             .button('Load from RAM')
                             .button('Load from DP')
+                            .button('Load from Arx storage')
                             .show(p).then(async acssResponse => {
 
                                 switch (acssResponse.selection) {
 
                                     case 0:
-                                        acss = acssStorage[p.id]
+                                        acss = acssTempStorage[p.id]
                                         break
 
                                     case 1:
@@ -556,6 +575,19 @@ export async function onUseSBHammer(p) {
                                                 acss = gDP(p, response)
                                             }
                                         })
+                                        break
+
+                                    case 2:
+                                        await new ModalFormData()
+                                            .title("Load ACSS from Arx storage")
+                                            .textField(`Enter building id`, "any")
+                                            .submitButton('Load')
+                                            .show(p).then(r => {
+                                                if (r.formValues) {
+                                                    const response = r.formValues[0].trim()
+                                                    acss = acssStorage[response]
+                                                }
+                                            })
                                         break
                                 }
                             })
