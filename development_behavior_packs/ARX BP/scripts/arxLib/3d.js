@@ -66,6 +66,31 @@ export const vector = {
         for (let i = 0; i < items.length; i++) result[this.vectorAxes[i]] = items[i]
         return result
     },
+
+    /**
+     * Return a null vector
+     * @param {number} [numOfDimensions]
+     * @returns {VectorAny}
+     */
+    null(numOfDimensions) {
+        if (typeof numOfDimensions !== 'number' || numOfDimensions > this.vectorAxes.length || numOfDimensions < 1) return undefined
+        let result = {}
+        for (const axis of this.vectorAxes) result[axis] = 0
+        return result
+    },
+
+    /**
+     * @template {Vector4 | import("@minecraft/server").Vector3 | import("@minecraft/server").Vector2 | VectorXZ} T
+     * @param {T} vector 
+     * @returns {T}
+     */
+    invert(vector) {
+        for (const axis in vector) {
+            vector[axis] = -vector[axis]
+        }
+
+        return vector
+    }
 }
 
 export const space = {
@@ -125,5 +150,15 @@ export const space = {
             }
         }
         return result
+    },
+
+    /**
+     * Get space's volume (in blocks)
+     * @param {VectorAny} vector 
+     */
+    getVolume(vector) {
+        let result = 1
+        for (const axis in vector) result *= vector[axis]
+        return Math.abs(result)
     }
 }

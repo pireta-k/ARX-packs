@@ -174,6 +174,7 @@ export class RLE {
      * Sample: '2ad4c' -> 'aadcccc'
      * @param {string} str 
      * @param {number} symbolsPerItem 
+     * @returns {string}
      */
     static decode(str, symbolsPerItem = 1) {
         const run = function () {

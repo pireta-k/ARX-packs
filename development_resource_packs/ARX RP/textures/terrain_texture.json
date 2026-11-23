@@ -2,7 +2,7 @@
 	"resource_pack_name": "arx_nap",
 	"texture_name": "atlas.terrain",
 	"padding": 8,
-	"num_mip_levels": 4,
+	"num_mip_levels": 2,
 	"texture_data": {
 		"arx_broken_minibot": {
 			"textures": "textures/blocks/hightec/minibot/broken_minibot"

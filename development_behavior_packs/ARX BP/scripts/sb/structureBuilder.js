@@ -1,4 +1,4 @@
-import { world, BlockPermutation, Player, Dimension, Block, System, system } from "@minecraft/server"
+import { world, BlockPermutation, Player, Dimension, Block, System, system, BlockTypes, BlockType } from "@minecraft/server"
 import { gDP, sDP } from "../arxLib/dp"
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { validateTickingAreaLoading } from "./prospect"
@@ -19,6 +19,11 @@ const RECURSIVE_DELETE_LIMIT = 8000
 // StructureBuilder namespace - sb
 
 /** @typedef {'success' | 'fail'} SBAPIOperationResponse */
+/** 
+ * @typedef {object} SBAPIOperationDetailedResponse 
+ * @prop {SBAPIOperationResponse} status
+ * @prop {'invalidBlock' | 'wrongArguments' | 'unknown'} reason
+ */
 /**
  * @typedef {object} SBAPIFillOptions
  * @prop {string[] | undefined} [affectedBlockTypes=undefined] - blocks to replace
@@ -80,6 +85,8 @@ export class SB {
          */
         fill: async (dimension, pos1, pos2, blockTypeToFillWith, options = {}) => {
             if (options?.affectedBlockTypes && !Array.isArray(options?.affectedBlockTypes)) throw new Error('Invalid argument in SB API fill(): options.affectedBlockTypes expected type: Array')
+            if (!this.api.private.doBlockTypeExists(blockTypeToFillWith)) return 'fail'
+
             const affectedBlockTypes = options?.affectedBlockTypes
 
             const bma = new BlocksMegaArray(dimension, pos1, pos2, { runViaRunJob: true })
@@ -195,7 +202,17 @@ export class SB {
             getPointDp: (pointNum) => {
                 if (this.allowedPoints.includes(pointNum)) return 'sb:point' + pointNum
                 throw new Error('Cannot get a DP of an unknown point')
-            }
+            },
+
+            /**
+             * Checks if a proveided string is any block's typeId. Supports Arx blocks
+             * @param {string | BlockType} type 
+             */
+            doBlockTypeExists(type) {
+                if (typeof type === 'string') return !!BlockTypes.get(type)
+                else return true
+
+            },
         }
     }
 
@@ -482,7 +499,7 @@ export async function onUseSBHammer(p) {
                                         break
 
                                     case 1:
-                                        acssStorage[gDP(p.id)] = acss
+                                        acssStorage[p.id] = acss
                                         p.sendMessage(`§bACSS saved in RAM, length: ${acss.length} symbols`)
                                         break
 

@@ -4,6 +4,7 @@ import { gDP, sDP } from "../arxLib/dp";
 import { BlocksMegaArray, SB } from "./structureBuilder";
 import { Block, Dimension, world, BlockComponentTypes } from '@minecraft/server'
 import { Cache } from "../arxLib/cache";
+import { sPerm } from "../arxLib/shortcuts";
 
 /**
  * @typedef {object} ACSO - Arx Compressed Structure Object
@@ -23,7 +24,7 @@ import { Cache } from "../arxLib/cache";
 /** @typedef {import("../arxLib/converters").PalettizerPalette} ACSOUniqueBlocksPalette */
 /** @typedef {string} BlocksArray */
 
-/** @typedef {string} ACSS - Arx Compressed Structure String */
+/** @typedef {string} ACSString - Arx Compressed Structure String */
 
 /**
  * @typedef {object} GetACSSOptions
@@ -33,7 +34,7 @@ import { Cache } from "../arxLib/cache";
 /**
  * @typedef {object} ACSSValidationResponse
  * @prop {boolean} isValid
- * @prop {'version' | 'structure'} [reason]
+ * @prop {'version' | 'objectStructure' | 'blocksArrayLength' | 'unknown'} [reason]
  */
 
 /** Arx Compressed Structure String */
@@ -54,7 +55,7 @@ export class ACSS {
          * @param {import("@minecraft/server").Vector3} p1 
          * @param {import("@minecraft/server").Vector3} p2 
          * @param {GetACSSOptions} [options={}]
-         * @returns {Promise<ACSS>}
+         * @returns {Promise<ACSString>}
          */
         get: async (dimension, p1, p2, options = {}) => {
             /** @type {ACSO} */
@@ -187,31 +188,127 @@ export class ACSS {
          * Place an ACSS in a world
          * @param {Dimension} dimension 
          * @param {import("@minecraft/server").Vector3} location 
-         * @param {ACSS} acss 
+         * @param {ACSString} acss 
          */
         place: async (dimension, location, acss) => {
+            const validationResult = this.api.validate(acss)
+            if (!validationResult.isValid) throw new Error('Cannot place an invalid ACSS. Reason: ' + validationResult.reason)
+
             const acso = this.api.private.acss2acso(acss)
+            const acsoSize = vector.str2vector(acso.s)
+
+            const placemenetOffset = acso.a ? vector.invert(vector.str2vector(acso.a)) : vector.null(3)
+
+            /** @type {import('../arxLib/jsDocInterfaces').MinMaxInterface<import("@minecraft/server").Vector3>} */
+            const minMax = {}
+            {
+                const min = vector.sum(location, placemenetOffset)
+                minMax.min = min
+                minMax.max = vector.sum(min, vector.sum(acsoSize, { x: -1, y: -1, z: -1 }))
+            }
+
+            const bma = new BlocksMegaArray(dimension, minMax.min, minMax.max, { runViaRunJob: true })
+
+            // Restore palettes
+            const palettesData = {
+                blockTypes: Palettizer.createPaletteFromArray(acso.p.split('|')),
+                uniquePermutations: acso.r ? Palettizer.createPaletteFromArray(acso.r.split('|')) : undefined,
+                uniquePermutationValues: acso.l ? Palettizer.createPaletteFromArray(acso.l) : undefined,
+                uniqueBlocks: Palettizer.createPaletteFromArray(acso.u.split('|'))
+            }
+
+            const blocksArray = RLE.decode(acso.b)
+
+            /**
+             * Parce block's string to block id and permutations
+             * Also, restores shorten namespaces
+             * @param {string} str 
+             * @returns {{ typeId: string, permutations: Record<string, number | boolean | string> | undefined }}
+             */
+            const parceBlockString = (str) => {
+                let result = {
+                    typeId: undefined,
+                    permutations: {}
+                }
+
+                const blockTypeKeyLength = palettesData.blockTypes.symbolsPerItem
+                const blockTypeShorten = palettesData.blockTypes.palettizer.get(str.slice(0, blockTypeKeyLength))
+                result.typeId = this.api.private.codec.namespaces.decode(blockTypeShorten)
+
+                // Permutations
+                if (blockTypeKeyLength < str.length) {
+
+                    const permutationKeyLength = palettesData.uniquePermutations.symbolsPerItem
+                    const permutationValueKeyLength = palettesData.uniquePermutationValues.symbolsPerItem
+                    const permKeyValueLength = permutationKeyLength + permutationValueKeyLength
+                    const permutationsEncoded = str.slice(blockTypeKeyLength)
+
+                    // Parce permutations
+                    for (let i = 0; i * permKeyValueLength < permutationsEncoded.length; i++) {
+                        const done = i * permKeyValueLength
+                        const area = permutationsEncoded.slice(done, done + permKeyValueLength)
+                        const permKey = area.slice(0, permutationKeyLength)
+                        const permValueKey = area.slice(permutationKeyLength)
+
+                        const permName = this.api.private.codec.namespaces.decode(palettesData.uniquePermutations.palettizer.get(permKey))
+                        const permValue = palettesData.uniquePermutationValues.palettizer.get(permValueKey)
+
+                        result.permutations[permName] = permValue
+                    }
+                }
+
+                return result
+
+            }
+
+            const step = palettesData.uniqueBlocks.symbolsPerItem
+            let done = 0
+            // Place
+            for await (const block of bma) {
+                const uniqueBlockSymbol = blocksArray.slice(done, done + step)
+
+                // Get a symbol(s) for this unique block
+                const blockSymbols = palettesData.uniqueBlocks.palettizer.get(uniqueBlockSymbol)
+                if (!blockSymbols) {
+                    console.error('An error occured while placing an acss: Recieved empty block data from palette')
+                    break
+                }
+                const data = parceBlockString(blockSymbols)
+
+                block.setType(data.typeId)
+
+                for (const permutationName in data.permutations) {
+                    console.warn(`Setting perm with name ${permutationName} to value ${data.permutations[permutationName]}`)
+                    block.setPermutation(block.permutation.withState(permutationName, data.permutations[permutationName]))
+                }
+
+                done += step
+            }
+
         },
 
         /**
          * Check if the acss is valid
-         * @param {ACSS} acss 
+         * @param {ACSString} acss 
          * @returns {ACSSValidationResponse}
          */
         validate: (acss) => {
+            /** @returns {ACSSValidationResponse} */
             const run = () => {
                 const acso = this.api.private.acss2acso(acss)
 
                 try {
-                    if (acso?.version !== 3) return { isValid: false, reason: 'version' }
-                    if (typeof acso?.s !== 'string' || typeof vector.str2vector(acso.s) !== 'object') return { isValid: false, reason: 'structure' }
-                    if (typeof acso?.p !== 'string') return { isValid: false, reason: 'structure' }
-                    if (typeof acso?.u !== 'string') return { isValid: false, reason: 'structure' }
-                    if (typeof acso?.b !== 'string') return { isValid: false, reason: 'structure' }
+                    if (acso?.v !== 3) return { isValid: false, reason: 'version' }
+                    if (typeof acso?.s !== 'string' || typeof vector.str2vector(acso.s) !== 'object') return { isValid: false, reason: 'objectStructure' }
+                    if (typeof acso?.p !== 'string') return { isValid: false, reason: 'objectStructure' }
+                    if (typeof acso?.u !== 'string') return { isValid: false, reason: 'objectStructure' }
+                    if (typeof acso?.b !== 'string') return { isValid: false, reason: 'objectStructure' }
+                    const volume = space.getVolume(vector.str2vector(acso?.s))
+                    if (RLE.decode(acso?.b).length % volume !== 0) return { isValid: false, reason: 'blocksArrayLength' }
                 }
                 catch (err) {
                     console.warn('An error ocured while validating acss')
-                    return { isValid: false, reason: 'structure' }
+                    return { isValid: false, reason: 'unknown' }
                 }
 
                 return { isValid: true }
@@ -223,14 +320,14 @@ export class ACSS {
             /**
              * Turn ACSO to ACSS
              * @param {ACSO} acso
-             * @returns {ACSS}
+             * @returns {ACSString}
              */
             acso2acss(acso) {
                 return JSON.stringify(acso)
             },
             /**
              * Turn ACSS to ACSO
-             * @param {ACSS} acss
+             * @param {ACSString} acss
              * @returns {ACSO}
              */
             acss2acso(acss) {
