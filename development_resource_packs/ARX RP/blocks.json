@@ -614,6 +614,9 @@
 	"arx:acss_anchor": {
 		"textures": "acss_anchor"
 	},
+	"arx:acss_structure_void": {
+		"textures": "flattened_structure_void"
+	},
 
 	"arx:electric_cold_lamp": {
 		"sound": "glass"

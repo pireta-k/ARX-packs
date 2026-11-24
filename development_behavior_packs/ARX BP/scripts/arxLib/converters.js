@@ -208,6 +208,57 @@ export class RLE {
 }
 
 /**
+ * The Burrows–Wheeler transform (BWT) 
+ * Written with AI
+ */
+export class BWT {
+    /**
+     * Apply BWT encoding
+     * @param {string} str 
+     * @returns {{bwt: string, index: number}}
+     */
+    static encode(str) {
+        if (!str) return { bwt: '', index: 0 };
+
+        const rotations = []
+        for (let i = 0; i < str.length; i++) {
+            rotations.push(str.slice(i) + str.slice(0, i))
+        }
+
+        rotations.sort()
+
+        const index = rotations.indexOf(str)
+
+        const bwt = rotations.map(row => row[row.length - 1]).join('')
+
+        return { bwt, index }
+    }
+
+    /**
+     * Decode BWT
+     * @param {string} bwt 
+     * @param {number} index 
+     * @returns {string}
+     */
+    static decode(bwt, index) {
+        if (!bwt) return '';
+
+        const len = bwt.length;
+        const table = Array(len).fill('');
+
+        for (let i = 0; i < len; i++) {
+            for (let j = 0; j < len; j++) {
+                table[j] = bwt[j] + table[j];
+            }
+            table.sort();
+        }
+
+        return table[index];
+
+    }
+}
+
+/**
  * @typedef CreatePaletteFromArrayOptions
  * @prop {string} [paletteAlphabet]
  */

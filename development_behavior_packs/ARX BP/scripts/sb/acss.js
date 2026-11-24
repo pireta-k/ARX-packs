@@ -47,6 +47,8 @@ export class ACSS {
         'minecraft:item'
     ]
 
+    static ignoredPermutations = ['structure_void_type']
+
     static api = {
         /**
          * Get an ACSS from a world
@@ -104,7 +106,7 @@ export class ACSS {
                 const allPermutations = b.permutation.getAllStates()
                 const permNames = Object.keys(allPermutations)
                 if (permNames.length > 0) {
-                    permNames.forEach(perm => uniquePermutations.add(perm))
+                    permNames.forEach(perm => this.ignoredPermutations.includes(perm) || uniquePermutations.add(perm))
                     Object.values(allPermutations).forEach(permValue => uniquePermutationValues.add(permValue))
                 }
             }
@@ -135,6 +137,7 @@ export class ACSS {
                 let uniqueBlockStr = palettesData.blockTypes.palettizer.getKey(b.typeId)
                 const allPermutations = b.permutation.getAllStates()
                 for (const permName in allPermutations) {
+                    if (this.ignoredPermutations.includes(permName)) continue
                     const permPaletteKey = palettesData.uniquePermutations.palettizer.getKey(permName)
                     const permValueKey = palettesData.uniquePermutationValues.palettizer.getKey(allPermutations[permName])
                     uniqueBlockStr += permPaletteKey + permValueKey
@@ -161,9 +164,9 @@ export class ACSS {
             blocksArray = RLE.encode(blocksArray, palettesData.uniqueBlocks.symbolsPerItem)
 
             // Write to asco
-            acso.p = Object.values(palettesData.blockTypes.palette).map(typeId => this.api.private.codec.namespaces.encode(typeId)).join('|')
+            acso.p = Object.values(palettesData.blockTypes.palette).map(typeId => this.api.private.codec.encode(typeId)).join('|')
             if (uniquePermutations.size > 0) {
-                acso.r = Object.values(palettesData.uniquePermutations.palette).map(permName => this.api.private.codec.namespaces.encode(permName)).join('|')
+                acso.r = Object.values(palettesData.uniquePermutations.palette).map(permName => this.api.private.codec.encode(permName)).join('|')
                 acso.l = Object.values(palettesData.uniquePermutationValues.palette)
             }
             acso.u = Object.values(palettesData.uniqueBlocks.palette).join('|')
@@ -232,7 +235,7 @@ export class ACSS {
 
                 const blockTypeKeyLength = palettesData.blockTypes.symbolsPerItem
                 const blockTypeShorten = palettesData.blockTypes.palettizer.get(str.slice(0, blockTypeKeyLength))
-                result.typeId = this.api.private.codec.namespaces.decode(blockTypeShorten)
+                result.typeId = this.api.private.codec.decode(blockTypeShorten)
 
                 // Permutations
                 if (blockTypeKeyLength < str.length) {
@@ -249,7 +252,7 @@ export class ACSS {
                         const permKey = area.slice(0, permutationKeyLength)
                         const permValueKey = area.slice(permutationKeyLength)
 
-                        const permName = this.api.private.codec.namespaces.decode(palettesData.uniquePermutations.palettizer.get(permKey))
+                        const permName = this.api.private.codec.decode(palettesData.uniquePermutations.palettizer.get(permKey))
                         const permValue = palettesData.uniquePermutationValues.palettizer.get(permValueKey)
 
                         result.permutations[permName] = permValue
@@ -274,10 +277,12 @@ export class ACSS {
                 }
                 const data = parceBlockString(blockSymbols)
 
-                block.setType(data.typeId)
+                if (data.typeId !== 'minecraft:structure_void') {
+                    block.setType(data.typeId)
 
-                for (const permutationName in data.permutations) {
-                    block.setPermutation(block.permutation.withState(permutationName, data.permutations[permutationName]))
+                    for (const permutationName in data.permutations) {
+                        block.setPermutation(block.permutation.withState(permutationName, data.permutations[permutationName]))
+                    }
                 }
 
                 done += step
@@ -337,31 +342,71 @@ export class ACSS {
             validationCache: new Cache({ limit: 50 }),
 
             codec: {
-                namespaces: {
-                    minecraftNameSpace: 'minecraft:',
-                    arxNameSpance: 'arx:',
+                shortcuts: {
+                    'minecraft:structure_void': '0',
+                    'minecraft:planks': '=',
+                    'upside_down_bit': '^',
+                    'weirdo_direction': '+',
+                    'minecraft:corner': '4',
+                    'stone_slab_type': '_',
+                    'top_slot_bit': '-',
+                    'minecraft:vertical_half': 'L',
+                    'wood_type': 'W',
+                    'stone_brick_type': 'S',
+                    'old_log_type': '$',
+                    'pillar_axis': '1',
+                    'minecraft:cardinal_direction': '2',
+                    'facing_direction': 'F',
+                    'open_bit': 'O',
+                    'direction': 'D',
+                    'head_piece_bit': 'H',
+                    'occupied_bit': 'C',
+                    'minecraft:connection_north': '6',
+                    'minecraft:connection_east': '7',
+                    'minecraft:connection_west': '8',
+                    'minecraft:connection_south': '9',
+                    'in_wall_bit': 'I',
+                    'door_hinge_bit': '!',
+                    'upper_block_bit': 'U',
+                    'wall_block_type': 'T',
+                    'wall_post_bit': 'B',
+                    'wall_connection_type_north': '3',
+                    'wall_connection_type_east': '5',
+                    'wall_connection_type_south': 'N',
+                    'wall_connection_type_west': 'X',
+                    'persistent_bit': 'P',
+                    'old_leaf_type': '*',
+                    'update_bit': '%',
+                },
 
-                    /**
-                     * Remove namespaces
-                     * @param {string} str 
-                     * @returns {string}
-                     */
-                    encode(str) {
-                        if (str.startsWith(this.minecraftNameSpace)) str = '@' + str.slice(this.minecraftNameSpace.length)
-                        else if (str.startsWith(this.arxNameSpance)) str = '#' + str.slice(this.arxNameSpance.length)
-                        return str
-                    },
+                minecraftNameSpace: 'minecraft:',
+                arxNameSpace: 'arx:',
 
-                    /**
-                     * Restore namespaces
-                     * @param {string} str 
-                     * @returns {string}
-                     */
-                    decode(str) {
-                        if (str.startsWith('@')) return this.minecraftNameSpace + str.slice(1)
-                        else if (str.startsWith('#')) return this.arxNameSpance + str.slice(1)
-                        return str
+                /**
+                 * Shorten
+                 * @param {string} str 
+                 * @returns {string}
+                 */
+                encode(str) {
+                    if (Object.keys(this.shortcuts).includes(str)) return this.shortcuts[str]
+                    if (str.startsWith(this.minecraftNameSpace)) str = '@' + str.slice(this.minecraftNameSpace.length)
+                    else if (str.startsWith(this.arxNameSpace)) str = '#' + str.slice(this.arxNameSpace.length)
+                    return str
+                },
+
+                /**
+                 * Restore string
+                 * @param {string} str 
+                 * @returns {string}
+                 */
+                decode(str) {
+                    for (const fullStr in this.shortcuts) {
+                        const shortcut = this.shortcuts[fullStr]
+                        if (str === shortcut) return fullStr
                     }
+                    if (str.startsWith('@')) return this.minecraftNameSpace + str.slice(1)
+                    else if (str.startsWith('#')) return this.arxNameSpace + str.slice(1)
+                    return str
                 }
             }
         }

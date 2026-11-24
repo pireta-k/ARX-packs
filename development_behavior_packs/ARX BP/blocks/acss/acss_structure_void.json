@@ -1,0 +1,17 @@
+{
+    "format_version": "1.26.30",
+    "minecraft:block": {
+        "components": {
+            "arx:blockInteration": {},
+            "minecraft:connection_rule": {
+                "accepts_connections_from": "none"
+            }
+        },
+        "description": {
+            "identifier": "arx:acss_structure_void",
+            "menu_category": {
+                "category": "construction"
+            }
+        }
+    }
+}
